@@ -1,0 +1,96 @@
+/*******************************************************************************
+ Микропроцессор КР580ВМ0А (8080A)
+ ******************************************************************************/
+
+@protocol ReadWrite <NSObject>
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status;
+- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock;
+@end
+
+@protocol Bytes <NSObject>
+- (uint8_t *) mutableBytesAtAddress:(uint16_t)addr;
+- (const uint8_t *) bytesAtAddress:(uint16_t)addr;
+@end
+
+@class X8080;
+
+@protocol Hook <NSObject>
+- (int) execute:(X8080*)cpu;
+@end
+
+@protocol HOLD <NSObject>
+- (unsigned) HOLD:(uint64_t)clock;
+@end
+
+@protocol INTE <NSObject>
+- (void) INTE:(BOOL)IF;
+@end
+
+// -----------------------------------------------------------------------------
+// X8080 - Базовый класс компьютера с процесором i8080
+// -----------------------------------------------------------------------------
+
+@interface X8080 : NSObject <NSCoding>
+
+@property NSObject<HOLD> *HOLD;
+@property NSObject<INTE> *INTE;
+
+@property uint32_t quartz;
+@property uint64_t CLK;
+
+@property uint16_t PC;
+@property uint16_t SP;
+@property uint16_t AF;
+@property uint16_t BC;
+@property uint16_t DE;
+@property uint16_t HL;
+
+@property uint8_t A;
+@property uint8_t F;
+@property uint8_t B;
+@property uint8_t C;
+@property uint8_t D;
+@property uint8_t E;
+@property uint8_t H;
+@property uint8_t L;
+
+@property BOOL IF;
+
+// -----------------------------------------------------------------------------
+
+- (id) initWithQuartz:(uint32_t)quartz;
+
+// -----------------------------------------------------------------------------
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+			atPage:(uint8_t)page
+			 count:(unsigned)count;
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+			atPage:(uint8_t)page;
+
+uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status);
+void MEMW(X8080 *cpu, uint16_t addr, uint8_t data);
+
+// -----------------------------------------------------------------------------
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+			atPort:(uint8_t)port
+			 count:(unsigned)count;
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+			atPort:(uint8_t)port;
+
+uint8_t IOR(X8080 *cpu, uint16_t addr, uint8_t status);
+void IOW(X8080 *cpu, uint16_t addr, uint8_t data);
+
+// -----------------------------------------------------------------------------
+
+- (void) mapHook:(NSObject<Hook> *)object
+	   atAddress:(uint16_t)addr;
+
+// -----------------------------------------------------------------------------
+
+- (void) execute:(uint64_t)clock;
+
+@end
