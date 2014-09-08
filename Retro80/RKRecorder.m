@@ -14,7 +14,6 @@
 	NSUInteger pos;
 
 	Sound __weak *snd;
-	BOOL _enabled;
 }
 
 // -----------------------------------------------------------------------------
@@ -23,9 +22,6 @@
 {
 	if (self = [super init])
 	{
-		_enabled = [[NSUserDefaults standardUserDefaults]
-					integerForKey:@"Tape Read Hook"];
-
 		snd = sound; _readError = 0xF800;
 	}
 
@@ -131,25 +127,6 @@
 	return 2;
 }
 
-// -----------------------------------------------------------------------------
-
-- (void) setEnabled:(BOOL)enabled
-{
-	[[NSUserDefaults standardUserDefaults]
-	 setInteger:_enabled = enabled
-	 forKey:@"Tape Read Hook"];
-}
-
-- (BOOL) enabled
-{
-	return _enabled;
-}
-
-- (NSInteger) tag
-{
-	return 3;
-}
-
 @end
 
 // -----------------------------------------------------------------------------
@@ -160,8 +137,6 @@
 {
 	NSMutableData* data;
 	NSTimeInterval last;
-
-	BOOL _enabled;
 }
 
 // -----------------------------------------------------------------------------
@@ -253,7 +228,7 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 				{
 					NSUInteger i = ((ptr[3] << 8) | ptr[4]) - ((ptr[1] << 8) | ptr[2]) + 6;
 
-					if (length - i == _Micro80 ? 0 : 2)
+					if (length - i == (_Micro80 ? 0 : 2))
 					{
 						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
 						break;
@@ -323,25 +298,6 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 		return 1;
 	}
 
-	return 2;
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) setEnabled:(BOOL)enabled
-{
-	[[NSUserDefaults standardUserDefaults]
-	 setInteger:_enabled = enabled
-	 forKey:@"Tape Write Hook"];
-}
-
-- (BOOL) enabled
-{
-	return _enabled;
-}
-
-- (NSInteger) tag
-{
 	return 2;
 }
 

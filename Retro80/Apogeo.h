@@ -1,7 +1,7 @@
-#import "Radio86RK.h"
+#import "RK86Base.h"
 #import "ROMDisk.h"
 
-@interface Apogeo : Radio86RK
+@interface Apogeo : RK86Base <INTE>
 
 @property ROMDisk *ext;
 

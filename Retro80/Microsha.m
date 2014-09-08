@@ -61,55 +61,17 @@
 
 - (uint8_t) A
 {
-	return 0x00;
+	return _mode.A ? 0x00 : _A;
+}
+
+- (uint8_t) B
+{
+	return _mode.B ? 0x00 : _B;
 }
 
 - (uint8_t) C
 {
-	return 0x00;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// Модуль дополнительной памяти
-// -----------------------------------------------------------------------------
-
-@implementation MicroshaExtRAM
-{
-	Microsha* __weak _microsha;
-}
-
-- (id) initWithMicrosha:(Microsha *)microsha
-{
-	if (self = [super init])
-	{
-		_microsha = microsha;
-	}
-
-	return self;
-}
-
-- (void) setEnabled:(BOOL)enabled
-{
-	if ((_microsha.extRAM = enabled))
-	{
-		[_microsha.cpu mapObject:_microsha.ram atPage:0x80 count:40];
-	}
-	else
-	{
-		[_microsha.cpu mapObject:nil atPage:0x80 count:40];
-	}
-}
-
-- (BOOL) enabled
-{
-	return _microsha.extRAM;
-}
-
-- (NSInteger) tag
-{
-	return 4;
+	return (_mode.H ? 0x00 : _C & 0xF0) | (_mode.L ? 0x00 : _C & 0x0F);
 }
 
 @end
@@ -142,45 +104,137 @@
 }
 
 // -----------------------------------------------------------------------------
+// validateMenuItem
+// -----------------------------------------------------------------------------
 
-- (void) setColor:(BOOL)color
+- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (color)
+	if (menuItem.action == @selector(colorModule:))
+	{
+		menuItem.state = self.isColor;
+		return YES;
+	}
+
+	if (menuItem.action == @selector(extraMemory:))
+	{
+		menuItem.state = self.extraRAM != nil;
+		return YES;
+	}
+
+	if (menuItem.action == @selector(floppy:))
+	{
+		if (self.floppy)
+		{
+			menuItem.state = menuItem.tag == 0 || [self.floppy state:menuItem.tag];
+			return YES;
+		}
+		else
+		{
+			menuItem.state = FALSE; return menuItem.tag == 0;
+		}
+	}
+
+	return [super validateMenuItem:menuItem];
+}
+
+// -----------------------------------------------------------------------------
+// Модуль цветности
+// -----------------------------------------------------------------------------
+
+static uint32_t colors[] =
+{
+	0xFFFFFFFF, 0xFF00FFFF, 0xFFFFFFFF, 0xFF00FFFF,
+	0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00, 0xFF00FF00,
+	0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF, 0xFF0000FF,
+	0xFFFF0000, 0xFF000000, 0xFFFF0000, 0xFF000000
+};
+
+- (IBAction) colorModule:(id)sender
+{
+	[self.document registerUndoMenuItem:sender];
+
+	if ((self.isColor = !self.isColor))
 	{
 		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0xD3;
-
-		static uint32_t colors[] =
-		{
-			0xFFFFFFFF, 0xFF00FFFF, 0xFFFFFFFF, 0xFF00FFFF,
-			0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00, 0xFF00FF00,
-			0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF, 0xFF0000FF,
-			0xFFFF0000, 0xFF000000, 0xFFFF0000, 0xFF000000
-		};
-
-		self.crt.attributesMask = 0xFF;
-		self.crt.colors = colors;
+		[self.crt setColors:colors attributeMask:0xFF];
 	}
 	else
 	{
 		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0x93;
-
-		self.crt.attributesMask = 0xEF;
-		self.crt.colors = NULL;
+		[self.crt setColors:NULL attributeMask:0x22];
 	}
 }
 
-- (BOOL) isColor
+// -----------------------------------------------------------------------------
+// Модуль ОЗУ
+// -----------------------------------------------------------------------------
+
+- (IBAction) extraMemory:(id)sender
 {
-	return *(uint8_t *)[self.rom bytesAtAddress:0xF842] == 0xD3;
+	[self.document registerUndo:((NSMenuItem *)sender).title];
+
+	@synchronized(self.snd)
+	{
+		if (self.extraRAM == nil)
+		{
+			self.extraRAM = [[RAM alloc] initWithLength:0x4000 mask:0x3FFF];
+			[self.cpu mapObject:self.extraRAM atPage:0x80 count:0x40];
+		}
+		else
+		{
+			[self.cpu mapObject:self.extraRAM = nil atPage:0x80 count:0x40];
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Модуль НГМД
+// -----------------------------------------------------------------------------
+
+- (IBAction) floppy:(NSMenuItem *)menuItem;
+{
+	[self.document registerUndo:menuItem.title];
+
+	if (menuItem.tag == 0)
+	{
+		@synchronized(self.snd)
+		{
+			if (self.floppy == nil)
+			{
+				self.floppy = [[Floppy alloc] init];
+				[self.cpu mapObject:self.floppy atPage:0xF0 count:0x08];
+				[self.cpu mapObject:self.dos29 atPage:0xE0 count:0x10];
+			}
+			else
+			{
+				[self.cpu mapObject:self.floppy = nil atPage:0xE0 count:0x18];
+			}
+		}
+	}
+	else
+	{
+		NSOpenPanel *panel = [NSOpenPanel openPanel];
+		panel.title = menuItem.title;
+		panel.canChooseDirectories = FALSE;
+		panel.allowedFileTypes = @[@"rkd"];
+
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		{
+			[self.document registerUndo:menuItem.title];
+			[self.floppy setUrl:panel.URLs.firstObject disk:menuItem.tag];
+		}
+		else if ([self.floppy state:menuItem.tag])
+		{
+			[self.document registerUndo:menuItem.title];
+			[self.floppy setUrl:nil disk:menuItem.tag];
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
-		return FALSE;
-
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
 		return FALSE;
 
@@ -200,7 +254,31 @@
 
 - (BOOL) mapObjects
 {
-	[self.cpu mapObject:self.ram atPage:0x00 count:self.extRAM ? 0xC0 : 0x80];
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
+		return FALSE;
+
+	if ((self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
+		return FALSE;
+
+	*(uint8_t *)[self.dos29 bytesAtAddress:0xEDBF] = 0xD1;
+
+
+	[self.ext.crt = self.crt setFontOffset:self.ext.B & 0x80 ? 0x2800 : 0x0C00];
+
+	if (self.isColor)
+	{
+		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0xD3;
+		[self.crt setColors:colors attributeMask:0xFF];
+	}
+	else
+	{
+		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0x93;
+		[self.crt setColors:NULL attributeMask:0x22];
+	}
+	
+	self.snd.channel2 = self.kbd.C & 0x04 ? TRUE : FALSE;
+	
+	[self.cpu mapObject:self.ram atPage:0x00 count:0x80];
 	[self.cpu mapObject:self.kbd atPage:0xC0 count:0x08];
 	[self.cpu mapObject:self.ext atPage:0xC8 count:0x08];
 	[self.cpu mapObject:self.crt atPage:0xD0 count:0x08];
@@ -208,32 +286,14 @@
 	[self.cpu mapObject:self.dma atPage:0xF8 count:0x08];
 	[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];
 
-	self.ext.crt = self.crt;
+	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xFEEA];
 
-	[self.crt setFontOffset:self.ext.B & 0x80 ? 0x2800 : 0x0C00];
+	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
+	self.inpHook.extension = @"rkm";
+	self.inpHook.readError = 0xF8C7;
 
-	self.snd.channel2 = self.kbd.C & 0x04 ? TRUE : FALSE;
-
-	[self.crt addAdjustment:[[MicroshaExtRAM alloc] initWithMicrosha:self]];
-
-	[self.crt addAdjustment:[[Adjustment alloc] initWithTag:5
-												   computer:self
-													 setter:@selector(setColor:)
-													 getter:@selector(isColor)]];
-
-	[self setColor:[self isColor]];
-
-	F81B *kbdHook; [self.cpu mapHook:kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xFEEA];
-	[self.crt addAdjustment:kbdHook];
-
-	F806 *inpHook; [self.cpu mapHook:inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	inpHook.extension = @"rkm";
-	inpHook.readError = 0xF8C7;
-	[self.crt addAdjustment:inpHook];
-
-	FCAB *outHook; [self.cpu mapHook:outHook = [[FCAB alloc] init] atAddress:0xFCAB];
-	outHook.extension = @"rkm";
-	[self.crt addAdjustment:outHook];
+	[self.cpu mapHook:self.outHook = [[FCAB alloc] init] atAddress:0xFCAB];
+	self.outHook.extension = @"rkm";
 
 	return TRUE;
 }
@@ -244,15 +304,27 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeBool:self.extRAM forKey:@"extRAM"];
 	[super encodeWithCoder:encoder];
+	[encoder encodeObject:self.extraRAM forKey:@"extraRAM"];
+	[encoder encodeObject:self.floppy forKey:@"floppy"];
 }
 
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	self.extRAM = [decoder decodeBoolForKey:@"extRAM"];
-	return [super initWithCoder:decoder];
+	if (self = [super initWithCoder:decoder])
+	{
+		self.extraRAM = [decoder decodeObjectForKey:@"extraRAM"];
+		[self.cpu mapObject:self.extraRAM atPage:0x80 count:0x40];
+
+		if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) != nil)
+		{
+			[self.cpu mapObject:self.floppy atPage:0xF0 count:0x08];
+			[self.cpu mapObject:self.dos29 atPage:0xE0 count:0x10];
+		}
+	}
+
+	return self;
 }
 
 @end

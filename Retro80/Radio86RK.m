@@ -1,3 +1,7 @@
+/*******************************************************************************
+ ПЭВМ «Радио-86РК»
+ ******************************************************************************/
+
 #import "Radio86RK.h"
 
 @implementation Radio86RK
@@ -8,38 +12,137 @@
 }
 
 // -----------------------------------------------------------------------------
-// Управление компьютером
+// validateMenuItem
 // -----------------------------------------------------------------------------
 
-- (void) start
+- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-	[self.snd start];
-}
-
-- (void) reset
-{
-	@synchronized(self.snd)
+	if (menuItem.action == @selector(colorModule:))
 	{
-		if (!self.snd.isInput)
+		menuItem.state = self.isColor;
+		return YES;
+	}
+
+	if (menuItem.action == @selector(ROMDisk:))
+	{
+		menuItem.state = self.ext.url != nil;
+		return YES;
+	}
+
+	if (menuItem.action == @selector(floppy:))
+	{
+		if (self.floppy)
 		{
-			self.cpu.PC = 0xF800;
-			self.cpu.IF = FALSE;
-			return;
+			menuItem.state = menuItem.tag == 0 || [self.floppy state:menuItem.tag];
+			return YES;
+		}
+		else
+		{
+			menuItem.state = FALSE; return menuItem.tag == 0;
 		}
 	}
 
-	[self.snd stop];
-	[self.snd close];
-
-	self.cpu.PC = 0xF800;
-	self.cpu.IF = FALSE;
-
-	[self.snd start];
+	return [super validateMenuItem:menuItem];
 }
 
-- (void) stop
+// -----------------------------------------------------------------------------
+// Модуль цветности
+// -----------------------------------------------------------------------------
+
+static uint32_t colors[] =
 {
-	[self.snd stop];
+	0xFFFFFFFF, 0xFF00FFFF, 0xFFFFFFFF, 0xFF00FFFF, 0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00, 0xFF00FF00,
+	0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF0000, 0xFF000000, 0xFFFF0000, 0xFF000000
+};
+
+- (IBAction) colorModule:(id)sender
+{
+	[self.document registerUndoMenuItem:sender];
+
+	if ((self.isColor = !self.isColor))
+	{
+		*(uint8_t *)[self.rom bytesAtAddress:0xFADC] = 0xD3;
+		[self.crt setColors:colors attributeMask:0xFF];
+	}
+	else
+	{
+		*(uint8_t *)[self.rom bytesAtAddress:0xFADC] = 0x93;
+		[self.crt setColors:NULL attributeMask:0x22];
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Внешний ROM-диск
+// -----------------------------------------------------------------------------
+
+- (IBAction) ROMDisk:(NSMenuItem *)menuItem;
+{
+	NSOpenPanel *panel = [NSOpenPanel openPanel];
+	panel.title = menuItem.title;
+	panel.canChooseDirectories = FALSE;
+	panel.allowedFileTypes = @[@"rom"];
+
+	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+	{
+		[self.document registerUndo:menuItem.title];
+		self.ext.url = panel.URLs.firstObject;
+	}
+	else if (self.ext.url != nil)
+	{
+		[self.document registerUndo:menuItem.title];
+		self.ext.url = nil;
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Модуль НГМД
+// -----------------------------------------------------------------------------
+
+- (IBAction) floppy:(NSMenuItem *)menuItem;
+{
+	if (menuItem.tag == 0)
+	{
+		[self.document registerUndo:menuItem.title];
+		
+		@synchronized(self.snd)
+		{
+			if (self.floppy == nil)
+			{
+				self.floppy = [[Floppy alloc] init];
+
+				[self.cpu mapObject:self.dma atPage:0xE0 count:0x20];
+
+				[self.cpu mapObject:self.floppy atPage:0xF0 count:0x08];
+				[self.cpu mapObject:self.dos29 atPage:0xE0 count:0x10];
+				[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];
+			}
+			else
+			{
+				[self.cpu mapObject:self.dma atPage:0xE0 count:0x20];
+				[self.cpu mapObject:self.rom atPage:0xF0 count:0x10];
+
+				self.floppy = nil;
+			}
+		}
+	}
+	else
+	{
+		NSOpenPanel *panel = [NSOpenPanel openPanel];
+		panel.title = menuItem.title;
+		panel.canChooseDirectories = FALSE;
+		panel.allowedFileTypes = @[@"rkd"];
+
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		{
+			[self.document registerUndo:menuItem.title];
+			[self.floppy setUrl:panel.URLs.firstObject disk:menuItem.tag];
+		}
+		else if ([self.floppy state:menuItem.tag])
+		{
+			[self.document registerUndo:menuItem.title];
+			[self.floppy setUrl:nil disk:menuItem.tag];
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -52,33 +155,15 @@
 }
 
 // -----------------------------------------------------------------------------
-// createObjects - стандартные устройства РК86
+// createObjects
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
 {
-	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
+	if ((self.ext = [[ROMDisk alloc] init]) == nil)
 		return FALSE;
 
-	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0x7FFF]) == nil)
-		return FALSE;
-
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000]) == nil)
-		return FALSE;
-
-	if (self.crt == nil && (self.crt = [[X8275 alloc] init]) == nil)
-		return FALSE;
-
-	if (self.dma == nil && (self.dma = [[X8257 alloc] init]) == nil)
-		return FALSE;
-
-	if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
-		return FALSE;
-
-	if (self.kbd == nil && (self.kbd = [[RKKeyboard alloc] init]) == nil)
-		return FALSE;
-
-	if (self.ext == nil && (self.ext = [[X8255 alloc] init]) == nil)
+	if (![super createObjects])
 		return FALSE;
 
 	return TRUE;
@@ -90,9 +175,24 @@
 
 - (BOOL) mapObjects
 {
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
+		return FALSE;
+
+	if ((self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
+		return FALSE;
+
 	[self.crt setFontOffset:0x0C00];
-	self.crt.attributesMask = 0xEF;
-	self.crt.colors = NULL;
+
+	if (self.isColor)
+	{
+		*(uint8_t *)[self.rom bytesAtAddress:0xFADC] = 0xD3;
+		[self.crt setColors:colors attributeMask:0xFF];
+	}
+	else
+	{
+		*(uint8_t *)[self.rom bytesAtAddress:0xFADC] = 0x93;
+		[self.crt setColors:NULL attributeMask:0x22];
+	}
 
 	[self.cpu mapObject:self.ram atPage:0x00 count:0x80];
 	[self.cpu mapObject:self.kbd atPage:0x80 count:0x20];
@@ -103,45 +203,15 @@
 
 	self.cpu.INTE = self;
 
-	F81B *kbdHook; [self.cpu mapHook:kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
-	[self.crt addAdjustment:kbdHook];
+	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
-	F806 *inpHook; [self.cpu mapHook:inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	inpHook.extension = @"rkr";
-	[self.crt addAdjustment:inpHook];
+	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
+	self.inpHook.extension = @"rkr";
 
-	F80C *outHook; [self.cpu mapHook:outHook = [[F80C alloc] init] atAddress:0xF80C];
-	outHook.extension = @"rkr";
-	[self.crt addAdjustment:outHook];
+	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
+	self.outHook.extension = @"rkr";
 
 	return TRUE;
-}
-
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
-
-- (id) init
-{
-	if (self = [super init])
-	{
-		if (![self createObjects])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.cpu.HOLD = self.crt;
-		self.crt.dma  = self.dma;
-		self.crt.kbd  = self.kbd;
-		self.kbd.snd  = self.snd;
-		self.dma.cpu  = self.cpu;
-		self.snd.cpu  = self.cpu;
-
-		self.cpu.PC = 0xF800;
-	}
-
-	return self;
 }
 
 // -----------------------------------------------------------------------------
@@ -150,52 +220,24 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeObject:self.cpu forKey:@"cpu"];
-	[encoder encodeObject:self.crt forKey:@"crt"];
-	[encoder encodeObject:self.dma forKey:@"dma"];
-	[encoder encodeObject:self.snd forKey:@"snd"];
-	[encoder encodeObject:self.kbd forKey:@"kbd"];
-	[encoder encodeObject:self.ext forKey:@"ext"];
-	[encoder encodeObject:self.rom forKey:@"rom"];
-	[encoder encodeObject:self.ram forKey:@"ram"];
+	[super encodeWithCoder:encoder];
+	[encoder encodeObject:self.floppy forKey:@"floppy"];
 }
 
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
-		return self = nil;
+	if (self = [super initWithCoder:decoder])
+	{
+		if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) != nil)
+		{
+			[self.cpu mapObject:self.dma atPage:0xE0 count:0x20];
 
-	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
-		return self = nil;
-
-	if ((self.dma = [decoder decodeObjectForKey:@"dma"]) == nil)
-		return self = nil;
-
-	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
-		return self = nil;
-
-	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
-		return self = nil;
-
-	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
-		return self = nil;
-
-	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
-		return self = nil;
-
-	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-		return self = nil;
-
-	self.cpu.HOLD = self.crt;
-	self.crt.dma  = self.dma;
-	self.crt.kbd  = self.kbd;
-	self.kbd.snd  = self.snd;
-	self.dma.cpu  = self.cpu;
-	self.snd.cpu  = self.cpu;
-
-	if (![self mapObjects])
-		return self = nil;
+			[self.cpu mapObject:self.floppy atPage:0xF0 count:0x08];
+			[self.cpu mapObject:self.dos29 atPage:0xE0 count:0x10];
+			[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];
+		}
+	}
 
 	return self;
 }

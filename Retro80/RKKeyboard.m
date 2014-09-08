@@ -13,9 +13,11 @@
 	BOOL _ruslat;
 	uint8_t _key;
 
-	char clipboard[1000];
+	NSData *clipboard;
+	NSUInteger length;
+	const char *paste;
+
 	unsigned count;
-	char *paste;
 }
 
 // -----------------------------------------------------------------------------
@@ -75,7 +77,10 @@
 			}
 		}
 
-		paste = NULL;
+		@synchronized(self)
+		{
+			length = 0;
+		}
 	}
 }
 
@@ -97,18 +102,12 @@
 // paste
 // -----------------------------------------------------------------------------
 
-- (void) paste:(id)sender
+- (void) paste:(NSString *)string
 {
 	@synchronized(self)
 	{
-		if ([[[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] uppercaseString] getCString:clipboard maxLength:sizeof(clipboard) encoding:(NSStringEncoding) 0x80000A02])
-		{
-			paste = clipboard;
-		}
-		else
-		{
-			paste = NULL;
-		}
+		clipboard = [[string uppercaseString] dataUsingEncoding:(NSStringEncoding) 0x80000A02];
+		paste = clipboard.bytes; length = clipboard.length; count = 0;
 	}
 }
 
@@ -120,13 +119,14 @@
 {
 	@synchronized(self)
 	{
-		if (paste && *paste)
+		if (length)
 		{
 			if (_key == 0xFF)
 			{
-				if ((_key = *paste++ & 0x7F) == '\n')
+				if ((_key = *paste & 0x7F) == '\n')
 					_key = 0x0D;
 
+				paste++; length--;
 				return _key;
 			}
 
@@ -138,8 +138,8 @@
 
 			if (count > 30)
 			{
+				paste++; length--;
 				count = 0;
-				paste++;
 			}
 
 			return 0xFF;
@@ -156,7 +156,7 @@
 
 - (BOOL) isPaste
 {
-	return paste && *paste;
+	return length != 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -267,17 +267,12 @@
 {
 	RKKeyboard* keyboard;
 	unsigned count;
-
-	BOOL _enabled;
 }
 
 - (id) initWithRKKeyboard:(RKKeyboard *)kbd
 {
 	if (self = [super init])
 	{
-		_enabled = [[NSUserDefaults standardUserDefaults]
-					integerForKey:@"Keyboard Hook"];
-
 		keyboard = kbd;
 	}
 
@@ -316,23 +311,6 @@
 	return 2;
 }
 
-- (void) setEnabled:(BOOL)enabled
-{
-	[[NSUserDefaults standardUserDefaults]
-	 setInteger:_enabled = enabled
-	 forKey:@"Keyboard Hook"];
-}
-
-- (BOOL) enabled
-{
-	return _enabled;
-}
-
-- (NSInteger) tag
-{
-	return 1;
-}
-
 @end
 
 // -----------------------------------------------------------------------------
@@ -344,17 +322,12 @@
 	RKKeyboard* keyboard;
 	unsigned count;
 	uint8_t _key;
-
-	BOOL _enabled;
 }
 
 - (id) initWithRKKeyboard:(RKKeyboard *)kbd
 {
 	if (self = [super init])
 	{
-		_enabled = [[NSUserDefaults standardUserDefaults]
-					integerForKey:@"Keyboard Hook"];
-
 		keyboard = kbd;
 		_key = 0xFF;
 	}
@@ -400,23 +373,6 @@
 	return _key;
 }
 
-- (void) setEnabled:(BOOL)enabled
-{
-	[[NSUserDefaults standardUserDefaults]
-	 setInteger:_enabled = enabled
-	 forKey:@"Keyboard Hook"];
-}
-
-- (BOOL) enabled
-{
-	return _enabled;
-}
-
-- (NSInteger) tag
-{
-	return 1;
-}
-
 @end
 
 // -----------------------------------------------------------------------------
@@ -440,7 +396,7 @@
 
 - (int) execute:(X8080 *)cpu
 {
-	if (keyboard.enabled)
+	if (keyboard && keyboard.enabled)
 	{
 		uint8_t key = keyboard.key;
 

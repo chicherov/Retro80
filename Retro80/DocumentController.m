@@ -16,14 +16,19 @@
 	{
 		document.computer = [[NSClassFromString([computers objectAtIndex:computer]) alloc] init];
 
-		if (![document.computer conformsToProtocol:@protocol(Computer)])
+		if (![document.computer isKindOfClass:[Computer class]])
 		{
-			*outError = [NSError errorWithDomain:@"com.uart.Retro80"
-											code:1
-										userInfo:nil];
+			if (outError)
+			{
+				*outError = [NSError errorWithDomain:@"com.uart.Retro80"
+												code:1
+											userInfo:nil];
+			}
 
 			return nil;
 		}
+
+		document.computer.document = document;
 	}
 
 	return document;
@@ -49,7 +54,7 @@
 				tag = item.tag;
 	}
 
-	if ([NSClassFromString([computers objectAtIndex:tag]) conformsToProtocol:@protocol(Computer)])
+	if ([NSClassFromString([computers objectAtIndex:tag]) isSubclassOfClass:[Computer class]])
 	{
 		[[NSUserDefaults standardUserDefaults] setInteger:computer = tag forKey:@"computer"];
 	}
@@ -74,7 +79,7 @@
 		{
 			Class class = NSClassFromString([computers objectAtIndex:tag]);
 
-			if ([class conformsToProtocol:@protocol(Computer)])
+			if ([class isSubclassOfClass:[Computer class]])
 			{
 				NSMenuItem* menuItem = [[NSMenuItem alloc] initWithTitle:[class title] action:@selector(newDocument:) keyEquivalent:@""];
 

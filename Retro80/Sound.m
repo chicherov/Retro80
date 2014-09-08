@@ -145,7 +145,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 								 (unsigned) (packetCount / streamFormat.mSampleRate) % 60
 								 ];
 
-		[self.text setHidden:FALSE];
+//		[self.text setHidden:FALSE];
 
 		inAudioFilePos = 0;
 		pause = FALSE;
@@ -236,15 +236,14 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (void) stop
 {
-
-#ifdef DEBUG
-	NSLog(@"Sound stop");
-#endif
-
 	@synchronized(self)
 	{
 		CLK = (uint64_t) -1;
 	}
+
+#ifdef DEBUG
+	NSLog(@"Sound stop");
+#endif
 
 	OSStatus err; if ((err = AudioQueueStop(audioQueue, TRUE)) != noErr)
 		NSLog(@"AudioQueueStop error: %d", err);

@@ -33,6 +33,7 @@
 	else if ((addr & 0x0F) == 0x08)
 	{
 		mode.byte = data;
+		latch = 0;
 	}
 }
 

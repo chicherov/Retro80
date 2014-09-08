@@ -21,14 +21,19 @@
 		self.B = 0x00;
 
 	if (_mode.H == 1)
-		_C |= 0xF0;
+	{
+		if (_mode.L == 1)
+			_C = 0xFF;
+		else
+			self.C = _C = 0xF0;
+	}
 	else
-		self.C = _C & 0x0F;
-
-	if (_mode.L == 1)
-		_C |= 0x0F;
-	else
-		self.C = _C & 0xF0;
+	{
+		if (_mode.L == 0)
+			self.C = 0x00;
+		else
+			self.C = _C = 0x0F;
+	}
 }
 
 - (uint8_t) mode

@@ -2,7 +2,8 @@
  ПЭВМ «Микроша»
  ******************************************************************************/
 
-#import "Radio86RK.h"
+#import "RK86Base.h"
+#import "Floppy.h"
 
 @class Microsha;
 
@@ -27,16 +28,6 @@
 @end
 
 // -----------------------------------------------------------------------------
-// Модуль дополнительной памяти
-// -----------------------------------------------------------------------------
-
-@interface MicroshaExtRAM : NSObject <Adjustment>
-
-- (id) initWithMicrosha:(Microsha *)microsha;
-
-@end
-
-// -----------------------------------------------------------------------------
 // FCAB - Вывод байта на магнитофон (Микроша)
 // -----------------------------------------------------------------------------
 
@@ -48,10 +39,13 @@
 // ПЭВМ «Микроша»
 // -----------------------------------------------------------------------------
 
-@interface Microsha : Radio86RK
+@interface Microsha : RK86Base
 
 @property MicroshaKeyboard *kbd;
 @property MicroshaExt *ext;
-@property BOOL extRAM;
+@property RAM *extraRAM;
+
+@property Floppy *floppy;
+@property ROM *dos29;
 
 @end

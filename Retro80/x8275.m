@@ -59,11 +59,8 @@
 	// -------------------------------------------------------------------------
 
 	NSData *rom; const uint8_t *font;
-
-	NSTimeInterval time;
-	unsigned frames;
-
-	int refresh;
+	const uint32_t *_colors;
+	uint8_t _attributesMask;
 }
 
 static uint8_t special[][3] =
@@ -82,6 +79,14 @@ static uint8_t special[][3] =
 
 	{ 0x00, 0x00, 0x00 }	// 1011
 };
+
+// -----------------------------------------------------------------------------
+
+- (void) setColors:(const uint32_t *)colors attributeMask:(uint8_t)attributesMask
+{
+	_colors = colors; _attributesMask = attributesMask;
+	memset(screen, -1, sizeof(screen));
+}
 
 // -----------------------------------------------------------------------------
 
@@ -135,28 +140,28 @@ static uint8_t special[][3] =
 
 		else if ((data & 0xE0) == 0x20)	// Команды Start Display
 		{
-			if (status.VE == 0) @synchronized(self)
+			@synchronized(self)
 			{
-				memset(screen, -1, sizeof(screen));
+				if (status.VE == 0)
+				{
+					memset(screen, -1, sizeof(screen));
 
-				[self setupTextWidth:config.H + 1
-							  height:config.R + 1
-								  cx:6
-								  cy:config.L + 1];
+					[self setupTextWidth:config.H + 1
+								  height:config.R + 1
+									  cx:6
+									  cy:config.L + 1];
 
-				rowClock = (config.H + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
-				rowTimer = clock  + rowClock;
+					rowClock = (config.H + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
+					rowTimer = clock  + rowClock;
 
-				row = config.R + config.V + 1;
-				bpos = 0; dmaTimer = 0;
+					row = config.R + config.V + 1;
+					bpos = 0; dmaTimer = 0;
+					
+				}
 
 				mode.byte = data;
 				status.VE = 1;
 				status.IE = 1;
-			}
-			else
-			{
-				refresh = 5;
 			}
 		}
 
@@ -257,12 +262,16 @@ static uint8_t special[][3] =
 
 					else if ((ch.byte & 0xC0) == 0x80)				// 10xxxxxx
 					{
-						ch.attr = attr = ch.byte;
-
-						if (config.F == 0)
-							ch.byte = fifo[f++ & 0x0F];
-						else
+						attr = ch.byte; if (config.F)
+						{
+							ch.attr = _colors ? 0 : attr;
 							ch.byte = 0x00;
+						}
+						else
+						{
+							ch.byte = fifo[f++ & 0x0F];
+							ch.attr = attr;
+						}
 					}
 
 					else if ((ch.byte & 0xF0) == 0xF0)				// 1111xxxx
@@ -318,8 +327,8 @@ static uint8_t special[][3] =
 					{
 						screen[row][col].word = ch.word;
 
-						uint32_t b0 = _colors ? _colors[0x0F & _attributesMask] : 0xFF000000;
-						uint32_t b1 = _colors ? _colors[ch.attr & 0x0F] : 0xFFFFFFFF;
+						uint32_t b0 = _colors ? _colors[0x0F & _attributesMask] : ch.attr & 0x01 ? 0xFF555555 : 0xFF000000;
+						uint32_t b1 = _colors ? _colors[ch.attr & 0x0F] : ch.attr & 0x01 ? 0xFFFFFFFF : 0xFFAAAAAA;
 
 						if (ch.byte < 0x80)
 						{
@@ -452,11 +461,16 @@ static uint8_t special[][3] =
 					return clk;
 				}
 			}
+
+			static unsigned burstSpace[8] =
+			{
+				0, 7, 15, 23, 31, 39, 47, 55
+			};
 			
-			dmaTimer = bpos <= config.H ? clock + clk + (3 << mode.S) * 12 : (uint64_t)-1;
+			dmaTimer = bpos <= config.H ? clock + clk + (burstSpace[mode.S]) * 12 : (uint64_t)-1;
 		}
 	}
-	
+
 	return clk;
 }
 
@@ -466,16 +480,9 @@ static uint8_t special[][3] =
 {
 	@synchronized(self)
 	{
-		if (status.VE/* && refresh == 0*/)
+		if (status.VE)
 		{
 			[super drawRect:rect];
-		}
-
-		else if (refresh)
-		{
-			refresh --;
-			glClear(GL_COLOR_BUFFER_BIT);
-			glFlush();
 		}
 
 		else
@@ -490,48 +497,9 @@ static uint8_t special[][3] =
 // Copy to pasteboard
 // -----------------------------------------------------------------------------
 
-- (IBAction) copy:(id)sender
+- (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y
 {
-	@synchronized(self)
-	{
-		if (isSelected)
-		{
-			uint8_t *buf = malloc(selected.size.height * (selected.size.width + 2)), *ptr = buf;
-
-			for (unsigned y = selected.origin.y; y < selected.origin.y + selected.size.height; y++)
-			{
-				for (unsigned x = selected.origin.x; x < selected.origin.x + selected.size.width; x++)
-				{
-					if ((*ptr = screen[y][x].byte) < 0x20 || *ptr >= 0x80) *ptr = 0x20;
-					else if (*ptr >= 0x60) *ptr |= 0x80;
-					ptr++;
-				}
-
-				if (selected.size.height > 1)
-				{
-					while (ptr > buf && ptr[-1] == ' ')
-						ptr--;
-
-					*ptr++ = '\n';
-				}
-			}
-
-			NSString *string = [[NSString alloc] initWithBytes:buf
-														length:ptr - buf
-													  encoding:(NSStringEncoding) 0x80000A02];
-
-			NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
-			[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
-			[pasteBoard setString:string forType:NSPasteboardTypeString];
-
-			isSelected = FALSE;
-		}
-		
-		else
-		{
-			[super copy:sender];
-		}
-	}
+	return screen[y][x].byte;
 }
 
 // -----------------------------------------------------------------------------

@@ -46,19 +46,22 @@
 				if ((rom = [NSData dataWithContentsOfFile:[[[NSURL URLWithString:@"boot/boot.rk" relativeToURL:url] path] stringByResolvingSymlinksInPath]]) != nil)
 				{
 					_length = rom.length; _bytes = rom.bytes;
-					_A = rom.length ? _bytes[0] : 0xFF;
 					_url = url; romMode = 1;
+					return;
 
 				}
 			}
 			else if ((rom = [NSData dataWithContentsOfFile:[[url path] stringByResolvingSymlinksInPath]]) != nil)
 			{
 				_length = rom.length; _bytes = rom.bytes;
-				_A = rom.length ? _bytes[0] : 0xFF;
 				_url = url; romMode = 0;
+				return;
 			}
 		}
 	}
+
+	rom = nil; _length = 0; _bytes = 0;
+	_url = nil; romMode = 0;
 }
 
 - (NSURL *) url
@@ -82,9 +85,6 @@
 
 - (uint8_t) A
 {
-	if (rom == nil && _B == 0x00 && _C == 0x00)
-		[self performSelectorOnMainThread:@selector(open) withObject:nil waitUntilDone:TRUE];
-
 	if (romMode)
 		return _A;
 

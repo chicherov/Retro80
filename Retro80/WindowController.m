@@ -11,21 +11,16 @@
 	return super.document;
 }
 
-- (IBAction)reset:(id)sender
-{
-	@synchronized(self.document.computer.snd)
-	{
-		[self.document undoPoint:@"Reset"];
-	}
-
-	[self.document.computer reset];
-}
-
 - (void) windowDidLoad
 {
 	Screen* screen = self.document.computer.crt;
-	[self.window makeFirstResponder:screen];
 	[self.view addSubview:screen];
+
+	[self.window makeFirstResponder:self.document.computer];
+
+	self.document.computer.snd.nextResponder = screen.nextResponder;
+	screen.nextResponder = self.document.computer.snd;
+	self.document.computer.nextResponder = screen;
 
 	[self.view addConstraint: [NSLayoutConstraint constraintWithItem:screen
 															 attribute:NSLayoutAttributeWidth
@@ -49,14 +44,15 @@
 
 	self.document.computer.snd.text = self.text1;
 
-	screen.document = self.document;
+//	screen.document = self.document;
+	self.document.computer.document = self.document;
 	[self.document.computer start];
 }
 
 - (void) windowWillClose:(NSNotification *)notification
 {
-//	self.document.computer.crt.document = nil;
 	[self.document.computer stop];
+	[self.document.computer.crt removeFromSuperviewWithoutNeedingDisplay];
 }
 
 @end

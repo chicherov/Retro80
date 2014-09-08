@@ -30,7 +30,7 @@
 // ПЭВМ "Микро-80"
 // -----------------------------------------------------------------------------
 
-@interface Micro80 : NSObject <Computer, NSCoding>
+@interface Micro80 : Computer <NSCoding>
 
 @property (weak) Document *document;
 
@@ -42,5 +42,9 @@
 
 @property Micro80Recorder *snd;
 @property Micro80Keyboard *kbd;
+
+@property F812 *kbdHook;
+@property F806 *inpHook;
+@property F80C *outHook;
 
 @end

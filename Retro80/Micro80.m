@@ -130,8 +130,6 @@
 
 	self.cpu.HOLD = self.crt;
 
-	self.crt.kbd = self.kbd;
-
 	[self.cpu mapObject:self.ram atPage:0x00 count:0xF8];
 	[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];
 
@@ -140,18 +138,15 @@
 	[self.cpu mapObject:self.snd atPort:0x00 count:0x02];
 	[self.cpu mapObject:self.kbd atPort:0x04 count:0x04];
 
-	F812 *kbdHook; [self.cpu mapHook:kbdHook = [[F812 alloc] initWithRKKeyboard:self.kbd] atAddress:0xF812];
-	[self.cpu mapHook:[[F803 alloc] initWithF812:kbdHook] atAddress:0xF803];
-	[self.crt addAdjustment:kbdHook];
+	[self.cpu mapHook:self.kbdHook = [[F812 alloc] initWithRKKeyboard:self.kbd] atAddress:0xF812];
+	[self.cpu mapHook:[[F803 alloc] initWithF812:self.kbdHook] atAddress:0xF803];
 
-	F806 *inpHook; [self.cpu mapHook:inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	inpHook.extension = @"rk8";
-	[self.crt addAdjustment:inpHook];
+	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
+	self.inpHook.extension = @"rk8";
 
-	F80C *outHook; [self.cpu mapHook:outHook = [[F80C alloc] init] atAddress:0xF80C];
-	outHook.extension = @"rk8";
-	outHook.Micro80 = TRUE;
-	[self.crt addAdjustment:outHook];
+	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
+	self.outHook.extension = @"rk8";
+	self.outHook.Micro80 = TRUE;
 
 	return TRUE;
 }
@@ -167,6 +162,10 @@
 			return self = nil;
 
 		self.cpu.PC = 0xF800;
+
+		self.kbdHook.enabled = TRUE;
+		self.inpHook.enabled = TRUE;
+		self.outHook.enabled = TRUE;
 	}
 
 	return self;
@@ -183,6 +182,10 @@
 	[encoder encodeObject:self.ram forKey:@"ram"];
 	[encoder encodeObject:self.crt forKey:@"crt"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
+
+	[encoder encodeBool:self.kbdHook.enabled forKey:@"kbdHook"];
+	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
+	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
@@ -201,6 +204,10 @@
 
 	if (![self mapObjects])
 		return self = nil;
+
+	self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
+	self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
+	self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
 
 	return self;
 }

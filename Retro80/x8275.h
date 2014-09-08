@@ -48,8 +48,10 @@
 	{
 		uint8_t byte[2]; struct
 		{
-			uint8_t COL;
-			uint8_t ROW;
+			unsigned COL:7;
+			unsigned    :1;
+			unsigned ROW:6;
+			unsigned    :2;
 		};
 
 	} cursor;
@@ -66,9 +68,10 @@
 	} mode;
 }
 
+- (void) setColors:(const uint32_t *)colors
+	 attributeMask:(uint8_t)attributesMask;
+
 - (void) setFontOffset:(unsigned)offset;
-@property const uint32_t* colors;
-@property uint8_t attributesMask;
 
 @property X8257* dma;
 

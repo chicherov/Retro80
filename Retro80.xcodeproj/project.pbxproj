@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		D91FBD7E19AE60A70002128E /* Sound.m in Sources */ = {isa = PBXBuildFile; fileRef = D91FBD7D19AE60A70002128E /* Sound.m */; };
-		D929487919B4832B009BC312 /* Micro80.rom in Resources */ = {isa = PBXBuildFile; fileRef = D9EBB62C19B4808A00C833CA /* Micro80.rom */; };
+		D929487919B4832B009BC312 /* Micro80.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9EBB62C19B4808A00C833CA /* Micro80.bin */; };
 		D929487A19B48341009BC312 /* TextScreen.fnt in Resources */ = {isa = PBXBuildFile; fileRef = D9EBB62B19B4808A00C833CA /* TextScreen.fnt */; };
 		D929487D19B484D5009BC312 /* TextScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = D929487C19B484D5009BC312 /* TextScreen.m */; };
 		D929488219B5850C009BC312 /* RKKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D929487F19B5850C009BC312 /* RKKeyboard.m */; };
@@ -23,21 +23,25 @@
 		D974FCCC19ADEA080041DF91 /* Screen.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCCB19ADEA080041DF91 /* Screen.m */; };
 		D974FCCF19ADEBF00041DF91 /* WindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCCE19ADEBF00041DF91 /* WindowController.m */; };
 		D974FCD519ADF2310041DF91 /* DocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCD419ADF2310041DF91 /* DocumentController.m */; };
-		D974FCDF19ADFD460041DF91 /* Radio86RK.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCDE19ADFD460041DF91 /* Radio86RK.m */; };
+		D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCDE19ADFD460041DF91 /* RK86Base.m */; };
 		D974FCE219AE08190041DF91 /* Microsha.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCE119AE08190041DF91 /* Microsha.m */; };
 		D974FCEA19AE10500041DF91 /* Apogeo.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCE919AE10500041DF91 /* Apogeo.m */; };
+		D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E319BCACFE005350CC /* Radio86RK.m */; };
+		D982B4E719BCB62C005350CC /* Floppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E619BCB62C005350CC /* Floppy.m */; };
+		D982B4E919BCB7FF005350CC /* dos29.bin in Resources */ = {isa = PBXBuildFile; fileRef = D982B4E819BCB7FF005350CC /* dos29.bin */; };
 		D9A4245319B8310B00DAA3E0 /* x8253.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4244E19B8310B00DAA3E0 /* x8253.m */; };
 		D9A4245419B8310B00DAA3E0 /* x8257.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4245019B8310B00DAA3E0 /* x8257.m */; };
 		D9A4245519B8310B00DAA3E0 /* x8275.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4245219B8310B00DAA3E0 /* x8275.m */; };
 		D9A4245719B8418600DAA3E0 /* SYMGEN.BIN in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245619B8418600DAA3E0 /* SYMGEN.BIN */; };
-		D9A4245B19B8421900DAA3E0 /* Apogeo.rom in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245819B8421900DAA3E0 /* Apogeo.rom */; };
-		D9A4245C19B8421900DAA3E0 /* Microsha.rom in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245919B8421900DAA3E0 /* Microsha.rom */; };
-		D9A4245D19B8421900DAA3E0 /* Radio86RK.rom in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245A19B8421900DAA3E0 /* Radio86RK.rom */; };
+		D9A4245B19B8421900DAA3E0 /* Apogeo.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245819B8421900DAA3E0 /* Apogeo.bin */; };
+		D9A4245C19B8421900DAA3E0 /* Microsha.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245919B8421900DAA3E0 /* Microsha.bin */; };
+		D9A4245D19B8421900DAA3E0 /* Radio86RK.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245A19B8421900DAA3E0 /* Radio86RK.bin */; };
 		D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */; };
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* ram.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* ram.m */; };
 		D9EBB62A19B47ECA00C833CA /* rom.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62819B47ECA00C833CA /* rom.m */; };
+		D9FE179D19B9F874008EBD32 /* Computer.m in Sources */ = {isa = PBXBuildFile; fileRef = D9FE179C19B9F874008EBD32 /* Computer.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -66,13 +70,18 @@
 		D974FCCB19ADEA080041DF91 /* Screen.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Screen.m; sourceTree = "<group>"; };
 		D974FCCE19ADEBF00041DF91 /* WindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WindowController.m; sourceTree = "<group>"; };
 		D974FCD419ADF2310041DF91 /* DocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DocumentController.m; sourceTree = "<group>"; };
-		D974FCDD19ADFD460041DF91 /* Radio86RK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Radio86RK.h; sourceTree = "<group>"; };
-		D974FCDE19ADFD460041DF91 /* Radio86RK.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Radio86RK.m; sourceTree = "<group>"; };
+		D974FCDD19ADFD460041DF91 /* RK86Base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RK86Base.h; sourceTree = "<group>"; };
+		D974FCDE19ADFD460041DF91 /* RK86Base.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RK86Base.m; sourceTree = "<group>"; };
 		D974FCE019AE08190041DF91 /* Microsha.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Microsha.h; sourceTree = "<group>"; };
 		D974FCE119AE08190041DF91 /* Microsha.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Microsha.m; sourceTree = "<group>"; };
 		D974FCE819AE10500041DF91 /* Apogeo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Apogeo.h; sourceTree = "<group>"; };
 		D974FCE919AE10500041DF91 /* Apogeo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Apogeo.m; sourceTree = "<group>"; };
 		D974FCEC19AE1D3D0041DF91 /* Retro80.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Retro80.h; sourceTree = "<group>"; };
+		D982B4E219BCACFE005350CC /* Radio86RK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Radio86RK.h; sourceTree = "<group>"; };
+		D982B4E319BCACFE005350CC /* Radio86RK.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Radio86RK.m; sourceTree = "<group>"; };
+		D982B4E519BCB62C005350CC /* Floppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Floppy.h; sourceTree = "<group>"; };
+		D982B4E619BCB62C005350CC /* Floppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Floppy.m; sourceTree = "<group>"; };
+		D982B4E819BCB7FF005350CC /* dos29.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = dos29.bin; sourceTree = "<group>"; };
 		D9A4244D19B8310B00DAA3E0 /* x8253.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8253.h; sourceTree = "<group>"; };
 		D9A4244E19B8310B00DAA3E0 /* x8253.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8253.m; sourceTree = "<group>"; };
 		D9A4244F19B8310B00DAA3E0 /* x8257.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8257.h; sourceTree = "<group>"; };
@@ -80,9 +89,9 @@
 		D9A4245119B8310B00DAA3E0 /* x8275.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8275.h; sourceTree = "<group>"; };
 		D9A4245219B8310B00DAA3E0 /* x8275.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8275.m; sourceTree = "<group>"; };
 		D9A4245619B8418600DAA3E0 /* SYMGEN.BIN */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = SYMGEN.BIN; sourceTree = "<group>"; };
-		D9A4245819B8421900DAA3E0 /* Apogeo.rom */ = {isa = PBXFileReference; lastKnownFileType = file; path = Apogeo.rom; sourceTree = "<group>"; };
-		D9A4245919B8421900DAA3E0 /* Microsha.rom */ = {isa = PBXFileReference; lastKnownFileType = file; path = Microsha.rom; sourceTree = "<group>"; };
-		D9A4245A19B8421900DAA3E0 /* Radio86RK.rom */ = {isa = PBXFileReference; lastKnownFileType = file; path = Radio86RK.rom; sourceTree = "<group>"; };
+		D9A4245819B8421900DAA3E0 /* Apogeo.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Apogeo.bin; sourceTree = "<group>"; };
+		D9A4245919B8421900DAA3E0 /* Microsha.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Microsha.bin; sourceTree = "<group>"; };
+		D9A4245A19B8421900DAA3E0 /* Radio86RK.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Radio86RK.bin; sourceTree = "<group>"; };
 		D9A4245E19B8974A00DAA3E0 /* ROMDisk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ROMDisk.h; sourceTree = "<group>"; };
 		D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ROMDisk.m; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
@@ -94,7 +103,8 @@
 		D9EBB62719B47ECA00C833CA /* rom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rom.h; sourceTree = "<group>"; };
 		D9EBB62819B47ECA00C833CA /* rom.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = rom.m; sourceTree = "<group>"; };
 		D9EBB62B19B4808A00C833CA /* TextScreen.fnt */ = {isa = PBXFileReference; lastKnownFileType = text; path = TextScreen.fnt; sourceTree = "<group>"; };
-		D9EBB62C19B4808A00C833CA /* Micro80.rom */ = {isa = PBXFileReference; lastKnownFileType = file; path = Micro80.rom; sourceTree = "<group>"; };
+		D9EBB62C19B4808A00C833CA /* Micro80.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Micro80.bin; sourceTree = "<group>"; };
+		D9FE179C19B9F874008EBD32 /* Computer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Computer.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,7 +123,7 @@
 			children = (
 				D967B3DE19B457E000C3ED9A /* Micro80.h */,
 				D967B3DF19B457E000C3ED9A /* Micro80.m */,
-				D9EBB62C19B4808A00C833CA /* Micro80.rom */,
+				D9EBB62C19B4808A00C833CA /* Micro80.bin */,
 				D967B3E119B4584200C3ED9A /* UT88.h */,
 				D967B3E219B4584200C3ED9A /* UT88.m */,
 				D929487B19B484D5009BC312 /* TextScreen.h */,
@@ -148,6 +158,7 @@
 				D974FCD419ADF2310041DF91 /* DocumentController.m */,
 				D974FCCE19ADEBF00041DF91 /* WindowController.m */,
 				D974FCA619ADE9450041DF91 /* Document.m */,
+				D9FE179C19B9F874008EBD32 /* Computer.m */,
 				D974FCCA19ADEA080041DF91 /* Screen.h */,
 				D974FCCB19ADEA080041DF91 /* Screen.m */,
 				D91FBD7C19AE60A70002128E /* Sound.h */,
@@ -175,21 +186,26 @@
 		D974FCEB19AE10640041DF91 /* Radio86RK */ = {
 			isa = PBXGroup;
 			children = (
-				D974FCDD19ADFD460041DF91 /* Radio86RK.h */,
-				D974FCDE19ADFD460041DF91 /* Radio86RK.m */,
-				D9A4245A19B8421900DAA3E0 /* Radio86RK.rom */,
+				D974FCDD19ADFD460041DF91 /* RK86Base.h */,
+				D974FCDE19ADFD460041DF91 /* RK86Base.m */,
+				D982B4E219BCACFE005350CC /* Radio86RK.h */,
+				D982B4E319BCACFE005350CC /* Radio86RK.m */,
+				D9A4245A19B8421900DAA3E0 /* Radio86RK.bin */,
 				D929487E19B5850C009BC312 /* RKKeyboard.h */,
 				D929487F19B5850C009BC312 /* RKKeyboard.m */,
 				D929488019B5850C009BC312 /* RKRecorder.h */,
 				D929488119B5850C009BC312 /* RKRecorder.m */,
 				D974FCE019AE08190041DF91 /* Microsha.h */,
 				D974FCE119AE08190041DF91 /* Microsha.m */,
-				D9A4245919B8421900DAA3E0 /* Microsha.rom */,
+				D9A4245919B8421900DAA3E0 /* Microsha.bin */,
 				D974FCE819AE10500041DF91 /* Apogeo.h */,
 				D974FCE919AE10500041DF91 /* Apogeo.m */,
-				D9A4245819B8421900DAA3E0 /* Apogeo.rom */,
+				D9A4245819B8421900DAA3E0 /* Apogeo.bin */,
 				D9A4245E19B8974A00DAA3E0 /* ROMDisk.h */,
 				D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */,
+				D982B4E519BCB62C005350CC /* Floppy.h */,
+				D982B4E619BCB62C005350CC /* Floppy.m */,
+				D982B4E819BCB7FF005350CC /* dos29.bin */,
 			);
 			name = Radio86RK;
 			sourceTree = "<group>";
@@ -270,14 +286,15 @@
 			files = (
 				D974FCAA19ADE9450041DF91 /* Document.xib in Resources */,
 				D929487A19B48341009BC312 /* TextScreen.fnt in Resources */,
-				D929487919B4832B009BC312 /* Micro80.rom in Resources */,
+				D929487919B4832B009BC312 /* Micro80.bin in Resources */,
 				D9A4245719B8418600DAA3E0 /* SYMGEN.BIN in Resources */,
 				D974FC9E19ADE9450041DF91 /* InfoPlist.strings in Resources */,
 				D974FCA419ADE9450041DF91 /* Credits.rtf in Resources */,
 				D974FCAD19ADE9450041DF91 /* MainMenu.xib in Resources */,
-				D9A4245C19B8421900DAA3E0 /* Microsha.rom in Resources */,
-				D9A4245B19B8421900DAA3E0 /* Apogeo.rom in Resources */,
-				D9A4245D19B8421900DAA3E0 /* Radio86RK.rom in Resources */,
+				D982B4E919BCB7FF005350CC /* dos29.bin in Resources */,
+				D9A4245C19B8421900DAA3E0 /* Microsha.bin in Resources */,
+				D9A4245B19B8421900DAA3E0 /* Apogeo.bin in Resources */,
+				D9A4245D19B8421900DAA3E0 /* Radio86RK.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -293,19 +310,22 @@
 				D974FCA719ADE9450041DF91 /* Document.m in Sources */,
 				D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */,
 				D9A4245319B8310B00DAA3E0 /* x8253.m in Sources */,
+				D982B4E719BCB62C005350CC /* Floppy.m in Sources */,
 				D974FCCF19ADEBF00041DF91 /* WindowController.m in Sources */,
 				D9A4245519B8310B00DAA3E0 /* x8275.m in Sources */,
+				D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */,
 				D91FBD7E19AE60A70002128E /* Sound.m in Sources */,
 				D9EBB62519B47E8B00C833CA /* x8255.m in Sources */,
 				D9A4245419B8310B00DAA3E0 /* x8257.m in Sources */,
 				D967B3E019B457E000C3ED9A /* Micro80.m in Sources */,
 				D9EBB62019B47E1300C833CA /* x8080.m in Sources */,
-				D974FCDF19ADFD460041DF91 /* Radio86RK.m in Sources */,
+				D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */,
 				D929488319B5850C009BC312 /* RKRecorder.m in Sources */,
 				D974FCD519ADF2310041DF91 /* DocumentController.m in Sources */,
 				D9EBB62919B47ECA00C833CA /* ram.m in Sources */,
 				D974FCA019ADE9450041DF91 /* main.m in Sources */,
 				D929487D19B484D5009BC312 /* TextScreen.m in Sources */,
+				D9FE179D19B9F874008EBD32 /* Computer.m in Sources */,
 				D9EBB62A19B47ECA00C833CA /* rom.m in Sources */,
 				D974FCEA19AE10500041DF91 /* Apogeo.m in Sources */,
 				D974FCCC19ADEA080041DF91 /* Screen.m in Sources */,

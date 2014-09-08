@@ -1,53 +1,8 @@
 #import "Retro80.h"
 #import "Screen.h"
 
-// -----------------------------------------------------------------------------
-
-@implementation Adjustment
-{
-	NSObject<Computer> __weak * _computer;
-
-	SEL _setter; void (*fSetter)(id, SEL, BOOL);
-	SEL _getter; BOOL (*fGetter)(id, SEL);
-
-	NSInteger _tag;
-}
-
-- (id) initWithTag:(NSInteger)tag computer:(NSObject<Computer> *)computer setter:(SEL)setter getter:(SEL)getter
-{
-	if (self = [super init])
-	{
-		_tag = tag; _computer = computer;
-		fSetter = (void *)[computer methodForSelector:_setter = setter];
-		fGetter = (void *)[computer methodForSelector:_getter = getter];
-		_getter = getter;
-	}
-
-	return self;
-}
-
-- (void) setEnabled:(BOOL)enabled
-{
-	fSetter(_computer, _setter, enabled);
-}
-
-- (BOOL) enabled
-{
-	return fGetter(_computer, _getter);
-}
-
-- (NSInteger) tag
-{
-	return _tag;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-
 @implementation Screen
 {
-	NSMutableDictionary *adjustments;
 	NSMutableData *data;
 	NSInteger scale;
 
@@ -56,99 +11,28 @@
 }
 
 // -----------------------------------------------------------------------------
-// Adjustments: опции эмуляции компьютера
-// -----------------------------------------------------------------------------
-
-- (void) addAdjustment:(NSObject<Adjustment> *)adjustment
-{
-	[adjustments setObject:adjustment forKey:[NSNumber numberWithInteger:adjustment.tag]];
-}
-
-- (IBAction) adjustment:(NSMenuItem *)menuItem
-{
-	NSObject <Adjustment> *adjustment = [adjustments objectForKey:[NSNumber numberWithInteger:[menuItem tag]]];
-	adjustment.enabled = adjustment.enabled == FALSE;
-}
-
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-
-- (IBAction) play:(id)sender
-{
-	[self.document.computer.snd play:sender];
-}
-
-- (IBAction) stop:(id)sender
-{
-	[self.document.computer.snd stop:sender];
-}
-
-- (IBAction) stepBackward:(id)sender
-{
-	[self.document.computer.snd stepBackward:sender];
-}
-
-- (IBAction) stepForward:(id)sender
-{
-	[self.document.computer.snd stepForward:sender];
-}
-
-// -----------------------------------------------------------------------------
 // validateMenuItem
 // -----------------------------------------------------------------------------
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(adjustment:))
-	{
-		NSObject <Adjustment> *adjustment = [adjustments objectForKey:[NSNumber numberWithInteger:menuItem.tag]];
-
-		[menuItem setHidden:adjustment == nil];
-
-		if (adjustment)
-		{
-			menuItem.state = adjustment.enabled ? NSOnState : NSOffState;
-			return YES;
-		}
-
-		return NO;
-	}
-	
-	else if (menuItem.action == @selector(zoom:))
+	if (menuItem.action == @selector(zoom:))
 	{
 		menuItem.state = menuItem.tag == scale ? NSOnState : NSOffState;
-
-		if (self.window.styleMask & NSFullScreenWindowMask)
-			return NO;
-		else
-			return YES;
+		return (self.window.styleMask & NSFullScreenWindowMask) == 0;
 	}
 
-	else if (menuItem.action == @selector(selectAll:))
+	if (menuItem.action == @selector(selectAll:))
 	{
 		return TRUE;
 	}
 
-	else if (menuItem.action == @selector(copy:))
+	if (menuItem.action == @selector(copy:))
 	{
-		return TRUE;
 		return isSelected;
 	}
 
-	else if (menuItem.action == @selector(paste:))
-	{
-		return [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] != nil;
-	}
-
-	else if ([self.document.computer.snd respondsToSelector:menuItem.action])
-	{
-		return [self.document.computer.snd validateMenuItem:menuItem];
-	}
-
-	else
-	{
-		return NO;
-	}
+	return NO;
 }
 
 // -----------------------------------------------------------------------------
@@ -159,8 +43,6 @@
 {
 	if (sender != nil && sender.tag >= 1 && sender.tag <= 9)
 	{
-		[[NSUserDefaults standardUserDefaults] setInteger:scale = sender.tag forKey:@"scale"];
-
 		if (scale && self.window.isZoomed)
 			[self.window zoom:sender];
 	}
@@ -219,7 +101,7 @@
 }
 
 // -----------------------------------------------------------------------------
-//
+// drawRect
 // -----------------------------------------------------------------------------
 
 - (void) drawRect:(NSRect)rect
@@ -268,6 +150,11 @@
 // Выделение мышкой
 // -----------------------------------------------------------------------------
 
+BOOL isAlphaNumber(uint8_t byte)
+{
+	return (byte >= '0' && byte <= '9') || (byte >= 'A' && byte <= 'Z') || (byte >= 0x60 && byte <= 0x7E);
+}
+
 - (void) mouseDown:(NSEvent *)theEvent
 {
 	@synchronized(self)
@@ -281,6 +168,27 @@
 			mark.y = trunc(text.height - point.y / self.frame.size.height * text.height);
 			mark.x = trunc(point.x / self.frame.size.width * text.width);
 			isMark = TRUE;
+
+			if (theEvent.clickCount == 2 && isAlphaNumber([self byteAtX:mark.x y:mark.y]))
+			{
+				selected.size.height = 1;
+				selected.size.width = 1;
+
+				selected.origin = mark;
+				isSelected = TRUE;
+
+				while (selected.origin.x + selected.size.width < text.width && isAlphaNumber([self byteAtX:selected.origin.x + selected.size.width y:selected.origin.y]))
+				{
+					selected.size.width += 1;
+				}
+
+				while (selected.origin.x >= 1 && isAlphaNumber([self byteAtX:selected.origin.x - 1 y:selected.origin.y]))
+				{
+					selected.origin.x -= 1; selected.size.width += 1;
+				}
+
+				mark = selected.origin;
+			}
 		}
 	}
 }
@@ -332,56 +240,79 @@
 }
 
 // -----------------------------------------------------------------------------
-// События клавиатуры
-// -----------------------------------------------------------------------------
-
-- (void) flagsChanged:(NSEvent*)theEvent
-{
-	[self.kbd flagsChanged:theEvent];
-}
-
-- (void) keyDown:(NSEvent*)theEvent
-{
-	[self.kbd keyDown:theEvent];
-	isSelected = FALSE;
-}
-
-- (void) keyUp:(NSEvent*)theEvent
-{
-	[self.kbd keyUp:theEvent];
-}
-
-// -----------------------------------------------------------------------------
 // copy/paste
 // -----------------------------------------------------------------------------
 
-- (IBAction) copy:(id)sender
+- (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y
 {
-	NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
-	[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeTIFF] owner:nil];
-
-	NSBitmapImageRep *image = [[NSBitmapImageRep alloc]
-							   initWithBitmapDataPlanes:(uint8_t **)&bitmap
-							   pixelsWide:graphics.width
-							   pixelsHigh:graphics.height
-							   bitsPerSample:8
-							   samplesPerPixel:4
-							   hasAlpha:YES
-							   isPlanar:NO
-							   colorSpaceName:NSDeviceRGBColorSpace
-							   bitmapFormat:0
-							   bytesPerRow:graphics.width * 4
-							   bitsPerPixel:0];
-
-	[pasteBoard setData:[image TIFFRepresentation]
-				forType:NSPasteboardTypeTIFF];
+	return 0;
 }
 
-// -----------------------------------------------------------------------------
-
-- (IBAction) paste:(id)sender
+- (IBAction) copy:(id)sender
 {
-	[self.kbd paste:sender];
+	@synchronized(self)
+	{
+		if (isSelected)
+		{
+			if (isText)
+			{
+				NSMutableData *buffer = [NSMutableData dataWithLength:selected.size.height * (selected.size.width + 1)];
+
+				uint8_t *buf = buffer.mutableBytes;
+				uint8_t *ptr = buf;
+
+				for (unsigned y = selected.origin.y; y < selected.origin.y + selected.size.height; y++)
+				{
+					for (unsigned x = selected.origin.x; x < selected.origin.x + selected.size.width; x++)
+					{
+						if ((*ptr = [self byteAtX:x y:y]) < 0x20 || *ptr > 0x80) *ptr = 0x20;
+						else if (*ptr >= 0x60) *ptr |= 0x80;
+						ptr++;
+					}
+
+					if (selected.size.height > 1)
+					{
+						while (ptr > buf && ptr[-1] == ' ')
+							ptr--;
+
+						*ptr++ = '\n';
+					}
+				}
+
+				NSString *string = [[NSString alloc] initWithBytes:buf
+															length:ptr - buf
+														  encoding:(NSStringEncoding) 0x80000A02];
+
+				NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
+				[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
+				[pasteBoard setString:string forType:NSPasteboardTypeString];
+
+				isSelected = FALSE;
+			}
+
+			else
+			{
+				NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
+				[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeTIFF] owner:nil];
+
+				NSBitmapImageRep *image = [[NSBitmapImageRep alloc]
+										   initWithBitmapDataPlanes:(uint8_t **)&bitmap
+										   pixelsWide:graphics.width
+										   pixelsHigh:graphics.height
+										   bitsPerSample:8
+										   samplesPerPixel:4
+										   hasAlpha:YES
+										   isPlanar:NO
+										   colorSpaceName:NSDeviceRGBColorSpace
+										   bitmapFormat:0
+										   bytesPerRow:graphics.width * 4
+										   bitsPerPixel:0];
+
+				[pasteBoard setData:[image TIFFRepresentation]
+							forType:NSPasteboardTypeTIFF];
+			}
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -392,10 +323,7 @@
 {
 	if (self = [super init])
 	{
-		adjustments = [[NSMutableDictionary alloc] init];
-
-		scale = [[NSUserDefaults standardUserDefaults]
-				 integerForKey:@"scale"];
+		scale = 2;
 	}
 
 	return self;
@@ -414,8 +342,6 @@
 {
 	if (self = [super initWithCoder:decoder])
 	{
-		adjustments = [[NSMutableDictionary alloc] init];
-
 		scale = [[NSUserDefaults standardUserDefaults]
 				 integerForKey:@"scale"];
 	}
@@ -423,7 +349,7 @@
 	return self;
 }
 
-	// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 // DEBUG: dealloc
 // -----------------------------------------------------------------------------
 

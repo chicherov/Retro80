@@ -115,34 +115,59 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="aJh-i4-bef"/>
-                            <menuItem title="Перехват ввода с клавиатуры" tag="1" keyEquivalent="k" id="tWu-be-OoA">
+                            <menuItem title="Перехват ввода с клавиатуры" keyEquivalent="k" id="tWu-be-OoA">
                                 <connections>
-                                    <action selector="adjustment:" target="-1" id="d3g-KY-kON"/>
+                                    <action selector="kbdHook:" target="-1" id="R0k-ck-vea"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Перехват вывода на ленту" tag="2" id="YDb-Gz-iEX">
+                            <menuItem title="Перехват вывода на ленту" id="YDb-Gz-iEX">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="adjustment:" target="-1" id="NtV-KN-unm"/>
+                                    <action selector="outHook:" target="-1" id="DrC-3p-Yu9"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Перехват ввода с ленты" tag="3" id="gOa-oh-41y">
+                            <menuItem title="Перехват ввода с ленты" id="gOa-oh-41y">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="adjustment:" target="-1" id="Tkx-IX-eNX"/>
+                                    <action selector="inpHook:" target="-1" id="18T-uF-pbG"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="4lE-Wa-aOw"/>
-                            <menuItem title="Подключить модуль дополнительного ОЗУ" tag="4" id="R66-oC-FIQ">
+                            <menuItem title="Модуль цветности" id="wQj-w4-Ogq">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="adjustment:" target="-1" id="b0h-Qg-U5T"/>
+                                    <action selector="colorModule:" target="-1" id="mx0-Vp-lOn"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Подключить модуль цветности" tag="5" id="wQj-w4-Ogq">
+                            <menuItem title="Модуль НГМД" id="R66-oC-FIQ">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="adjustment:" target="-1" id="po9-L3-NK3"/>
+                                    <action selector="floppy:" target="-1" id="O7L-Vx-HLc"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Модуль ОЗУ" id="vJC-7g-PJH">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="extraMemory:" target="-1" id="4Jx-Mx-6ZC"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="9JB-dH-wkD"/>
+                            <menuItem title="Внешний ROM-диск" id="xBi-TV-tlo">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="ROMDisk:" target="-1" id="W81-70-B1a"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Дисковод A:" tag="1" id="32q-No-bpF">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="floppy:" target="-1" id="io9-wS-jb1"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Дисковод B:" tag="2" id="KIo-98-FP3">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="floppy:" target="-1" id="vYC-jI-NAz"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="ozI-j0-Wca"/>

@@ -12,7 +12,7 @@
 
 - (id) initWithContentsOfResource:(NSString*)name mask:(uint16_t)mask
 {
-	return self = [super initWithData:[NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:name ofType:@"rom"]] mask:mask];
+	return self = [super initWithData:[NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:name ofType:@"bin"]] mask:mask];
 }
 
 - (uint8_t*) mutableBytesAtAddress:(uint16_t)addr

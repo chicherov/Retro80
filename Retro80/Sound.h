@@ -4,7 +4,7 @@
 // Sound - Поддеркжа звукового ввода/вывода
 // -----------------------------------------------------------------------------
 
-@interface Sound : NSObject
+@interface Sound : NSResponder
 
 @property NSTextField *text;
 
@@ -23,10 +23,5 @@
 
 - (void) start;
 - (void) stop;
-
-- (IBAction) play:(id)sender;
-- (IBAction) stop:(id)sender;
-- (IBAction) stepBackward:(id)sender;
-- (IBAction) stepForward:(id)sender;
 
 @end

@@ -1,20 +1,70 @@
 #import "Screen.h"
 #import "Sound.h"
 
+@class Document;
+
 // -----------------------------------------------------------------------------
-// Протокол готового компьютера
+// Протокол объекта со свойством enabled (для хуков)
 // -----------------------------------------------------------------------------
 
-@protocol Computer <NSObject>
+@protocol Adjustment <NSObject>
+@property BOOL enabled;
+@end
+
+// -----------------------------------------------------------------------------
+// Протокол центрального процессора
+// -----------------------------------------------------------------------------
+
+@protocol Processor <NSObject>
+
+- (void) execute:(uint64_t)clock;
+
+@property uint32_t quartz;
+@property uint64_t CLK;
+
+@end
+
+// -----------------------------------------------------------------------------
+// Протокол клавиатуры
+// -----------------------------------------------------------------------------
+
+@protocol Keyboard <NSObject>
+
+- (void) flagsChanged:(NSEvent *)theEvent;
+- (void) keyDown:(NSEvent *)theEvent;
+- (void) keyUp:(NSEvent *)theEvent;
+
+- (void) paste:(NSString *)string;
+
+@end
+
+// -----------------------------------------------------------------------------
+// Бащовый класс произвольного компьютера
+// -----------------------------------------------------------------------------
+
+@interface Computer : NSResponder
+
+@property (weak) Document *document;
 
 @property Screen *crt;
 @property Sound *snd;
 
+@property NSObject <Processor> *cpu;
+@property NSObject <Keyboard> *kbd;
+
 + (NSString *) title;
 
 - (void) start;
-- (void) reset;
 - (void) stop;
+
+@property NSObject <Adjustment> *kbdHook;
+@property NSObject <Adjustment> *inpHook;
+@property NSObject <Adjustment> *outHook;
+
+- (IBAction) colorModule:(id)sender;
+- (IBAction) extraMemory:(id)sender;
+- (IBAction) ROMDisk:(id)sender;
+- (IBAction) floppy:(id)sender;
 
 @end
 
@@ -24,10 +74,12 @@
 
 @interface Document : NSDocument
 
-@property NSObject <Computer> *computer;
+@property Computer *computer;
 
-- (void) undoPoint:(NSString *)actionName;
-- (void) undo:(NSData *)data;
+- (void) registerUndoMenuItem:(NSMenuItem *)menuItem;
+- (void) registerUndo:(NSString *)actionName;
+
+- (void) performUndo:(NSData *)data;
 
 @end
 

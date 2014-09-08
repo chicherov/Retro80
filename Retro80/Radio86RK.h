@@ -1,36 +1,12 @@
-/*******************************************************************************
- ПЭВМ «Радио-86РК»
- ******************************************************************************/
+#import "RK86Base.h"
+#import "ROMDisk.h"
+#import "Floppy.h"
 
-#import "Retro80.h"
+@interface Radio86RK : RK86Base <INTE>
 
-#import "x8080.h"
-#import "x8275.h"
-#import "x8257.h"
-#import "x8253.h"
+@property ROMDisk *ext;
 
-#import "ram.h"
-#import "rom.h"
-
-#import "RKKeyboard.h"
-#import "RKRecorder.h"
-
-// -----------------------------------------------------------------------------
-
-@interface Radio86RK : NSObject <Computer, INTE, NSCoding>
-
-@property X8080 *cpu;
-@property X8275 *crt;
-@property X8257 *dma;
-@property X8253 *snd;
-
-@property RKKeyboard *kbd;
-@property X8255 *ext;
-
-@property RAM *ram;
-@property ROM *rom;
-
-- (BOOL) createObjects;
-- (BOOL) mapObjects;
+@property Floppy *floppy;
+@property ROM *dos29;
 
 @end
