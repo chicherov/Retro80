@@ -49,9 +49,8 @@
 
 		uint16_t word;
 
-	} screen[64][80];
+	} screen[2][64][80];
 
-	uint8_t blink;
 	unsigned row;
 
 	uint8_t attr;
@@ -155,7 +154,7 @@ static uint8_t special[][3] =
 									  cx:6
 									  cy:config.L + 1];
 
-					rowClock = (config.H + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
+					rowClock = (config.H + 1 + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
 					rowTimer = clock  + rowClock;
 
 					row = config.R + config.V + 1;
@@ -238,8 +237,9 @@ static uint8_t special[][3] =
 			if (++row == config.R + config.V + 2)
 			{
 				row = 0; attr = 0x80; EoS = FALSE;
-				blink = (blink + 1) & 0x1F;
-				self.needsDisplay = TRUE;
+
+				if (frame++ & 1)
+					self.needsDisplay = TRUE;
 			}
 
 			if (row <= config.R)
@@ -300,11 +300,11 @@ static uint8_t special[][3] =
 						switch (config.C)
 						{
 							case 0:
-								ch.R = (blink & 0x10) ? 1 : 0;
+								ch.R = (frame & 0x10) ? 1 : 0;
 								break;
 
 							case 1:
-								ch.U = (blink & 0x10) ? 1 : 0;
+								ch.U = (frame & 0x10) ? 1 : 0;
 								break;
 
 							case 2:
@@ -317,22 +317,23 @@ static uint8_t special[][3] =
 						}
 					}
 
-					if (ch.B && (blink & 0x10) == 0x00)
+					if (ch.B && (frame & 0x10) == 0x00)
 						ch.byte = 0;
 
 					ch.attr &= _attributesMask;
 
-					if (isSelected)
-						if (row >= selected.origin.y && row < selected.origin.y + selected.size.height)
-							if (col >= selected.origin.x && col < selected.origin.x + selected.size.width)
-								ch.R ^= 1;
-
-					if (screen[row][col].word != ch.word)
+					if (screen[frame & 1][row][col].word != ch.word)
 					{
-						screen[row][col].word = ch.word;
+						screen[frame & 1][row][col].word = ch.word;
 
 						uint32_t b0 = _colors ? _colors[0x0F & _attributesMask] : ch.attr & 0x01 ? 0xFF555555 : 0xFF000000;
 						uint32_t b1 = _colors ? _colors[ch.attr & 0x0F] : ch.attr & 0x01 ? 0xFFFFFFFF : 0xFFAAAAAA;
+
+						if (frame & 1)
+						{
+							b0 &= 0x7FFFFFFF;
+							b1 &= 0x7FFFFFFF;
+						}
 
 						if (ch.byte < 0x80)
 						{
@@ -365,7 +366,7 @@ static uint8_t special[][3] =
 
 								for (int i = 0; i < 6; i++, byte <<= 1)
 								{
-									unsigned address = ((row * (config.L + 1) + line) * (config.H + 1) + col) * 6 + i;
+									unsigned address = (((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) + line) * (config.H + 1) + col) * 6 + i;
 									bitmap[address] = byte & 0x20 ? b1 : b0;
 								}
 							}
@@ -503,7 +504,7 @@ static uint8_t special[][3] =
 
 - (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y
 {
-	return screen[y][x].byte;
+	return screen[0][y][x].byte;
 }
 
 // -----------------------------------------------------------------------------

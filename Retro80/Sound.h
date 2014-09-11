@@ -6,7 +6,7 @@
 
 @interface Sound : NSResponder
 
-@property NSTextField *text;
+@property NSTextField *textField;
 
 @property (weak) X8080 *cpu;
 

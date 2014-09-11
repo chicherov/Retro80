@@ -45,12 +45,12 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 					{
 						sound->inAudioFilePos += ioNumPackets;
 
-						sound->_text.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
-													(unsigned) (sound->inAudioFilePos / sound->streamFormat.mSampleRate) / 60,
-													(unsigned) (sound->inAudioFilePos / sound->streamFormat.mSampleRate) % 60,
-													(unsigned) (sound->packetCount / sound->streamFormat.mSampleRate) / 60,
-													(unsigned) (sound->packetCount / sound->streamFormat.mSampleRate) % 60
-													];
+						sound.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
+													   (unsigned) (sound->inAudioFilePos / sound->streamFormat.mSampleRate) / 60,
+													   (unsigned) (sound->inAudioFilePos / sound->streamFormat.mSampleRate) % 60,
+													   (unsigned) (sound->packetCount / sound->streamFormat.mSampleRate) / 60,
+													   (unsigned) (sound->packetCount / sound->streamFormat.mSampleRate) % 60
+													   ];
 
 						uint8_t add = sound->streamFormat.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger ? 0x80 : 0x00;
 						uint8_t* ptr = inBuffer->mAudioData + (sound->streamFormat.mBitsPerChannel == 16 ? 1 : 0);
@@ -140,12 +140,12 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 										 userInfo:nil];
 		}
 
-		self.text.stringValue = [NSString stringWithFormat:@"--:--/%02d:%02d",
-								 (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
-								 (unsigned) (packetCount / streamFormat.mSampleRate) % 60
-								 ];
+		self.textField.stringValue = [NSString stringWithFormat:@"--:--/%02d:%02d",
+									  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+									  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+									  ];
 
-		[self.text setHidden:FALSE];
+		[self.textField setHidden:FALSE];
 
 		inAudioFilePos = 0;
 		pause = FALSE;
@@ -173,8 +173,8 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	OSStatus err; if ((err = AudioFileClose(inAudioFile)) != noErr)
 		NSLog(@"AudioFileClose error: %d", err);
 
-	self.text.stringValue = @"";
-	[self.text setHidden:TRUE];
+	self.textField.stringValue = @"";
+	[self.textField setHidden:TRUE];
 
 	inAudioFile = 0;
 }
@@ -200,7 +200,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		streamFormat.mFramesPerPacket = 1;
 		streamFormat.mReserved = 0;
 
-		self.text.stringValue = @"--:--";
+		self.textField.stringValue = @"--:--";
 	}
 
 	OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, NULL, NULL, 0, &audioQueue)) == noErr)

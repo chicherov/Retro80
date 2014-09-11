@@ -89,7 +89,8 @@
 
 	[screen setTranslatesAutoresizingMaskIntoConstraints:NO];
 
-	self.document.computer.snd.text = self.text1;
+	self.document.computer.snd.textField = self.text1;
+	self.document.computer.crt.textField = self.text2;
 
 	[[self window] setDelegate:self];
 	[self.document.computer start];

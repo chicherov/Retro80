@@ -8,6 +8,10 @@
 
 	NSPoint mark;
 	BOOL isMark;
+
+#ifdef DEBUG
+	NSTimeInterval frameRate[10];
+#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -39,7 +43,7 @@
 
 	if (menuItem.action == @selector(copy:))
 	{
-		return isSelected;
+		return isText && isSelected;
 	}
 
 	return NO;
@@ -51,21 +55,20 @@
 
 - (IBAction) zoom:(NSMenuItem *)sender
 {
-	CGFloat addHeight = self.window.frame.size.height - self.frame.size.height;
-
 	if (sender != nil && sender.tag >= 1 && sender.tag <= 9)
 		scale = sender.tag;
 
 	if (data != nil && scale >= 1 && scale <= 9)
 	{
-		NSRect frame = self.window.frame; frame.origin.y += frame.size.height;
-
-		frame.size.height = graphics.height * scale + addHeight;
-		frame.size.width = graphics.width * scale;
-		frame.origin.y -= frame.size.height;
+		NSRect rect = self.window.frame; rect.origin.y += rect.size.height;
+		CGFloat addHeight = rect.size.height - self.frame.size.height;
+		
+		rect.size.height = graphics.height * scale + addHeight;
+		rect.size.width = graphics.width * scale;
+		rect.origin.y -= rect.size.height;
 
 		if (!(self.window.styleMask & NSFullScreenWindowMask))
-			[self.window setFrame:frame display:TRUE];
+			[self.window setFrame:rect display:TRUE];
 
 		[self.window setMinSize:NSMakeSize(graphics.width, graphics.height + addHeight)];
 	}
@@ -79,7 +82,7 @@
 {
 	if (data == nil || graphics.width != width || graphics.height != height)
 	{
-		bitmap = (data = [NSMutableData dataWithLength:width * height * 4]).mutableBytes;
+		bitmap = (data = [NSMutableData dataWithLength:width * height * 8]).mutableBytes;
 		graphics.width = width; graphics.height = height;
 
 		[self performSelectorOnMainThread:@selector(zoom:)
@@ -95,7 +98,7 @@
 {
 	if (data == nil || graphics.width != width * cx || graphics.height != height * cy)
 	{
-		bitmap = (data = [NSMutableData dataWithLength:(width * cx) * (height * cy) * 4]).mutableBytes;
+		bitmap = (data = [NSMutableData dataWithLength:(width * cx) * (height * cy) * 8]).mutableBytes;
 		graphics.width = width * cx; graphics.height = height * cy;
 
 		[self performSelectorOnMainThread:@selector(zoom:)
@@ -115,6 +118,21 @@
 
 - (void) drawRect:(NSRect)rect
 {
+#ifdef DEBUG
+	if (frame % 50 == 0)
+	{
+		unsigned pos = frame / 50 % 10; NSTimeInterval uptime = frameRate[pos] = [NSProcessInfo processInfo].systemUptime;
+
+		if (frameRate[pos = (pos + 1) % 10] != 0.0)
+			self.textField.stringValue = [NSString stringWithFormat:@"%2.2f fps", 450 / (uptime - frameRate[pos])];
+		else if (frameRate[pos = (pos + 8) % 10] != 0.0)
+		{
+			self.textField.stringValue = [NSString stringWithFormat:@"%2.2f fps", 50 / (uptime - frameRate[pos])];
+			[self.textField setHidden:FALSE];
+		}
+	}
+#endif
+
 	NSRect backingBounds = [self convertRectToBacking:[self bounds]];
 	GLsizei backingPixelWidth  = (GLsizei)(backingBounds.size.width),
 	backingPixelHeight = (GLsizei)(backingBounds.size.height);
@@ -122,10 +140,22 @@
 
 	glEnable(GL_TEXTURE_2D);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
-
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
+
+	glBegin(GL_QUADS);
+	glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+	glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+	glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+	glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+	glEnd();
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
@@ -135,6 +165,32 @@
 	glEnd();
 
 	glDisable(GL_TEXTURE_2D);
+
+	if (isSelected)
+	{
+		glBegin(GL_QUADS);
+		glColor4f(1.0, 1.0, 1.0, 0.5);
+
+		if (isText)
+		{
+			glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
+			glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
+			glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
+			glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
+		}
+		else
+		{
+			glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
+			glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
+			glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
+			glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
+		}
+
+		glColor4f(1.0, 1.0, 1.0, 1.0);
+		glEnd();
+	}
+
+	glDisable(GL_BLEND);
 	glFlush();
 }
 
@@ -146,12 +202,9 @@
 {
 	@synchronized(self)
 	{
-		if (isText)
-		{
-			selected.origin = NSZeroPoint;
-			selected.size = text;
-			isSelected = TRUE;
-		}
+		isSelected = TRUE;
+		selected.origin = NSZeroPoint;
+		selected.size = isText ? text : graphics;
 	}
 }
 
@@ -168,36 +221,34 @@ BOOL isAlphaNumber(uint8_t byte)
 {
 	@synchronized(self)
 	{
+		NSPoint point = [self convertPoint:theEvent.locationInWindow fromView:nil];
+		NSSize size = isText ? text : graphics;
+
+		mark.y = trunc(size.height - point.y / self.frame.size.height * size.height);
+		mark.x = trunc(point.x / self.frame.size.width * size.width);
+
 		isSelected = FALSE;
+		isMark = TRUE;
 
-		if (isText)
+		if (isText && theEvent.clickCount == 2 && isAlphaNumber([self byteAtX:mark.x y:mark.y]))
 		{
-			NSPoint point = [self convertPoint:theEvent.locationInWindow fromView:nil];
+			selected.size.height = 1;
+			selected.size.width = 1;
 
-			mark.y = trunc(text.height - point.y / self.frame.size.height * text.height);
-			mark.x = trunc(point.x / self.frame.size.width * text.width);
-			isMark = TRUE;
+			selected.origin = mark;
+			isSelected = TRUE;
 
-			if (theEvent.clickCount == 2 && isAlphaNumber([self byteAtX:mark.x y:mark.y]))
+			while (selected.origin.x + selected.size.width < text.width && isAlphaNumber([self byteAtX:selected.origin.x + selected.size.width y:selected.origin.y]))
 			{
-				selected.size.height = 1;
-				selected.size.width = 1;
-
-				selected.origin = mark;
-				isSelected = TRUE;
-
-				while (selected.origin.x + selected.size.width < text.width && isAlphaNumber([self byteAtX:selected.origin.x + selected.size.width y:selected.origin.y]))
-				{
-					selected.size.width += 1;
-				}
-
-				while (selected.origin.x >= 1 && isAlphaNumber([self byteAtX:selected.origin.x - 1 y:selected.origin.y]))
-				{
-					selected.origin.x -= 1; selected.size.width += 1;
-				}
-
-				mark = selected.origin;
+				selected.size.width += 1;
 			}
+
+			while (selected.origin.x >= 1 && isAlphaNumber([self byteAtX:selected.origin.x - 1 y:selected.origin.y]))
+			{
+				selected.origin.x -= 1; selected.size.width += 1;
+			}
+
+			mark = selected.origin;
 		}
 	}
 }
@@ -218,11 +269,12 @@ BOOL isAlphaNumber(uint8_t byte)
 		@synchronized(self)
 		{
 			NSPoint point = [self convertPoint:theEvent.locationInWindow fromView:nil];
+			NSSize size = isText ? text : graphics;
 
-			point.y = trunc(text.height - point.y / self.frame.size.height * text.height);
-			point.x = trunc(point.x / self.frame.size.width * text.width);
+			point.y = trunc(size.height - point.y / self.frame.size.height * size.height);
+			point.x = trunc(point.x / self.frame.size.width * size.width);
 
-			if (point.y < text.height && point.x < text.width)
+			if (point.y < size.height && point.x < size.width)
 			{
 				if (point.y < mark.y)
 				{
@@ -351,8 +403,7 @@ BOOL isAlphaNumber(uint8_t byte)
 {
 	if (self = [super initWithCoder:decoder])
 	{
-		scale = [[NSUserDefaults standardUserDefaults]
-				 integerForKey:@"scale"];
+		scale = 2;
 	}
 
 	return self;

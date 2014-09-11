@@ -8,6 +8,7 @@
 {
 	uint32_t *bitmap;
 	NSSize graphics;
+	unsigned frame;
 
 	BOOL isSelected;
 	NSRect selected;
@@ -15,6 +16,8 @@
 	BOOL isText;
 	NSSize text;
 }
+
+@property NSTextField *textField;
 
 - (void) setupGraphicsWidth:(NSUInteger)width
 					 height:(NSUInteger)height;

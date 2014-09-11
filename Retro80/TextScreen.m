@@ -56,8 +56,8 @@
 {
 	if (CLK < clock)
 	{
+		frame++; CLK += 18000000/25;
 		self.needsDisplay = TRUE;
-		CLK += 18000000/25;
 	}
 
 	return 0;
@@ -72,11 +72,6 @@
 		for (unsigned col = 0; col < 64; col++)
 		{
 			uint8_t ch =  memory[row][col];
-
-			if (isSelected)
-				if (row >= selected.origin.y && row < selected.origin.y + selected.size.height)
-					if (col >= selected.origin.x && col < selected.origin.x + selected.size.width)
-						ch ^= 0x80;
 
 			if (screen[row][col] != ch)
 			{
