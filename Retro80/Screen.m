@@ -18,8 +18,18 @@
 {
 	if (menuItem.action == @selector(zoom:))
 	{
-		menuItem.state = menuItem.tag == scale ? NSOnState : NSOffState;
-		return (self.window.styleMask & NSFullScreenWindowMask) == 0;
+		menuItem.state = FALSE;
+
+		if (self.window.styleMask & NSFullScreenWindowMask)
+			return NO;
+
+		if (scale && menuItem.tag == scale)
+		{
+			if (graphics.width * scale == self.frame.size.width && graphics.height * scale == self.frame.size.height)
+				menuItem.state = YES;
+		}
+
+		return YES;
 	}
 
 	if (menuItem.action == @selector(selectAll:))
@@ -41,24 +51,23 @@
 
 - (IBAction) zoom:(NSMenuItem *)sender
 {
+	CGFloat addHeight = self.window.frame.size.height - self.frame.size.height;
+
 	if (sender != nil && sender.tag >= 1 && sender.tag <= 9)
-	{
-		if (scale && self.window.isZoomed)
-			[self.window zoom:sender];
-	}
+		scale = sender.tag;
 
 	if (data != nil && scale >= 1 && scale <= 9)
 	{
 		NSRect frame = self.window.frame; frame.origin.y += frame.size.height;
 
-		frame.size.height = graphics.height * scale + 44;
+		frame.size.height = graphics.height * scale + addHeight;
 		frame.size.width = graphics.width * scale;
 		frame.origin.y -= frame.size.height;
 
-		if (!(self.window.isZoomed || self.window.styleMask & NSFullScreenWindowMask))
+		if (!(self.window.styleMask & NSFullScreenWindowMask))
 			[self.window setFrame:frame display:TRUE];
 
-		[self.window setMinSize:NSMakeSize(graphics.width, graphics.height + 44)];
+		[self.window setMinSize:NSMakeSize(graphics.width, graphics.height + addHeight)];
 	}
 }
 

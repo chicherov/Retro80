@@ -76,9 +76,8 @@
 
 @property Computer *computer;
 
-- (void) registerUndoMenuItem:(NSMenuItem *)menuItem;
-- (void) registerUndo:(NSString *)actionName;
-
+- (void) registerUndoWitString:(NSString *)string type:(NSInteger)type;
+- (void) registerUndoWithMenuItem:(NSMenuItem *)menuItem;
 - (void) performUndo:(NSData *)data;
 
 @end
@@ -95,8 +94,9 @@
 // WindowController
 // -----------------------------------------------------------------------------
 
-@interface WindowController : NSWindowController
+@interface WindowController : NSWindowController <NSWindowDelegate>
 
+@property IBOutlet NSLayoutConstraint *constraint;
 @property IBOutlet NSTextField *text1;
 @property IBOutlet NSTextField *text2;
 @property IBOutlet NSView *view;

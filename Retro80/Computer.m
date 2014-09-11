@@ -42,6 +42,12 @@
 
 	if (menuItem.action == @selector(inpHook:))
 	{
+		if (self.snd.isInput)
+		{
+			menuItem.state = FALSE;
+			return NO;
+		}
+
 		menuItem.state = self.inpHook.enabled;
 		return self.inpHook != nil;
 	}
@@ -77,9 +83,9 @@
 // reset
 // -----------------------------------------------------------------------------
 
-- (IBAction) reset:(id)sender
+- (IBAction) reset:(NSMenuItem *)menuItem
 {
-	[self.document registerUndo:NSLocalizedString(@"Reset", undo)];
+	[self.document registerUndoWithMenuItem:menuItem];
 	[self performSelector:@selector(reset)];
 }
 
@@ -87,21 +93,18 @@
 // хуки
 // -----------------------------------------------------------------------------
 
-- (IBAction) kbdHook:(id)sender
+- (IBAction) kbdHook:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoMenuItem:sender];
 	self.kbdHook.enabled = !self.kbdHook.enabled;
 }
 
-- (IBAction) inpHook:(id)sender
+- (IBAction) inpHook:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoMenuItem:sender];
 	self.inpHook.enabled = !self.inpHook.enabled;
 }
 
-- (IBAction) outHook:(id)sender
+- (IBAction) outHook:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoMenuItem:sender];
 	self.outHook.enabled = !self.outHook.enabled;
 }
 
@@ -118,16 +121,19 @@
 {
 	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0)
 	{
+		NSString *typing = NSLocalizedString(@"Набор на клавиатуре", "Typing");
 		unichar ch = [theEvent.characters characterAtIndex:0];
 
 		if (ch == 0x09 || (ch >= 0x20 && ch < 0x7F) || (ch >= 0x410 && ch <= 0x44F))
-			[self.document registerUndo:@"Typing"];
+			[self.document registerUndoWitString:typing type:1];
+		else if (ch == 0xF700 || ch == 0xF701 || ch == 0xF702 || ch == 0xF703)
+			[self.document registerUndoWitString:typing type:2];
 		else if (ch == 0x7F)
-			[self.document registerUndo:@"Backspace"];
+			[self.document registerUndoWitString:typing type:3];
 		else if (ch == 0x0D)
-			[self.document registerUndo:@"Enter"];
+			[self.document registerUndoWitString:typing type:4];
 		else
-			[self.document registerUndo:@"Keys"];
+			[self.document registerUndoWitString:typing type:5];
 	}
 
 	[self.kbd keyDown:theEvent];
@@ -139,9 +145,9 @@
 	[self.kbd keyUp:theEvent];
 }
 
-- (IBAction) paste:(id)sender
+- (IBAction) paste:(NSMenuItem *)menuItem
 {
-	[self.document registerUndo:@"Paste"];
+	[self.document registerUndoWithMenuItem:menuItem];
 	[self.kbd paste:[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString]];
 }
 

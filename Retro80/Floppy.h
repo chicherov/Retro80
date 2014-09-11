@@ -2,7 +2,8 @@
 
 @interface Floppy : X8255
 
-- (void) setUrl:(NSURL *)url disk:(NSInteger)disk;
-- (BOOL) state:(NSInteger)disk;
+- (void) setDisk:(NSInteger)disk URL:(NSURL *)url;
+- (NSURL *) getDisk:(NSInteger)disk;
+- (NSInteger) selected;
 
 @end

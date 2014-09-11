@@ -20,7 +20,7 @@
 		{
 			if (outError)
 			{
-				*outError = [NSError errorWithDomain:@"com.uart.Retro80"
+				*outError = [NSError errorWithDomain:@"ru.uart.Retro80"
 												code:1
 											userInfo:nil];
 			}

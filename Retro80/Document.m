@@ -5,6 +5,10 @@
 // -----------------------------------------------------------------------------
 
 @implementation Document
+{
+	NSInteger lastUndoType;
+	SEL lastUndoAction;
+}
 
 // -----------------------------------------------------------------------------
 // Инициализация
@@ -29,8 +33,10 @@
 	[self.computer stop]; [self.computer.crt removeFromSuperviewWithoutNeedingDisplay];
 
 	[self.undoManager registerUndoWithTarget:self
-									selector:@selector(performUndo:)
+									selector:lastUndoAction = @selector(performUndo:)
 									  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
+
+	lastUndoType = 0;
 
 	self.computer = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 	self.computer.document = self;
@@ -38,38 +44,40 @@
 	[self.windowControllers.firstObject windowDidLoad];
 }
 
-- (void) performUndoMenuItem:(NSMenuItem *)menuItem
-{
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warc-performSelector-leaks"
-	[self.computer performSelector:menuItem.action withObject:menuItem];
-#pragma clang diagnostic pop
-}
-
 // -----------------------------------------------------------------------------
 
-- (void) registerUndoMenuItem:(NSMenuItem *)menuItem
-{
-	[self.undoManager registerUndoWithTarget:self
-									selector:@selector(performUndoMenuItem:)
-									  object:menuItem];
-
-	[self.undoManager setActionName:menuItem.title];
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) registerUndo:(NSString *)actionName
+- (void) registerUndoWitString:(NSString *)string type:(NSInteger)type
 {
 	@synchronized(self.computer.snd)
 	{
-		if (![self.undoManager.undoActionName isEqualToString:actionName])
+		if (type != lastUndoType)
 		{
+			lastUndoType = type;
+
 			[self.undoManager registerUndoWithTarget:self
 											selector:@selector(performUndo:)
 											  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
 
-			[self.undoManager setActionName:actionName];
+			[self.undoManager setActionName:string];
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) registerUndoWithMenuItem:(NSMenuItem *)menuItem
+{
+	@synchronized(self.computer.snd)
+	{
+		if (lastUndoType || menuItem.action != lastUndoAction)
+		{
+			lastUndoType = 0; lastUndoAction = menuItem.action;
+
+			[self.undoManager registerUndoWithTarget:self
+											selector:@selector(performUndo:)
+											  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
+
+			[self.undoManager setActionName:menuItem.title];
 		}
 	}
 }
@@ -108,37 +116,39 @@
 	}
 }
 
-- (BOOL) readFromURL:(NSURL *)url ofType:(NSString *)typeName error:(NSError **)outError
+- (BOOL) readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError
 {
-	NSData *data = [NSData dataWithContentsOfURL:url options:0 error:outError];
-
-	if (data)
+	@try
 	{
 		id object = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 		if ([object isKindOfClass:[Computer class]])
 		{
-			self.computer = object;
+			if (self.computer)
+			{
+				[self.computer stop]; [self.computer.crt removeFromSuperviewWithoutNeedingDisplay];
+				self.computer = object; [self.windowControllers.firstObject windowDidLoad];
+			}
+			else
+			{
+				self.computer = object;
+			}
+
 			return TRUE;
 		}
 	}
 
-	return FALSE;
-}
-
-- (BOOL) revertToContentsOfURL:(NSURL *)url ofType:(NSString *)typeName error:(NSError **)outError
-{
-	[self.computer stop];
-
-	Screen *screen = self.computer.crt;
-
-	if ([self readFromURL:url ofType:typeName error:outError])
+	@catch (NSException *exception)
 	{
-		[screen removeFromSuperviewWithoutNeedingDisplay];
-		[self.windowControllers.firstObject windowDidLoad];
-		return TRUE;
+		NSLog(@"%@", exception);
 	}
 
-	[self.computer start];
+	if (outError)
+	{
+		*outError = [NSError errorWithDomain:@"ru.uart.Retro80"
+										code:2
+									userInfo:nil];
+	}
+
 	return FALSE;
 }
 

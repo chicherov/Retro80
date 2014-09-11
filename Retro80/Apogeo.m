@@ -44,9 +44,9 @@ static uint32_t colors[] =
 	0xFF0000FF, 0xFF000000, 0xFF0000FF, 0xFF000000
 };
 
-- (IBAction) colorModule:(id)sender
+- (IBAction) colorModule:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoMenuItem:sender];
+	[self.document registerUndoWithMenuItem:menuItem];
 
 	if ((self.isColor = !self.isColor))
 	{
@@ -66,17 +66,17 @@ static uint32_t colors[] =
 {
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 	panel.title = menuItem.title;
-	panel.canChooseDirectories = FALSE;
+	panel.canChooseDirectories = TRUE;
 	panel.allowedFileTypes = @[@"rom"];
 
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
-		[self.document registerUndo:menuItem.title];
+		[self.document registerUndoWithMenuItem:menuItem];
 		self.ext.url = panel.URLs.firstObject;
 	}
 	else if (self.ext.url != nil)
 	{
-		[self.document registerUndo:menuItem.title];
+		[self.document registerUndoWithMenuItem:menuItem];
 		self.ext.url = nil;
 	}
 }

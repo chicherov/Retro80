@@ -33,8 +33,8 @@
 	{
 		if (self.floppy)
 		{
-			menuItem.state = menuItem.tag == 0 || [self.floppy state:menuItem.tag];
-			return YES;
+			menuItem.state = menuItem.tag == 0 || [self.floppy getDisk:menuItem.tag] != nil;
+			return menuItem.tag == 0 || menuItem.tag != [self.floppy selected];
 		}
 		else
 		{
@@ -55,9 +55,9 @@ static uint32_t colors[] =
 	0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF0000, 0xFF000000, 0xFFFF0000, 0xFF000000
 };
 
-- (IBAction) colorModule:(id)sender
+- (IBAction) colorModule:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoMenuItem:sender];
+	[self.document registerUndoWithMenuItem:menuItem];
 
 	if ((self.isColor = !self.isColor))
 	{
@@ -84,12 +84,12 @@ static uint32_t colors[] =
 
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
-		[self.document registerUndo:menuItem.title];
+		[self.document registerUndoWithMenuItem:menuItem];
 		self.ext.url = panel.URLs.firstObject;
 	}
 	else if (self.ext.url != nil)
 	{
-		[self.document registerUndo:menuItem.title];
+		[self.document registerUndoWithMenuItem:menuItem];
 		self.ext.url = nil;
 	}
 }
@@ -102,8 +102,8 @@ static uint32_t colors[] =
 {
 	if (menuItem.tag == 0)
 	{
-		[self.document registerUndo:menuItem.title];
-		
+		[self.document registerUndoWithMenuItem:menuItem];
+
 		@synchronized(self.snd)
 		{
 			if (self.floppy == nil)
@@ -129,18 +129,19 @@ static uint32_t colors[] =
 	{
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
 		panel.title = menuItem.title;
+
+		panel.allowedFileTypes = @[@"rkdisk", @"rkd"];
 		panel.canChooseDirectories = FALSE;
-		panel.allowedFileTypes = @[@"rkd"];
 
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
-			[self.document registerUndo:menuItem.title];
-			[self.floppy setUrl:panel.URLs.firstObject disk:menuItem.tag];
+			[self.document registerUndoWithMenuItem:menuItem];
+			[self.floppy setDisk:menuItem.tag URL:panel.URLs.firstObject];
 		}
-		else if ([self.floppy state:menuItem.tag])
+		else if ([self.floppy getDisk:menuItem.tag] != nil)
 		{
-			[self.document registerUndo:menuItem.title];
-			[self.floppy setUrl:nil disk:menuItem.tag];
+			[self.document registerUndoWithMenuItem:menuItem];
+			[self.floppy setDisk:menuItem.tag URL:nil];
 		}
 	}
 }

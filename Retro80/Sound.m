@@ -145,7 +145,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 								 (unsigned) (packetCount / streamFormat.mSampleRate) % 60
 								 ];
 
-//		[self.text setHidden:FALSE];
+		[self.text setHidden:FALSE];
 
 		inAudioFilePos = 0;
 		pause = FALSE;
@@ -274,11 +274,19 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 {
 	if (menuItem.action == @selector(play:))
 	{
-		menuItem.title = inAudioFile ? pause ? @"Resume" : @"Pause" : @"Play";
+		if (inAudioFile)
+		{
+			menuItem.title = pause ? NSLocalizedString(@"Возобновить", "Resume") : NSLocalizedString(@"Пауза", "Pause");
+		}
+		else
+		{
+			menuItem.title = NSLocalizedString(@"Воспроизвести", "Play");
+		}
+
 		return YES;
 	}
 
-	if (menuItem.action == @selector(stop:))
+	if (menuItem.action == @selector(playstop:))
 	{
 		return inAudioFile != 0;
 	}
@@ -325,7 +333,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 // stop
 // -----------------------------------------------------------------------------
 
-- (IBAction) stop:(id)sender
+- (IBAction) playstop:(id)sender
 {
 	[self stop];
 

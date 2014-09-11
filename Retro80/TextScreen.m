@@ -106,48 +106,9 @@
 // Copy to pasteboard
 // -----------------------------------------------------------------------------
 
-- (IBAction) copy:(id)sender
+- (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y
 {
-	if (isSelected)
-	{
-		uint8_t *buf = malloc(selected.size.height * (selected.size.width + 2)), *ptr = buf;
-
-		for (unsigned y = selected.origin.y; y < selected.origin.y + selected.size.height; y++)
-		{
-			for (unsigned x = selected.origin.x; x < selected.origin.x + selected.size.width; x++)
-			{
-				*ptr = screen[y][x] & 0x7F;
-
-				if (*ptr < 0x20 || *ptr >= 0x80) *ptr = 0x20;
-				else if (*ptr >= 0x60) *ptr |= 0x80;
-
-				ptr++;
-			}
-
-			if (selected.size.height > 1)
-			{
-				while (ptr > buf && ptr[-1] == ' ')
-					ptr--;
-
-				*ptr++ = '\n';
-			}
-		}
-
-		NSString *string = [[NSString alloc] initWithBytes:buf
-													length:ptr - buf
-												  encoding:(NSStringEncoding) 0x80000A02];
-
-		NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
-		[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
-		[pasteBoard setString:string forType:NSPasteboardTypeString];
-
-		isSelected = FALSE;
-	}
-
-	else
-	{
-		[super copy:sender];
-	}
+	return screen[y][x] & 0x7F;
 }
 
 // -----------------------------------------------------------------------------
@@ -158,7 +119,7 @@
 {
 	if (self = [super init])
 	{
-		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"TextScreen" ofType:@"fnt"]]) == nil)
+		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Micro80" ofType:@"fnt"]]) == nil)
 			return self = nil;
 
 		[self setupTextWidth:64 height:32 cx:6 cy:8];

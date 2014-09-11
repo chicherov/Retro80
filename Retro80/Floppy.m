@@ -4,17 +4,19 @@
 {
 	NSURL *URLs[2];
 
-	uint64_t current;
-	uint64_t started;
-
 	NSInteger selected;
 	NSFileHandle *file;
 	unsigned track;
 	unsigned head;
 
+	uint64_t current;
+	uint64_t started;
+
 	unsigned long long offset;
 	uint8_t buffer[3125];
 	unsigned pos;
+
+	BOOL readonly;
 
 	BOOL update;
 	BOOL ready;
@@ -24,26 +26,35 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) setUrl:(NSURL *)url disk:(NSInteger)disk
+- (void) setDisk:(NSInteger)disk URL:(NSURL *)url;
 {
 	if (disk == 1 || disk == 2)
 	{
 		@synchronized(self)
 		{
-			if (disk == selected)
-				selected = 0;
-
-			URLs[disk-1] = url;
+			if (disk != selected)
+			{
+				URLs[disk-1] = url;
+			}
 		}
 	}
 }
 
-- (BOOL) state:(NSInteger)disk
+- (NSURL *) getDisk:(NSInteger)disk;
 {
 	if (disk == 1 || disk == 2)
-		return URLs[disk-1] != nil;
+	{
+		return URLs[disk-1];
+	}
 
-	return FALSE;
+	return nil;
+}
+
+// -----------------------------------------------------------------------------
+
+- (NSInteger) selected
+{
+	return selected;
 }
 
 // -----------------------------------------------------------------------------
@@ -52,18 +63,18 @@
 {
 	if (update)
 	{
-		// NSLog(@"Write track %d head %d", track, head);
-		[file seekToFileOffset:(track * 2 + head) * 3125];
-		[file writeData:[NSData dataWithBytes:buffer length:3125]];
+		[file seekToFileOffset:offset];
+		[file writeData:[NSData dataWithBytes:buffer length:sizeof(buffer)]];
 		update = FALSE;
 	}
 }
 
 - (void) read
 {
-	[self write]; // NSLog(@"Read track %d head %d", track, head);
-	[file seekToFileOffset:(track * 2 + head) * 3125];
-	[[file readDataOfLength:3125] getBytes:buffer length:3125];
+	[self write];
+	memset(buffer, 0x00, sizeof(buffer));
+	[file seekToFileOffset:offset = (track * 2 + head) * sizeof(buffer)];
+	[[file readDataOfLength:sizeof(buffer)] getBytes:buffer length:sizeof(buffer)];
 }
 
 - (void) setA:(uint8_t)A
@@ -90,29 +101,34 @@
 
 - (uint8_t) B
 {
-	_B = 0xFF; if (selected && current > started)
+	_B = 0xFF; if (selected)
 	{
-		_B &= ~0x10;		// РВ4 - готовность НГМД
-
 		if (track == 0)
-			_B &= ~0x20;	// РВ5 - трек 00
+			_B &= ~0x20;					// РВ5 - трек 00
 
-		unsigned p = (current - started) / 1024 % 3125;
+		if (readonly)
+			_B &= ~0x08;					// РВЗ - защита записи
 
-		if (pos != p)
+		if (current > started)
 		{
-			ready = TRUE;
-			pos = p;
+			_B &= ~0x10;					// РВ4 - готовность НГМД
+
+			unsigned p = (current - started) / 1024 % sizeof(buffer);
+
+			if (pos != p)
+			{
+				ready = TRUE;
+				pos = p;
+			}
+
+			if (pos == sizeof(buffer) - 1)
+				_B &= ~0x40;				// РВ6 - индекс
+
+			if (!ready)
+				_B &= ~0x80;				// РВ7 - триггер готовности
 		}
-
-		if (pos == 3124)
-			_B &= ~0x40;
-
-		if (!ready)
-			_B &= ~0x80;
 	}
-
-	else if (!selected)
+	else
 	{
 		_B &= ~0x80;
 	}
@@ -134,8 +150,14 @@
 
 			if (URLs[0] != nil && (file = [NSFileHandle fileHandleForUpdatingURL:URLs[0] error:NULL]) != nil)
 			{
+				selected = 1; readonly = FALSE;
 				started = current + 16000000;
-				selected = 1;
+				[self read];
+			}
+			else if (URLs[0] != nil && (file = [NSFileHandle fileHandleForReadingFromURL:URLs[0] error:NULL]) != nil)
+			{
+				selected = 1; readonly = TRUE;
+				started = current + 16000000;
 				[self read];
 			}
 			else
@@ -156,8 +178,14 @@
 
 			if (URLs[1] != nil && (file = [NSFileHandle fileHandleForUpdatingURL:URLs[1] error:NULL]) != nil)
 			{
+				selected = 2; readonly = FALSE;
 				started = current + 16000000;
-				selected = 2;
+				[self read];
+			}
+			else if (URLs[1] != nil && (file = [NSFileHandle fileHandleForReadingFromURL:URLs[1] error:NULL]) != nil)
+			{
+				selected = 2; readonly = TRUE;
+				started = current + 16000000;
 				[self read];
 			}
 			else
@@ -225,6 +253,29 @@
 	{
 		current = clock; [super WR:addr byte:data CLK:clock];
 	}
+}
+
+// -----------------------------------------------------------------------------
+// encodeWithCoder/initWithCoder
+// -----------------------------------------------------------------------------
+
+- (void) encodeWithCoder:(NSCoder *)encoder
+{
+	[super encodeWithCoder:encoder];
+	[encoder encodeObject:URLs[0] forKey:@"urlA"];
+	[encoder encodeObject:URLs[1] forKey:@"urlB"];
+}
+
+
+- (id) initWithCoder:(NSCoder *)decoder
+{
+	if (self = [super initWithCoder:decoder])
+	{
+		URLs[0] = [decoder decodeObjectForKey:@"urlA"];
+		URLs[1] = [decoder decodeObjectForKey:@"urlB"];
+	}
+
+	return self;
 }
 
 @end
