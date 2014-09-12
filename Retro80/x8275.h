@@ -70,6 +70,7 @@
 		};
 		
 	} mode;
+
 }
 
 - (void) setColors:(const uint32_t *)colors
