@@ -96,6 +96,10 @@
 		self.kbdHook.enabled = TRUE;
 		self.inpHook.enabled = TRUE;
 		self.outHook.enabled = TRUE;
+
+#ifdef DEBUG
+		self.outHook.enabled = FALSE;
+#endif
 	}
 
 	return self;

@@ -207,6 +207,7 @@ static uint32_t colors[] =
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
 	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
+	self.inpHook.readError = 0xFAAE;
 	self.inpHook.extension = @"rkr";
 
 	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];

@@ -7,6 +7,7 @@
 @implementation WindowController
 {
 	BOOL hideStatusLine;
+	NSTimer *timer;
 }
 
 - (Document *) document
@@ -26,9 +27,46 @@
 	return NO;
 }
 
-- (void) windowDidResize:(NSNotification *)notification
+// -----------------------------------------------------------------------------
+// Обработка FullScreen
+// -----------------------------------------------------------------------------
+
+- (void) hideMouse:(NSTimer *)theTimer
 {
-	self.constraint.constant = self.window.styleMask & NSFullScreenWindowMask || hideStatusLine ? 0 : 22;
+	[NSCursor setHiddenUntilMouseMoves:YES];
+}
+
+- (void) mouseMoved:(NSEvent *)theEvent
+{
+	[timer invalidate];
+
+	timer = [NSTimer scheduledTimerWithTimeInterval:2.0
+											 target:self
+										   selector:@selector(hideMouse:)
+										   userInfo:nil
+											repeats:NO];
+}
+
+- (void) windowWillEnterFullScreen:(NSNotification *)notification
+{
+	timer = [NSTimer scheduledTimerWithTimeInterval:2.0
+											 target:self
+										   selector:@selector(hideMouse:)
+										   userInfo:nil
+											repeats:NO];
+
+	[self.window setAcceptsMouseMovedEvents:YES];
+
+	self.constraint.constant = 0;
+}
+
+- (void) windowWillExitFullScreen:(NSNotification *)notification
+{
+	self.constraint.constant = hideStatusLine ? 0 : 22;
+
+	[self.window setAcceptsMouseMovedEvents:NO];
+	[NSCursor setHiddenUntilMouseMoves:NO];
+	[timer invalidate];
 }
 
 - (IBAction) statusLine:(id)sender
@@ -90,7 +128,10 @@
 	[screen setTranslatesAutoresizingMaskIntoConstraints:NO];
 
 	self.document.computer.snd.textField = self.text1;
-	self.document.computer.crt.textField = self.text2;
+
+#ifdef DEBUG
+	[self.document.computer.crt.textField = self.text2 setHidden:NO];
+#endif
 
 	[[self window] setDelegate:self];
 	[self.document.computer start];

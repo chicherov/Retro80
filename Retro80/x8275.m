@@ -474,11 +474,11 @@ static uint8_t special[][3] =
 					count = config.H + 1 - pos;;
 				}
 
-				unsigned clk = 9; while (count--)
+				unsigned clk = 0; while (count--)
 				{
 					uint8_t byte; if (i8257DMA2(_dma, &byte))
 					{
-						clk += 36; buffer[pos++] = byte;
+						clk += clk ? 36 : 45; buffer[pos++] = byte;
 
 						if ((byte & 0xC0) == 0x80 && config.F == 0)
 						{

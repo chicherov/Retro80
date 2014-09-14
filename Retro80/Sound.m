@@ -12,11 +12,92 @@
 	SInt64 inAudioFilePos;
 	SInt64 packetCount;
 
-	uint32_t quartz;
-	uint64_t CLK;
+	Float64 CLK;
+	Float64 clk;
+
+	void (*execute)(id, SEL, uint64_t);
+	SInt8 (*sample)(id, SEL, uint64_t);
 }
 
-// ----------------------------------------------------------------------
+@synthesize output = output;
+@synthesize beeper = beeper;
+@synthesize input = input;
+
+// -----------------------------------------------------------------------------
+
+- (void) callback:(AudioQueueBufferRef)inBuffer
+{
+	if (inAudioFile)
+	{
+		if (pause)
+		{
+			memset(inBuffer->mAudioData, 0, inBuffer->mAudioDataByteSize = inBuffer->mAudioDataBytesCapacity);
+		}
+
+		else
+		{
+			UInt32 ioNumPackets = inBuffer->mAudioDataBytesCapacity / streamFormat.mBytesPerPacket;
+
+			OSStatus err; if ((AudioFileReadPackets(inAudioFile, true, &inBuffer->mAudioDataByteSize, NULL, inAudioFilePos, &ioNumPackets, inBuffer->mAudioData)) != noErr && err != eofErr)
+			{
+				NSLog(@"AudioFileReadPackets error: %d", err);
+			}
+
+			if (ioNumPackets > 0)
+			{
+				inAudioFilePos += ioNumPackets;
+
+				self.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
+											  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) / 60,
+											  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) % 60,
+											  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+											  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+											  ];
+
+				uint8_t add = streamFormat.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger ? 0x80 : 0x00;
+				uint8_t* ptr = inBuffer->mAudioData + (streamFormat.mBitsPerChannel == 16 ? 1 : 0);
+
+				while (ioNumPackets--)
+				{
+					input = ((*ptr + add) & 0xFF) > 0x80;
+					ptr += streamFormat.mBytesPerPacket;
+
+					execute(_cpu, @selector(execute:), CLK += clk);
+				}
+			}
+
+			else
+			{
+				[self stop];
+				[self close];
+				[self start];
+
+				return;
+			}
+		}
+	}
+	else
+	{
+		SInt8 *ptr = inBuffer->mAudioData;
+
+		for (inBuffer->mAudioDataByteSize = 0; inBuffer->mAudioDataByteSize < inBuffer->mAudioDataBytesCapacity; inBuffer->mAudioDataByteSize++, ptr++)
+		{
+			execute(_cpu, @selector(execute:), CLK += clk);
+
+			*ptr = (output ? 25 : 0) + (beeper ? 25 : 0) + sample(self, @selector(sample:), CLK);
+
+			if (streamFormat.mBitsPerChannel == 16)
+			{
+				*(SInt16*)ptr = *ptr * 256; inBuffer->mAudioDataByteSize++; ptr++;
+			}
+		}
+	}
+
+	OSStatus err; if ((err = AudioQueueEnqueueBuffer(audioQueue, inBuffer, 0, nil)) != noErr)
+		NSLog(@"AudioQueueEnqueueBuffer error: %d", err);
+}
+
+// -----------------------------------------------------------------------------
 
 static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer)
 {
@@ -24,68 +105,38 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	{
 		if (sound->CLK != (uint64_t) -1)
 		{
-			uint64_t clk = sound->quartz / sound->streamFormat.mSampleRate;
-
-			if (sound->inAudioFile)
-			{
-				if (sound->pause)
-				{
-					memset(inBuffer->mAudioData, 0, inBuffer->mAudioDataByteSize = inBuffer->mAudioDataBytesCapacity);
-				}
-				else
-				{
-					UInt32 ioNumPackets = inBuffer->mAudioDataBytesCapacity / sound->streamFormat.mBytesPerPacket;
-
-					OSStatus err; if ((AudioFileReadPackets(sound->inAudioFile, true, &inBuffer->mAudioDataByteSize, NULL, sound->inAudioFilePos, &ioNumPackets, inBuffer->mAudioData)) != noErr && err != eofErr)
-					{
-						NSLog(@"AudioFileReadPackets error: %d", err);
-					}
-
-					if (ioNumPackets > 0)
-					{
-						sound->inAudioFilePos += ioNumPackets;
-
-						sound.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
-													   (unsigned) (sound->inAudioFilePos / sound->streamFormat.mSampleRate) / 60,
-													   (unsigned) (sound->inAudioFilePos / sound->streamFormat.mSampleRate) % 60,
-													   (unsigned) (sound->packetCount / sound->streamFormat.mSampleRate) / 60,
-													   (unsigned) (sound->packetCount / sound->streamFormat.mSampleRate) % 60
-													   ];
-
-						uint8_t add = sound->streamFormat.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger ? 0x80 : 0x00;
-						uint8_t* ptr = inBuffer->mAudioData + (sound->streamFormat.mBitsPerChannel == 16 ? 1 : 0);
-
-						while (ioNumPackets--)
-						{
-							sound->_input = ((*ptr + add) & 0xFF) > 0x80;
-							ptr += sound->streamFormat.mBytesPerPacket;
-							[sound->_cpu execute:sound->CLK += clk];
-						}
-					}
-					else
-					{
-						[sound stop];
-						[sound close];
-						[sound start];
-						return;
-					}
-				}
-			}
-			else
-			{
-				SInt8 *ptr = inBuffer->mAudioData;
-
-				for (inBuffer->mAudioDataByteSize = 0; inBuffer->mAudioDataByteSize < inBuffer->mAudioDataBytesCapacity; inBuffer->mAudioDataByteSize++)
-				{
-					[sound->_cpu execute:sound->CLK += clk];
-					*ptr++ = (sound->_output ? 20 : 0) + (sound->_beeper ? 20 : 0) + [sound sample:sound->CLK];
-				}
-			}
-
-			OSStatus err; if ((err = AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, nil)) != noErr)
-				NSLog(@"AudioQueueEnqueueBuffer error: %d", err);
+			[sound callback:inBuffer];
 		}
 	}
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) receiveSleepNote: (NSNotification*) note
+{
+#ifdef DEBUG
+    NSLog(@"receiveSleepNote: %@", [note name]);
+#endif
+
+	[self stop];
+
+	[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+														   selector:@selector(receiveWakeNote:)
+															   name:NSWorkspaceDidWakeNotification
+															 object:nil];
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) receiveWakeNote: (NSNotification*) note
+{
+#ifdef DEBUG
+    NSLog(@"receiveWakeNote: %@", [note name]);
+#endif
+
+	[[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
+
+	[self start];
 }
 
 // -----------------------------------------------------------------------------
@@ -183,20 +234,19 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (void) start
 {
-
 #ifdef DEBUG
 	NSLog(@"Sound start");
 #endif
 
 	if (inAudioFile == 0)
 	{
-		streamFormat.mSampleRate = 44100;
+		streamFormat.mSampleRate = 48000;
 		streamFormat.mFormatID = kAudioFormatLinearPCM;
 		streamFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
 		streamFormat.mBitsPerChannel = 8;
 		streamFormat.mChannelsPerFrame = 1;
-		streamFormat.mBytesPerPacket = 1 * streamFormat.mChannelsPerFrame;
-		streamFormat.mBytesPerFrame = 1 * streamFormat.mChannelsPerFrame;
+		streamFormat.mBytesPerPacket = streamFormat.mBitsPerChannel / 8 * streamFormat.mChannelsPerFrame;
+		streamFormat.mBytesPerFrame = streamFormat.mBitsPerChannel / 8 * streamFormat.mChannelsPerFrame;
 		streamFormat.mFramesPerPacket = 1;
 		streamFormat.mReserved = 0;
 
@@ -205,8 +255,11 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 	OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, NULL, NULL, 0, &audioQueue)) == noErr)
 	{
-		quartz = [self.cpu quartz];
 		CLK = [self.cpu CLK];
+		clk = [self.cpu quartz] / streamFormat.mSampleRate;
+
+		execute = (void (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
+		sample = (SInt8 (*) (id, SEL, uint64_t)) [self methodForSelector:@selector(sample:)];
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -225,6 +278,11 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		{
 			NSLog(@"AudioQueueStart error: %d", err);
 		}
+
+		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+															   selector:@selector(receiveSleepNote:)
+																   name:NSWorkspaceWillSleepNotification
+																 object:nil];
 	}
 	else
 	{
@@ -250,6 +308,8 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 	if ((err = AudioQueueDispose(audioQueue, TRUE)) != noErr)
 		NSLog(@"AudioQueueDispose error: %d", err);
+
+	[[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
 }
 
 // ----------------------------------------------------------------------

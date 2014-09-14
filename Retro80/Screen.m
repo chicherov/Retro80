@@ -126,10 +126,7 @@
 		if (frameRate[pos = (pos + 1) % 10] != 0.0)
 			self.textField.stringValue = [NSString stringWithFormat:@"%2.2f fps", 450 / (uptime - frameRate[pos])];
 		else if (frameRate[pos = (pos + 8) % 10] != 0.0)
-		{
 			self.textField.stringValue = [NSString stringWithFormat:@"%2.2f fps", 50 / (uptime - frameRate[pos])];
-			[self.textField setHidden:FALSE];
-		}
 	}
 #endif
 
