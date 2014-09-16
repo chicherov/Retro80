@@ -45,14 +45,12 @@
 	}
 
 	if (memory[0][addr & 0x7FF] != ch)
-	{
 		memory[0][addr & 0x7FF] = ch;
-	}
 }
 
 // -----------------------------------------------------------------------------
 
-- (unsigned) HOLD:(uint64_t)clock
+- (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr
 {
 	if (CLK < clock)
 	{

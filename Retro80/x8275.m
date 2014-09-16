@@ -10,9 +10,6 @@
 	unsigned cmd:8;			// Последняя команда
 	unsigned len:8;			// Данные команды
 
-	union i8275_cursor lightPen;	// Световое перо
-	BOOL rightMouse;
-
 	// -------------------------------------------------------------------------
 	// Тайминги ROW и DMA
 	// -------------------------------------------------------------------------
@@ -55,18 +52,43 @@
 
 	} screen[2][64][80];
 
+	BOOL hideCursor;
+
 	unsigned row;
 	uint8_t attr;
 	BOOL EoR;
 	BOOL EoS;
 
 	// -------------------------------------------------------------------------
+	// Световое перо
+	// -------------------------------------------------------------------------
+
+	union i8275_cursor lightPen;
+	BOOL rightMouse;
+	
+	// -------------------------------------------------------------------------
 	// Внешние настройки
 	// -------------------------------------------------------------------------
 
 	NSData *rom; const uint8_t *font;
-	const uint32_t *_colors;
-	uint8_t _attributesMask;
+	const uint32_t *colors;
+	uint8_t attributesMask;
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) setColors:(const uint32_t *)ptr attributeMask:(uint8_t)mask
+{
+	colors = ptr; attributesMask = mask;
+	memset(screen, -1, sizeof(screen));
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) setFontOffset:(unsigned int)offset
+{
+	font = (const uint8_t *)rom.bytes + offset;
+	memset(screen, -1, sizeof(screen));
 }
 
 // -----------------------------------------------------------------------------
@@ -91,52 +113,7 @@ static uint8_t special[][3] =
 };
 
 // -----------------------------------------------------------------------------
-
-- (void) setColors:(const uint32_t *)colors attributeMask:(uint8_t)attributesMask
-{
-	_colors = colors; _attributesMask = attributesMask;
-	memset(screen, -1, sizeof(screen));
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) setFontOffset:(unsigned int)offset
-{
-	font = (const uint8_t *)rom.bytes + offset;
-	memset(screen, -1, sizeof(screen));
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) rightMouseDragged:(NSEvent *)theEvent
-{
-	[self rightMouseDown:theEvent];
-}
-
-- (void) rightMouseDown:(NSEvent *)theEvent
-{
-	NSPoint point = [self convertPoint:theEvent.locationInWindow fromView:nil];
-
-	@synchronized(self)
-	{
-		if (status.VE)
-		{
-			lightPen.ROW = trunc(text.height - point.y / self.frame.size.height * text.height);
-			lightPen.COL = trunc(point.x / self.frame.size.width * text.width) + 8;
-			rightMouse = TRUE;
-			status.LP = 1;
-		}
-	}
-}
-
-- (void) rightMouseUp:(NSEvent *)theEvent
-{
-	@synchronized(self)
-	{
-		status.LP = 0;
-	}
-}
-
+// Чтение/запись регистров ВГ75
 // -----------------------------------------------------------------------------
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)st
@@ -241,9 +218,8 @@ static uint8_t special[][3] =
 				{
 					if (status.VE)
 					{
-//						EoS = TRUE; dmaTimer = -2;
-						row = config.R + config.V;
-						rowTimer = clock;
+						EoS = TRUE; dmaTimer = -2;
+						hideCursor = TRUE;
 					}
 
 					break;
@@ -258,9 +234,7 @@ static uint8_t special[][3] =
 				{
 					if (*(uint32_t*)config.byte != *(uint32_t*)cfg.byte)
 					{
-						config = cfg;
-
-						memset(screen, -1, sizeof(screen));
+						config = cfg; memset(screen, -1, sizeof(screen));
 
 						[self setupTextWidth:config.H + 1
 									  height:config.R + 1
@@ -268,13 +242,12 @@ static uint8_t special[][3] =
 										  cy:config.L + 1];
 
 						rowClock = (config.H + 1 + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
-
+						rowTimer = clock; rowTimer += 12 - (rowTimer % 12);
 						row = config.R + config.V;
-						rowTimer = clock;
 					}
 				}
 			}
-			
+
 			else if ((cmd & 0xE0) == 0x80 && len < 2)
 			{
 				cursor.byte[len++] = data;
@@ -289,8 +262,10 @@ static uint8_t special[][3] =
 }
 
 // -----------------------------------------------------------------------------
+// Переодические вызовы из модуля CPU
+// -----------------------------------------------------------------------------
 
-- (unsigned) HOLD:(uint64_t)clock
+- (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr
 {
 	if (rowClock)
 	{
@@ -298,7 +273,7 @@ static uint8_t special[][3] =
 		{
 			if (rowTimer <= clock)
 			{
-				if (++row == config.R + 1 + config.V + 1)
+				if (++row == config.R + config.V + 2)
 				{
 					row = 0; attr = 0x80; EoS = FALSE;
 
@@ -306,22 +281,26 @@ static uint8_t special[][3] =
 						self.needsDisplay = TRUE;
 				}
 
-				if (row < config.R + 1)
+				if (row <= config.R)
 				{
-					if (row == config.R)
-						status.IR = status.IE;
+					if (pos != config.H + 1)
+					{
+						status.DU = 1;
+						dmaTimer = -2;
+						EoS = TRUE;
+					}
+
+					if (row == config.R && status.IE)
+						status.IR = TRUE;
 
 					EoR = FALSE; for (uint8_t col = 0, f = 0; col <= config.H; col++)
 					{
 						union i8275_char ch;
 
-						ch.byte = 0x00; if (status.VE && !EoS && !EoR)
-						{
-							if (col < pos)
-								ch.byte = buffer[col];
-							else
-								status.DU = 1;
-						}
+						if (status.VE && !EoS && !EoR)
+							ch.byte = buffer[col];
+						else
+							ch.byte = 0x00;
 
 						if ((ch.byte & 0x80) == 0x00)					// 0xxxxxxx
 						{
@@ -332,7 +311,7 @@ static uint8_t special[][3] =
 						{
 							attr = ch.byte; if (config.F)
 							{
-								ch.attr = _colors ? 0 : attr;
+								ch.attr = colors ? 0 : attr;
 								ch.byte = 0x00;
 							}
 							else
@@ -359,9 +338,12 @@ static uint8_t special[][3] =
 							ch.byte = ((ch.byte >> 2) & 0x0F) | 0x80;
 						}
 
-						if (status.VE && !EoS && !EoR && row == cursor.ROW && col == cursor.COL)
+						if (status.VE && row == cursor.ROW && col == cursor.COL)
 						{
-							switch (config.C)
+							if (hideCursor)
+								hideCursor = FALSE;
+
+							else switch (config.C)
 							{
 								case 0:
 									ch.R = (frame & 0x10) ? 1 : 0;
@@ -384,14 +366,14 @@ static uint8_t special[][3] =
 						if (ch.B && (frame & 0x10) == 0x00)
 							ch.byte = 0;
 
-						ch.attr &= _attributesMask;
+						ch.attr &= attributesMask;
 
 						if (screen[frame & 1][row][col].word != ch.word)
 						{
 							screen[frame & 1][row][col].word = ch.word;
 
-							uint32_t b0 = _colors ? _colors[0x0F & _attributesMask] : ch.attr & 0x01 ? 0xFF555555 : 0xFF000000;
-							uint32_t b1 = _colors ? _colors[ch.attr & 0x0F] : ch.attr & 0x01 ? 0xFFFFFFFF : 0xFFAAAAAA;
+							uint32_t b0 = colors ? colors[0x0F & attributesMask] : ch.H ? 0xFF555555 : 0xFF000000;
+							uint32_t b1 = colors ? colors[ch.attr & 0x0F] : ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
 
 							if (frame & 1)
 							{
@@ -399,68 +381,56 @@ static uint8_t special[][3] =
 								b1 &= 0x7FFFFFFF;
 							}
 
+							uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
+
 							if (ch.byte < 0x80)
 							{
 								const unsigned char *fnt = font + (ch.byte << 3);
 
-								for (unsigned line = 0; line <= config.L; line++)
+								for (unsigned L = 0; L <= config.L; L++)
 								{
-									uint8_t byte = 0x00; if (config.M)
-									{
-										if (line == 0)
-										{
-											if (config.L < 8) byte = fnt[config.L];
+									uint8_t byte = config.M ? L ? (L < 9 ? *fnt++ : 0x00) : config.L < 8 ? fnt[config.L] : 0x00 : (L < 8 ? *fnt++ : 0x00);
 
-										}
-										else if (line < 9)
-										{
-											byte = *fnt++;
-										}
-									}
-									else
-									{
-										if (line < 8) byte = *fnt++;
-									}
-
-									if (line > 7 && line == config.U && ch.U)
-										byte = 0xFF;
-
-									if (ch.R)
-										byte ^= 0xFF;
+									if (L > 7 && L == config.U && ch.U) byte = 0xFF;
+									if (ch.R) byte = ~byte;
 
 									for (int i = 0; i < 6; i++, byte <<= 1)
-									{
-										unsigned address = (((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) + line) * (config.H + 1) + col) * 6 + i;
-										bitmap[address] = byte & 0x20 ? b1 : b0;
-									}
+										*ptr ++ = byte & 0x20 ? b1 : b0;
+
+									ptr += config.H * 6;
 								}
 							}
 							else
 							{
-								for (unsigned line = 0; line <= config.L; line++)
-								{
-									uint8_t byte = line < config.U ? special[ch.byte - 0x80][0] : line == config.U ? special[ch.byte - 0x80][1] : special[ch.byte - 0x80][2];
+								const unsigned char *fnt = special[ch.byte - 0x80];
 
-									if (ch.R)
-										byte ^= 0xFF;
+								for (unsigned L = 0; L <= config.L; L++)
+								{
+									if (L == config.U) fnt++;
+									uint8_t byte = *fnt;
+									if (L == config.U) fnt++;
+
+									if (ch.R) byte = ~byte;
 
 									for (int i = 0; i < 6; i++, byte <<= 1)
-										bitmap[(((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) + line) * (config.H + 1) + col) * 6 + i] = byte & 0x20 ? b1 : b0;
+										*ptr++ = byte & 0x20 ? b1 : b0;
+
+									ptr += config.H * 6;
 								}
 							}
 						}
 					}
 				}
 
-				if (dmaTimer != (uint64_t)-2 || row == config.R + 1 + config.V)
+				if (dmaTimer != -2 || row == config.R + config.V + 1)
 				{
-					if (status.VE && (row < (config.R + 1 - 1) || row == config.R + 1 + config.V + 1 - 1))
+					if (status.VE && (row < config.R || row == config.R + config.V + 1))
 					{
-						pos = 0; fpos = 0; dmaTimer = rowTimer;
+						pos = 0; fpos = 0; dmaTimer = rowTimer + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
 					}
 					else
 					{
-						dmaTimer = (uint64_t)-1;
+						dmaTimer = -1;
 					}
 				}
 
@@ -471,36 +441,35 @@ static uint8_t special[][3] =
 			{
 				unsigned count = 1 << mode.B; if (count + pos > config.H + 1)
 				{
-					count = config.H + 1 - pos;;
+					count = config.H + 1 - pos;
 				}
 
 				unsigned clk = 0; while (count--)
 				{
 					uint8_t byte; if (i8257DMA2(_dma, &byte))
 					{
-						clk += clk ? 36 : 45; buffer[pos++] = byte;
+						clk += clk ? 36 : (wr ? 54 : 45); buffer[pos++] = byte;
 
 						if ((byte & 0xC0) == 0x80 && config.F == 0)
 						{
 							if (i8257DMA2(_dma, &byte))
 							{
-								clk += 36; fifo[fpos++] = byte & 0x7F;
+								clk += 36; fifo[fpos++ & 0x0F] = byte & 0x7F;
 
-								if (fpos == 16)
-								{
+								if (fpos == 17)
 									status.FO = 1;
-									fpos = 0;
-								}
 							}
 							else
 							{
+								dmaTimer = -2;
 								return clk;
 							}
 						}
 
 						else if ((byte & 0xF3) == 0xF1)
 						{
-							dmaTimer = (uint64_t)-1;
+							pos = config.H + 1;
+							dmaTimer = -1;
 
 							if (count && i8257DMA2(_dma, &byte))
 								clk += 36;
@@ -510,8 +479,9 @@ static uint8_t special[][3] =
 						
 						else if ((byte & 0xF3) == 0xF3)
 						{
-							dmaTimer = (uint64_t)-2;
-							
+							pos = config.H + 1;
+							dmaTimer = -2;
+
 							if (count && i8257DMA2(_dma, &byte))
 								clk += 36;
 							
@@ -520,11 +490,21 @@ static uint8_t special[][3] =
 					}
 					else
 					{
+						dmaTimer = -2;
 						return clk;
 					}
 				}
-				
-				dmaTimer = pos <= config.H ? clock + clk + (mode.S ? (mode.S << 3) - 1 : 0) * 12 : (uint64_t)-1;
+
+				if (pos <= config.H)
+				{
+					dmaTimer = clock + clk + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
+					dmaTimer += 12 - (dmaTimer % 12);
+				}
+				else
+				{
+					dmaTimer = -1;
+				}
+
 				return clk;
 			}
 		}
@@ -532,6 +512,39 @@ static uint8_t special[][3] =
 	}
 
 	return 0;
+}
+
+// -----------------------------------------------------------------------------
+// Световое перо
+// -----------------------------------------------------------------------------
+
+- (void) rightMouseDragged:(NSEvent *)theEvent
+{
+	[self rightMouseDown:theEvent];
+}
+
+- (void) rightMouseDown:(NSEvent *)theEvent
+{
+	NSPoint point = [self convertPoint:theEvent.locationInWindow fromView:nil];
+
+	@synchronized(self)
+	{
+		if (status.VE)
+		{
+			lightPen.ROW = trunc(text.height - point.y / self.frame.size.height * text.height);
+			lightPen.COL = trunc(point.x / self.frame.size.width * text.width) + 8;
+			rightMouse = TRUE;
+			status.LP = 1;
+		}
+	}
+}
+
+- (void) rightMouseUp:(NSEvent *)theEvent
+{
+	@synchronized(self)
+	{
+		status.LP = 0;
+	}
 }
 
 // -----------------------------------------------------------------------------

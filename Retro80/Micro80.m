@@ -128,7 +128,7 @@
 
 	self.snd.cpu = self.cpu;
 
-	self.cpu.HOLD = self.crt;
+	self.cpu.HLDA = self.crt;
 
 	[self.cpu mapObject:self.ram atPage:0x00 count:0xF8];
 	[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];

@@ -20,8 +20,8 @@
 - (int) execute:(X8080*)cpu;
 @end
 
-@protocol HOLD <NSObject>
-- (unsigned) HOLD:(uint64_t)clock;
+@protocol HLDA <NSObject>
+- (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr;
 @end
 
 @protocol INTE <NSObject>
@@ -34,7 +34,7 @@
 
 @interface X8080 : NSObject <Processor, NSCoding>
 
-@property NSObject<HOLD> *HOLD;
+@property NSObject<HLDA> *HLDA;
 @property NSObject<INTE> *INTE;
 
 @property uint32_t quartz;

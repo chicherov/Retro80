@@ -289,7 +289,10 @@
 		uint8_t key = keyboard.key;
 
 		if (key == 0xFE)
+		{
+			count = 10;
 			return 0;
+		}
 
 		if (key != 0xFF)
 		{

@@ -102,8 +102,8 @@
 	// Служебные переменные
 	// -------------------------------------------------------------------------
 
-	unsigned (*HOLDFunc) (id, SEL, uint64_t);
-	NSObject<HOLD> *_HOLD;
+	unsigned (*HLDAFunc) (id, SEL, uint64_t, BOOL);
+	NSObject<HLDA> *_HLDA;
 
 	void (*INTEFunc) (id, SEL, uint64_t);
 	NSObject<INTE> __weak *_INTE;
@@ -266,24 +266,24 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
 }
 
 // -----------------------------------------------------------------------------
-// Работа с объектом HOLD
+// Работа с объектом HLDA
 // -----------------------------------------------------------------------------
 
-- (void) setHOLD:(NSObject<HOLD> *)HOLD
+- (void) setHLDA:(NSObject<HLDA> *)HLDA
 {
-	HOLDFunc = (unsigned (*) (id, SEL, uint64_t)) [_HOLD = HOLD methodForSelector:@selector(HOLD:)];
+	HLDAFunc = (unsigned (*) (id, SEL, uint64_t, BOOL)) [_HLDA = HLDA methodForSelector:@selector(HLDA:WR:)];
 }
 
-- (NSObject<HOLD> *)HOLD
+- (NSObject<HLDA> *)HLDA
 {
-	return _HOLD;
+	return _HLDA;
 }
 
-static unsigned HOLD(X8080* cpu, unsigned clk)
+static unsigned HOLD(X8080* cpu, unsigned clk, BOOL wr)
 {
-	if (cpu->HOLDFunc)
+	if (cpu->HLDAFunc)
 	{
-		unsigned clkHOLD = cpu->HOLDFunc(cpu->_HOLD, @selector(HOLD:), cpu->CLK);
+		unsigned clkHOLD = cpu->HLDAFunc(cpu->_HLDA, @selector(HLDA:WR:), cpu->CLK, wr);
 		return clk > clkHOLD ? clk : clkHOLD;
 	}
 
@@ -336,36 +336,36 @@ static unsigned timings[256] =
 	 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,
 	 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,
 
-	18,  9,  9,  9, 18,  9,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
-	18,  9,  9,  9, 18,  9,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
-	18,  9,  9,  9, 18,  9,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
-	18,  9,  9,  9, 18,  9,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18
+	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
+	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
+	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
+	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18
 };
 
 static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 {
-	cpu->CLK += 18; uint8_t data = MEMR(cpu, addr, status);
-	cpu->CLK +=  9; cpu->CLK += HOLD(cpu, 0);
+	uint8_t data = MEMR(cpu, addr, status); cpu->CLK += 27;
+	cpu->CLK += HOLD(cpu, 0, FALSE);
 	return data;
 }
 
 static void put(X8080* cpu, uint16_t addr, uint8_t data)
 {
 	cpu->CLK += 27; MEMW(cpu, addr, data);
-	cpu->CLK += HOLD(cpu, 0);
+	cpu->CLK += HOLD(cpu, 0, TRUE);
 }
 
 static uint8_t inp(X8080* cpu, uint16_t addr)
 {
-	cpu->CLK += 18; uint8_t data = IOR(cpu, addr, 0x42);
-	cpu->CLK +=  9; cpu->CLK += HOLD(cpu, 0);
+	uint8_t data = IOR(cpu, addr, 0x42); cpu->CLK += 27;
+	cpu->CLK += HOLD(cpu, 0, FALSE);
 	return data;
 }
 
 static void out(X8080* cpu, uint16_t addr, uint8_t data)
 {
 	cpu->CLK += 27; IOW(cpu, addr, data);
-	cpu->CLK += HOLD(cpu, 0);
+	cpu->CLK += HOLD(cpu, 0, TRUE);
 }
 
 // -----------------------------------------------------------------------------
@@ -506,7 +506,7 @@ static bool test(uint8_t IR, uint8_t F)
 {
 	while (CLK < CLKI)
 	{
-		uint8_t IR; CLK += 18;
+		uint8_t IR;
 
 		switch (HOOK[PC.PC] ? [HOOK[PC.PC] execute:self] : 2)
 		{
@@ -529,7 +529,7 @@ static bool test(uint8_t IR, uint8_t F)
 			}
 		}
 
-		CLK +=  9; CLK += HOLD(self, timings[IR]);
+		CLK +=  27; CLK += HOLD(self, timings[IR], FALSE);
 
 		switch (IR)
 		{
@@ -1959,7 +1959,7 @@ static bool test(uint8_t IR, uint8_t F)
 				put(self, --SP.SP, HL.H);
 
 				CLK += 27; MEMW(self, --SP.SP, HL.L);
-				CLK += HOLD(self, 18);
+				CLK += HOLD(self, 18, TRUE);
 
 				HL.HL = WZ.WZ;
 				break;

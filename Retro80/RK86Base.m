@@ -84,7 +84,7 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.cpu.HOLD = self.crt;
+		self.cpu.HLDA = self.crt;
 		self.crt.dma  = self.dma;
 		self.dma.cpu  = self.cpu;
 
@@ -152,7 +152,7 @@
 
 	self.isColor = [decoder decodeBoolForKey:@"isColor"];
 
-	self.cpu.HOLD = self.crt;
+	self.cpu.HLDA = self.crt;
 	self.crt.dma  = self.dma;
 	self.dma.cpu  = self.cpu;
 
