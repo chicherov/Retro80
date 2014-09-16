@@ -299,7 +299,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 	blen = 0;
 
 	buffer[blen++] = 1;
-	memcpy(buffer + blen, "V1.0 RETRO80 EMU", 16); blen += 16;
+	memcpy(buffer + blen, "V1.0 retro kr580", 16); blen += 16;
 
 	return TRUE;
 }

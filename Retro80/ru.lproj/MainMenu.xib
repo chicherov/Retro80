@@ -19,7 +19,7 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Retro80" systemMenu="apple" id="uQy-DD-JDr">
                         <items>
-                            <menuItem title="О программе «Ретро 80»" id="5kV-Vb-QxS">
+                            <menuItem title="О программе «Ретро КР580»" id="5kV-Vb-QxS">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="orderFrontStandardAboutPanel:" target="-1" id="Exp-CZ-Vem"/>
@@ -33,7 +33,7 @@
                                 <menu key="submenu" title="Службы" systemMenu="services" id="hz9-B4-Xy5"/>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="4je-JR-u6R"/>
-                            <menuItem title="Скрыть «Ретро 80»" keyEquivalent="h" id="Olw-nP-bQN">
+                            <menuItem title="Скрыть «Ретро КР580»" keyEquivalent="h" id="Olw-nP-bQN">
                                 <connections>
                                     <action selector="hide:" target="-1" id="PnN-Uc-m68"/>
                                 </connections>
@@ -51,7 +51,7 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="kCx-OE-vgT"/>
-                            <menuItem title="Завершить «Ретро 80»" keyEquivalent="q" id="4sb-4s-VLi">
+                            <menuItem title="Завершить «Ретро КР580»" keyEquivalent="q" id="4sb-4s-VLi">
                                 <connections>
                                     <action selector="terminate:" target="-1" id="Te7-pn-YzF"/>
                                 </connections>
