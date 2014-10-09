@@ -95,21 +95,27 @@
 // Графические символы
 // -----------------------------------------------------------------------------
 
-static uint8_t special[][3] =
+static struct special
 {
-	{ 0x00, 0x07, 0x04 },	// 0000
-	{ 0x00, 0x3C, 0x04 },	// 0001
-	{ 0x04, 0x07, 0x00 },	// 0010
-	{ 0x04, 0x3C, 0x00 },	// 0011
-	{ 0x00, 0x3F, 0x04 },	// 0100
-	{ 0x04, 0x3C, 0x04 },	// 0101
-	{ 0x04, 0x07, 0x04 },	// 0110
-	{ 0x04, 0x3F, 0x00 },	// 0111
-	{ 0x00, 0x3F, 0x00 },	// 1000
-	{ 0x04, 0x04, 0x04 },	// 1001
-	{ 0x04, 0x3F, 0x04 },	// 1010
-
-	{ 0x00, 0x00, 0x00 }	// 1011
+	BOOL LA1;
+	BOOL LA0;
+	BOOL VSP;
+	BOOL LTEN;
+}
+CCCC[][3] =
+{
+	{{0, 0, 1, 0}, {1, 0, 0, 0}, {0, 1, 0, 0}},	// 0000
+	{{0, 0, 1, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}},	// 0001
+	{{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 0, 1, 0}},	// 0010
+	{{0, 1, 0, 0}, {1, 1, 0, 0}, {0, 0, 1, 0}},	// 0011
+	{{0, 0, 1, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}},	// 0100
+	{{0, 1, 0, 0}, {1, 1, 0, 0}, {0, 1, 0, 0}},	// 0101
+	{{0, 1, 0, 0}, {1, 0, 0, 0}, {0, 1, 0, 0}},	// 0110
+	{{0, 1, 0, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}},	// 0111
+	{{0, 0, 1, 0}, {0, 0, 0, 1}, {0, 0, 1, 0}},	// 1000
+	{{0, 1, 0, 0}, {0, 1, 0, 0}, {0, 1, 0, 0}},	// 1001
+	{{0, 1, 0, 0}, {0, 0, 0, 1}, {0, 1, 0, 0}},	// 1010
+	{{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}	// 1011
 };
 
 // -----------------------------------------------------------------------------
@@ -335,7 +341,6 @@ static uint8_t special[][3] =
 						else											// 11xxxxxx
 						{
 							ch.attr = (attr & 0x3C) | (ch.byte & 0x83);
-							ch.byte = ((ch.byte >> 2) & 0x0F) | 0x80;
 						}
 
 						if (status.VE && row == cursor.ROW && col == cursor.COL)
@@ -383,40 +388,37 @@ static uint8_t special[][3] =
 
 							uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
 
-							if (ch.byte < 0x80)
+							const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
+
+							for (unsigned L = 0; L <= config.L; L++)
 							{
-								const unsigned char *fnt = font + (ch.byte << 3);
+								uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
 
-								for (unsigned L = 0; L <= config.L; L++)
+								if ((ch.byte & 0x80) == 0x00)
 								{
-									uint8_t byte = config.M ? L ? (L < 9 ? *fnt++ : 0x00) : config.L < 8 ? fnt[config.L] : 0x00 : (L < 8 ? *fnt++ : 0x00);
-
-									if (L > 7 && L == config.U && ch.U) byte = 0xFF;
-									if (ch.R) byte = ~byte;
-
-									for (int i = 0; i < 6; i++, byte <<= 1)
-										*ptr ++ = byte & 0x20 ? b1 : b0;
-
-									ptr += config.H * 6;
+									if (config.U & 0x08 && (L == 0 || L == config.L))
+										byte = 0x00;
 								}
-							}
-							else
-							{
-								const unsigned char *fnt = special[ch.byte - 0x80];
-
-								for (unsigned L = 0; L <= config.L; L++)
+								else
 								{
-									if (L == config.U) fnt++;
-									uint8_t byte = *fnt;
-									if (L == config.U) fnt++;
+									struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
 
-									if (ch.R) byte = ~byte;
+//									byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
 
-									for (int i = 0; i < 6; i++, byte <<= 1)
-										*ptr++ = byte & 0x20 ? b1 : b0;
+									if (special->VSP)
+										byte = 0x00;
 
-									ptr += config.H * 6;
+									if (special->LTEN)
+										byte = 0xFF;
 								}
+
+								if (L == config.U && ch.U) byte = 0xFF;
+								if (ch.R) byte = ~byte;
+
+								for (int i = 0; i < 6; i++, byte <<= 1)
+									*ptr ++ = byte & 0x20 ? b1 : b0;
+
+								ptr += config.H * 6;
 							}
 						}
 					}

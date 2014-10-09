@@ -79,7 +79,7 @@ static uint32_t colors[] =
 {
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 	panel.title = menuItem.title;
-	panel.canChooseDirectories = FALSE;
+	panel.canChooseDirectories = TRUE;
 	panel.allowedFileTypes = @[@"rom"];
 
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
