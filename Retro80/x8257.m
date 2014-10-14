@@ -47,7 +47,7 @@ BOOL i8257DMA2(X8257* dma, uint8_t *data)
 {
 	if (dma->mode.dma2 && dma->dma[2].type == 1)
 	{
-		*data = MEMR(dma->_cpu, dma->dma[2].address, 0xFF);
+		*data = MEMR(dma->_cpu, dma->dma[2].address, 0x00);
 
 		dma->dma[2].address++; if (dma->dma[2].count-- == 0 && dma->mode.a)
 		{

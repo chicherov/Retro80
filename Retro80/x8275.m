@@ -248,8 +248,8 @@ CCCC[][3] =
 										  cy:config.L + 1];
 
 						rowClock = (config.H + 1 + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
-						rowTimer = clock; rowTimer += 12 - (rowTimer % 12);
-						row = config.R + config.V;
+//						rowTimer = clock; rowTimer += 12 - (rowTimer % 12);
+//						row = config.R + config.V;
 					}
 				}
 			}
@@ -279,7 +279,7 @@ CCCC[][3] =
 		{
 			if (rowTimer <= clock)
 			{
-				if (++row == config.R + config.V + 2)
+				if (++row >= config.R + config.V + 2)
 				{
 					row = 0; attr = 0x80; EoS = FALSE;
 
