@@ -62,15 +62,18 @@
 
 		if (ch != nil)
 		{
-			_down = theEvent.timestamp;
-			_key = [ch charValue];
+			if (key != NSNotFound)
+			{
+				_down = theEvent.timestamp;
+				_key = [ch charValue];
+			}
 		}
 
 		else
 		{
 			const char* ptr = [theEvent.characters.uppercaseString cStringUsingEncoding:(NSStringEncoding) 0x80000A02];
 
-			if (ptr && *(uint8_t *)ptr <= 0x7F | *(uint8_t *)ptr >= 0xE0)
+			if (ptr && (*(uint8_t *)ptr <= 0x5F || *(uint8_t *)ptr >= 0xE0))
 			{
 				_key = *(uint8_t *)ptr & 0x7F;
 				_down = theEvent.timestamp;
@@ -169,7 +172,7 @@
 	{
 		_A = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 		{
-			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.7)
+			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.1)
 			{
 				if ((_B & (0x01 << (i & 0x07))) == 0)
 					_A &= (0x80 >> (i >> 3)) ^ 0xFF;
@@ -194,7 +197,7 @@
 	{
 		_B = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 		{
-			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.7)
+			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.1)
 			{
 				if ((_A & (0x80 >> (i >> 3))) == 0)
 					_B &= (0x01 << (i & 0x07)) ^ 0xFF;
@@ -234,19 +237,30 @@
 {
 	if (self = [super init])
 	{
-		keyCode = @{@115: @0x0C, @117: @0x1F, @122: @0x00, @120: @0x01,
-					@99:  @0x02, @118: @0x03, @96:  @0x04, @76:  @0x0A,
-					@123: @0x08, @126: @0x19, @124: @0x18, @125: @0x1A
+		keyCode = @{
+					@123: @0x08, @124: @0x18, @126: @0x19, @125: @0x1A, @115: @0x0C,
+					@36:  @0x0D, @76:  @0x0A, @53:  @0x1B, @48:  @0x09, @117: @0x1F,
+					@122: @0x00, @120: @0x01, @99:  @0x02, @118: @0x03, @96:  @0x04,
+					@51:  @0x7F
 					};
 
-		kbdmap = @[@7,   @16,  @6,   @33,  @42,  @30,  @39,  @49,
-				   @35,  @12,  @15,  @1,   @17,  @32,  @9,   @13,
-				   @4,   @34,  @38,  @40,  @37,  @46,  @45,  @31,
-				   @41,  @0,   @11,  @8,   @2,   @14,  @3,   @5,
-				   @28,  @25,  @24,  @50,  @43,  @27,  @47,  @44,
+		kbdmap = @[
+				   // 58 59    5A    5B    5C    5D    5E    20
+				   @46,  @1,   @35,  @34,  @39,  @31,  @7,   @49,
+				   // 50 51    52    53    54    55    56    57
+				   @5,   @6,   @4,   @8,   @45,  @14,  @41,  @2,
+				   // 48 49    4A    4B    4C    4D    4E    4F
+				   @33,  @11,  @12,  @15,  @40,  @9,   @16,  @38,
+				   // 40 41    42    43    44    45    46    47
+				   @47,  @3,   @43,  @13,  @37,  @17,  @0,   @32,
+				   // 38 39    3A    3B    2C    2D    2E    2F
+				   @28,  @25,  @30,  @10,  @44,  @27,  @42,  @50,
+				   // 30 31    32    33    34    35    36    37
 				   @29,  @18,  @19,  @20,  @21,  @23,  @22,  @26,
+				   // 09 0A    0D    7F    08    19    18    1A
 				   @48,  @76,  @36,  @51,  @123, @126, @124, @125,
-				   @115, @117, @53,  @122, @120, @99,  @118, @96,
+				   // 0C 1F    1B    00    01    02    03    04
+				   @115, @117, @53,  @122, @120, @99,  @118, @96
 				   ];
 
 		RUSLAT = 0x80;
