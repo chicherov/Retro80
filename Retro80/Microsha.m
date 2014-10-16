@@ -302,6 +302,7 @@ static uint32_t colors[] =
 	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
 	self.inpHook.extension = @"rkm";
 	self.inpHook.readError = 0xF8C7;
+	self.inpHook.type = 2;
 
 	[self.cpu mapHook:self.outHook = [[FCAB alloc] init] atAddress:0xFCAB];
 	self.outHook.extension = @"rkm";

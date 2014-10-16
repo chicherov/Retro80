@@ -11,6 +11,7 @@
 
 @property NSString *extension;
 @property uint16_t readError;
+@property unsigned type;
 @property BOOL enabled;
 
 @end

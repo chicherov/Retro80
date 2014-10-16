@@ -18,6 +18,33 @@
 
 // -----------------------------------------------------------------------------
 
+uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
+{
+	uint8_t B = 0x00, C = 0x00; while (size--)
+	{
+		if (!microsha)
+		{
+			bool CF = (C + *ptr) > 0xFF; C += *ptr; if (size)
+			{
+				B += *ptr + (CF ? 1 : 0);
+			}
+
+			ptr++;
+		}
+		else
+		{
+			C ^= *ptr++; if (size)
+			{
+				B ^= *ptr++; size--;
+			}
+		}
+	}
+
+	return (B << 8) | C;
+}
+
+// -----------------------------------------------------------------------------
+
 - (id) initWithSound:(Sound *)sound
 {
 	if (self = [super init])
@@ -33,7 +60,7 @@
 {
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 
-	openPanel.allowedFileTypes = [NSArray arrayWithObjects:@"wav", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension, nil];
+	openPanel.allowedFileTypes = [NSArray arrayWithObjects:@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension, nil];
 
 	if ([openPanel runModal] == NSFileHandlingPanelOKButton && openPanel.URLs.count == 1)
 	{
@@ -60,6 +87,29 @@
 			{
 				if (length && bytes[0] == 0xE6)
 					pos++;
+			}
+			else if ([extension isEqualToString:@"bin"] && length <= 0x10000)
+			{
+				uint8_t buffer[4]; buffer[0] = 0x00; buffer[1] = 0x00;
+				buffer[2] = ((length - 1) >> 8) & 0xFF;
+				buffer[3] = (length - 1) & 0xFF;
+
+				NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:4];
+				[mutableData appendData:data];
+
+				if (_type)
+				{
+					uint16_t cs = csum(bytes, length, _type == 2);
+					buffer[2] = cs >> 8; buffer[3] = cs & 0xFF;
+					buffer[1] = 0xE6;
+
+					if (_type == 2)
+						[mutableData appendBytes:buffer + 2 length:2];
+					else
+						[mutableData appendBytes:buffer length:4];
+				}
+
+				data = mutableData; bytes = data.bytes; length = data.length;
 			}
 		}
 	}
