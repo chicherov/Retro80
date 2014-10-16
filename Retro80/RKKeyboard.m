@@ -172,7 +172,7 @@
 	{
 		_A = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 		{
-			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.1)
+			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.7)
 			{
 				if ((_B & (0x01 << (i & 0x07))) == 0)
 					_A &= (0x80 >> (i >> 3)) ^ 0xFF;
@@ -197,7 +197,7 @@
 	{
 		_B = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 		{
-			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.1)
+			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.7)
 			{
 				if ((_A & (0x80 >> (i >> 3))) == 0)
 					_B &= (0x01 << (i & 0x07)) ^ 0xFF;
