@@ -47,6 +47,12 @@
 											repeats:NO];
 }
 
+- (void) windowDidBecomeKey:(NSNotification *)notification
+{
+	if (self.window.styleMask & NSFullScreenWindowMask)
+		[self mouseMoved:nil];
+}
+
 - (void) windowWillEnterFullScreen:(NSNotification *)notification
 {
 	timer = [NSTimer scheduledTimerWithTimeInterval:2.0
