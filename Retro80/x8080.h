@@ -34,8 +34,8 @@
 
 @interface X8080 : NSObject <Processor, NSCoding>
 
-@property NSObject<HLDA> *HLDA;
-@property NSObject<INTE> *INTE;
+@property (weak) NSObject<HLDA> *HLDA;
+@property (weak) NSObject<INTE> *INTE;
 
 @property uint32_t quartz;
 @property uint64_t CLK;
@@ -66,13 +66,47 @@
 
 - (void) mapObject:(NSObject<ReadWrite>*)object
 			atPage:(uint8_t)page
-			 count:(unsigned)count;
+			  from:(uint16_t)from
+				to:(uint16_t)to;
 
 - (void) mapObject:(NSObject<ReadWrite>*)object
-			atPage:(uint8_t)page;
+			atPage:(uint8_t)page
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				RO:(BOOL)ro;
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+			atPage:(uint8_t)page
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				WO:(BOOL)wo;
+
+// -----------------------------------------------------------------------------
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+				from:(uint16_t)from
+				to:(uint16_t)to;
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				RO:(BOOL)ro;
+
+- (void) mapObject:(NSObject<ReadWrite>*)object
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				WO:(BOOL)ro;
+
+// -----------------------------------------------------------------------------
 
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status);
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data);
+
+// -----------------------------------------------------------------------------
+
+- (void) selectPage:(uint8_t)page
+			   from:(uint16_t)from
+				 to:(uint16_t)to;
 
 // -----------------------------------------------------------------------------
 
@@ -82,6 +116,8 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data);
 
 - (void) mapObject:(NSObject<ReadWrite>*)object
 			atPort:(uint8_t)port;
+
+// -----------------------------------------------------------------------------
 
 uint8_t IOR(X8080 *cpu, uint16_t addr, uint8_t status);
 void IOW(X8080 *cpu, uint16_t addr, uint8_t data);

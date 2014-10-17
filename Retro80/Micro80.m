@@ -115,6 +115,9 @@
 	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
 		return FALSE;
 
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
+		return FALSE;
+
 	if ((self.ram = [[RAM alloc] initWithLength:0xF800 mask:0xFFFF]) == nil)
 		return FALSE;
 
@@ -129,9 +132,6 @@
 
 - (BOOL) mapObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
-		return FALSE;
-
 	if ((self.snd = [[Micro80Recorder alloc] init]) == nil)
 		return FALSE;
 
@@ -139,10 +139,11 @@
 
 	self.cpu.HLDA = self.crt;
 
-	[self.cpu mapObject:self.ram atPage:0x00 count:0xF8];
-	[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];
+	[self.cpu mapObject:self.ram from:0x0000 to:0xF7FF];
+	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF RO:YES];
 
-	[self.cpu mapObject:self.crt atPage:0xE0 count:0x10];
+	[self.cpu mapObject:self.crt from:0xE000 to:0xEFFF WO:YES];
+	self.crt.WR = self.ram;
 
 	[self.cpu mapObject:self.snd atPort:0x00 count:0x02];
 	[self.cpu mapObject:self.kbd atPort:0x04 count:0x04];
@@ -188,6 +189,7 @@
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeObject:self.cpu forKey:@"cpu"];
+	[encoder encodeObject:self.rom forKey:@"rom"];
 	[encoder encodeObject:self.ram forKey:@"ram"];
 	[encoder encodeObject:self.crt forKey:@"crt"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
@@ -200,6 +202,9 @@
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+		return self = nil;
+
+	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
 		return self = nil;
 
 	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)

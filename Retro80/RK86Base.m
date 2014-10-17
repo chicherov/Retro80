@@ -62,12 +62,54 @@
 }
 
 // -----------------------------------------------------------------------------
+// decodeObjects
+// -----------------------------------------------------------------------------
+
+- (BOOL) decodeObjects:(NSCoder *)decoder
+{
+	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+		return FALSE;
+
+	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
+		return FALSE;
+
+	if ((self.dma = [decoder decodeObjectForKey:@"dma"]) == nil)
+		return FALSE;
+
+	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
+		return FALSE;
+
+	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
+		return FALSE;
+
+	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
+		return FALSE;
+
+	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
+		return FALSE;
+
+	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
+		return FALSE;
+
+	self.isColor = [decoder decodeBoolForKey:@"isColor"];
+
+	return TRUE;
+}
+
+// -----------------------------------------------------------------------------
 // mapObjects
 // -----------------------------------------------------------------------------
 
 - (BOOL) mapObjects
 {
-	return FALSE;
+	self.cpu.HLDA = self.crt;
+	self.crt.dma  = self.dma;
+	self.dma.cpu  = self.cpu;
+
+	self.kbd.snd  = self.snd;
+	self.snd.cpu  = self.cpu;
+	
+	return TRUE;
 }
 
 // -----------------------------------------------------------------------------
@@ -83,13 +125,6 @@
 
 		if (![self mapObjects])
 			return self = nil;
-
-		self.cpu.HLDA = self.crt;
-		self.crt.dma  = self.dma;
-		self.dma.cpu  = self.cpu;
-
-		self.kbd.snd  = self.snd;
-		self.snd.cpu  = self.cpu;
 
 		self.cpu.PC = 0xF800;
 
@@ -118,6 +153,7 @@
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 	[encoder encodeObject:self.ext forKey:@"ext"];
 	[encoder encodeObject:self.ram forKey:@"ram"];
+	[encoder encodeObject:self.rom forKey:@"rom"];
 
 	[encoder encodeBool:self.isColor forKey:@"isColor"];
 
@@ -129,35 +165,8 @@
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+	if (![self decodeObjects:decoder])
 		return self = nil;
-
-	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
-		return self = nil;
-
-	if ((self.dma = [decoder decodeObjectForKey:@"dma"]) == nil)
-		return self = nil;
-
-	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
-		return self = nil;
-
-	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
-		return self = nil;
-
-	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
-		return self = nil;
-
-	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-		return self = nil;
-
-	self.isColor = [decoder decodeBoolForKey:@"isColor"];
-
-	self.cpu.HLDA = self.crt;
-	self.crt.dma  = self.dma;
-	self.dma.cpu  = self.cpu;
-
-	self.kbd.snd  = self.snd;
-	self.snd.cpu  = self.cpu;
 
 	if (![self mapObjects])
 		return self = nil;

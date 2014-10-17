@@ -30,6 +30,7 @@
 @property RAM *ram;
 @property ROM *rom;
 
+- (BOOL) decodeObjects:(NSCoder *)decoder;
 - (BOOL) createObjects;
 - (BOOL) mapObjects;
 

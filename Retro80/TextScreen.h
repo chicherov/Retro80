@@ -3,7 +3,6 @@
 
 @interface TextScreen : Screen <ReadWrite, HLDA, NSCoding>
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
-			atPage:(uint8_t)page;
+@property NSObject <ReadWrite> *WR;
 
 @end

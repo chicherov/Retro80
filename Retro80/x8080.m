@@ -10,8 +10,6 @@
 	// Регистры процессора
 	// -------------------------------------------------------------------------
 
-	uint64_t CLK;
-
 	union
 	{
 		uint16_t PC; struct
@@ -82,7 +80,7 @@
 
 	} WZ;
 
-	BOOL _IF;
+	BOOL IF;
 
 	// -------------------------------------------------------------------------
 	// Адресная шина
@@ -90,29 +88,19 @@
 
 	NSObject<Hook> *HOOK[0x10000];
 
-	NSObject<ReadWrite> *MEM[256];
+	NSObject<ReadWrite> *RD[16][0x10000];
+	NSObject<ReadWrite> *WR[16][0x10000];
+	uint8_t PAGE[0x10000];
+
 	NSObject<ReadWrite> *IO[256];
-
-	uint8_t *mutableBytes[256];
-	const uint8_t *bytes[256];
-
 	BOOL PMIO;
-
-	// -------------------------------------------------------------------------
-	// Служебные переменные
-	// -------------------------------------------------------------------------
-
-	unsigned (*HLDAFunc) (id, SEL, uint64_t, BOOL);
-	NSObject<HLDA> *_HLDA;
-
-	void (*INTEFunc) (id, SEL, uint64_t);
-	NSObject<INTE> __weak *_INTE;
 }
 
 // -----------------------------------------------------------------------------
 // Доступ к регистрам процессора
 // -----------------------------------------------------------------------------
 
+@synthesize quartz;
 @synthesize CLK;
 
 - (void) setPC:(uint16_t)value { PC.PC = value; }
@@ -158,57 +146,80 @@
 - (uint8_t) L { return HL.L; }
 
 // -----------------------------------------------------------------------------
+// Сигнналы процессора
+// -----------------------------------------------------------------------------
+
+@synthesize HLDA;
+@synthesize INTE;
+
+// -----------------------------------------------------------------------------
 // Доступ к адресному пространству
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page count:(unsigned int)count
+- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to
 {
-	while (count--) [self mapObject:object atPage:page++];
+	for (unsigned address = from; address <= to; address++)
+	{
+		RD[page][address] = object;
+		WR[page][address] = object;
+	}
 }
 
-- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page
+- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to RO:(BOOL)ro
 {
-	if (MEM[page] && [object respondsToSelector:@selector(mapObject:atPage:)])
-		[(id)object mapObject:MEM[page] atPage:page];
+	for (unsigned address = from; address <= to; address++)
+		RD[page][address] = object;
+}
 
-	MEM[page] = object; if ([object conformsToProtocol:@protocol(Bytes)])
-	{
-		mutableBytes[page] = [(NSObject<Bytes> *)object mutableBytesAtAddress:page << 8];
-		bytes[page] = [(NSObject<Bytes> *)object bytesAtAddress:page << 8];
-	}
-	else
-	{
-		mutableBytes[page] = 0;
-		bytes[page] = 0;
-	}
+- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to WO:(BOOL)wo
+{
+	for (unsigned address = from; address <= to; address++)
+		WR[page][address] = object;
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) mapObject:(NSObject<ReadWrite>*)object from:(uint16_t)from to:(uint16_t)to
+{
+	for (uint8_t page = 0; page < 16; page++)
+		[self mapObject:object atPage:page from:from to:to];
+}
+
+- (void) mapObject:(NSObject<ReadWrite>*)object from:(uint16_t)from to:(uint16_t)to RO:(BOOL)ro
+{
+	for (uint8_t page = 0; page < 16; page++)
+		[self mapObject:object atPage:page from:from to:to RO:ro];
+}
+
+- (void) mapObject:(NSObject<ReadWrite>*)object from:(uint16_t)from to:(uint16_t)to WO:(BOOL)wo
+{
+	for (uint8_t page = 0; page < 16; page++)
+		[self mapObject:object atPage:page from:from to:to WO:wo];
 }
 
 // -----------------------------------------------------------------------------
 
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status)
 {
-	uint8_t page = addr >> 8; if (cpu->MEM[page])
-	{
-		if (cpu->bytes[page])
-			return cpu->bytes[page][addr & 0xFF];
-		else
-			return [cpu->MEM[page] RD:addr CLK:cpu->CLK status:status];
-	}
-
-	return status;
+	if (cpu->RD[cpu->PAGE[addr]][addr])
+		return [cpu->RD[cpu->PAGE[addr]][addr] RD:addr CLK:cpu->CLK status:status];
+	else
+		return status;
 }
 
 // -----------------------------------------------------------------------------
 
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data)
 {
-	uint8_t page = addr >> 8; if (cpu->MEM[page])
-	{
-		if (cpu->mutableBytes[page])
-			cpu->mutableBytes[page][addr & 0xFF] = data;
-		else
-			[cpu->MEM[page] WR:addr byte:data CLK:cpu->CLK];
-	}
+	if (cpu->WR[cpu->PAGE[addr]][addr])
+		[cpu->WR[cpu->PAGE[addr]][addr] WR:addr byte:data CLK:cpu->CLK];
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) selectPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to
+{
+	memset(PAGE + from, page, to - from + 1);
 }
 
 // -----------------------------------------------------------------------------
@@ -253,66 +264,34 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
 
 - (void) mapHook:(NSObject<Hook> *)object atAddress:(uint16_t)addr
 {
-	const uint8_t *byte1 = bytes[addr >> 8] + (addr & 0xFF); if (byte1 && *byte1 == 0xC3)
-	{
-		const uint8_t *byte2 = bytes[((addr + 1) >> 8) & 0xFF] + ((addr + 1) & 0xFF);
-		const uint8_t *byte3 = bytes[((addr + 2) >> 8) & 0xFF] + ((addr + 2) & 0xFF);
-
-		if (byte2 && byte3)
-			addr = *byte3 << 8 | *byte2;
-	}
+	if (MEMR(self, addr, 0) == 0xC3)
+		addr = MEMR(self, addr + 1, 0) | (MEMR(self, addr + 2, 0) << 8);
 
 	HOOK[addr] = object;
 }
 
 // -----------------------------------------------------------------------------
-// Работа с объектом HLDA
+// Работа с сигналом HLDA
 // -----------------------------------------------------------------------------
-
-- (void) setHLDA:(NSObject<HLDA> *)HLDA
-{
-	HLDAFunc = (unsigned (*) (id, SEL, uint64_t, BOOL)) [_HLDA = HLDA methodForSelector:@selector(HLDA:WR:)];
-}
-
-- (NSObject<HLDA> *)HLDA
-{
-	return _HLDA;
-}
 
 static unsigned HOLD(X8080* cpu, unsigned clk, BOOL wr)
 {
-	if (cpu->HLDAFunc)
-	{
-		unsigned clkHOLD = cpu->HLDAFunc(cpu->_HLDA, @selector(HLDA:WR:), cpu->CLK, wr);
-		return clk > clkHOLD ? clk : clkHOLD;
-	}
-
-	return clk;
+	unsigned clkHOLD = [cpu->HLDA HLDA:cpu->CLK WR:wr];
+	return clk > clkHOLD ? clk : clkHOLD;
 }
 
 // -----------------------------------------------------------------------------
-// Работа с объектом INTE
+// Работа с сигналом INTE
 // -----------------------------------------------------------------------------
 
-- (void) setINTE:(NSObject<INTE> *)INTE
+- (void) setIF:(BOOL)enable
 {
-	INTEFunc = (void (*) (id, SEL, uint64_t)) [_INTE = INTE methodForSelector:@selector(INTE:)];
-}
-
-- (NSObject<INTE> *)INTE
-{
-	return _INTE;
-}
-
-- (void) setIF:(BOOL)IF
-{
-	_IF = IF; if (INTEFunc)
-		INTEFunc(_INTE, @selector(INTE:), IF);
+	[self->INTE INTE:IF = enable];
 }
 
 - (BOOL) IF
 {
-	return _IF;
+	return IF;
 }
 
 // -----------------------------------------------------------------------------
@@ -2049,10 +2028,10 @@ static bool test(uint8_t IR, uint8_t F)
 // Инициализация
 // -----------------------------------------------------------------------------
 
-- (id) initWithQuartz:(uint32_t)quartz
+- (id) initWithQuartz:(uint32_t)freq
 {
 	if (self = [super init])
-		_quartz = quartz;
+		quartz = freq;
 
 	return self;
 }
@@ -2063,9 +2042,9 @@ static bool test(uint8_t IR, uint8_t F)
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeInt32:_quartz forKey:@"quartz"];
+	[encoder encodeInt32:quartz forKey:@"quartz"];
 	[encoder encodeInt64:CLK forKey:@"CLK"];
-	[encoder encodeBool:_IF forKey:@"IF"];
+	[encoder encodeBool:IF forKey:@"IF"];
 
 	[encoder encodeInt:PC.PC forKey:@"PC"];
 	[encoder encodeInt:SP.SP forKey:@"SP"];
@@ -2080,9 +2059,9 @@ static bool test(uint8_t IR, uint8_t F)
 {
 	if (self = [super init])
 	{
-		_quartz = [decoder decodeInt32ForKey:@"quartz"];
+		quartz = [decoder decodeInt32ForKey:@"quartz"];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
-		_IF = [decoder decodeBoolForKey:@"IF"];
+		IF = [decoder decodeBoolForKey:@"IF"];
 
 		PC.PC = [decoder decodeIntForKey:@"PC"];
 		SP.SP = [decoder decodeIntForKey:@"SP"];

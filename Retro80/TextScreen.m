@@ -4,33 +4,23 @@
 {
 	NSData *rom;
 
-	NSObject<ReadWrite> *MEM[256];
 	uint8_t memory[32][64];
 	uint8_t screen[32][64];
 	uint64_t CLK;
 }
 
-// -----------------------------------------------------------------------------
-
-- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page
-{
-	MEM[page] = object;
-}
+@synthesize WR;
 
 // -----------------------------------------------------------------------------
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
-	uint8_t page = addr >> 8; if (MEM[page])
-		return [MEM[page] RD:addr CLK:clock status:status];
-
 	return status;
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-	uint8_t page = addr >> 8; if (MEM[page])
-		[MEM[page] WR:addr byte:data CLK:clock];
+	[WR WR:addr byte:data CLK:clock];
 
 	uint8_t ch; if (addr & 0x800)
 	{
@@ -38,7 +28,7 @@
 	}
 	else
 	{
-		if (data)
+		if (data & 0x80)
 			ch = memory[0][--addr & 0x7FF] | 0x80;
 		else
 			ch = memory[0][--addr & 0x7FF] & 0x7F;

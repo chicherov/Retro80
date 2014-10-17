@@ -31,7 +31,7 @@
 
 	if (menuItem.action == @selector(floppy:))
 	{
-		if (self.floppy)
+		if (self.isFloppy)
 		{
 			menuItem.state = menuItem.tag == 0 || [self.floppy getDisk:menuItem.tag] != nil;
 			return menuItem.tag == 0 || menuItem.tag != [self.floppy selected];
@@ -106,22 +106,13 @@ static uint32_t colors[] =
 
 		@synchronized(self.snd)
 		{
-			if (self.floppy == nil)
+			if ((self.isFloppy = !self.isFloppy))
 			{
-				self.floppy = [[Floppy alloc] init];
-
-				[self.cpu mapObject:self.dma atPage:0xE0 count:0x20];
-
-				[self.cpu mapObject:self.floppy atPage:0xF0 count:0x08];
-				[self.cpu mapObject:self.dos29 atPage:0xE0 count:0x10];
-				[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];
+				[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
 			}
 			else
 			{
-				[self.cpu mapObject:self.dma atPage:0xE0 count:0x20];
-				[self.cpu mapObject:self.rom atPage:0xF0 count:0x10];
-
-				self.floppy = nil;
+				[self.cpu selectPage:0 from:0xE000 to:0xF7FF];
 			}
 		}
 	}
@@ -161,11 +152,38 @@ static uint32_t colors[] =
 
 - (BOOL) createObjects
 {
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
+		return FALSE;
+
 	if ((self.ext = [[ROMDisk alloc] init]) == nil)
+		return FALSE;
+
+	if ((self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
+		return FALSE;
+
+	if ((self.floppy = [[Floppy alloc] init]) == nil)
 		return FALSE;
 
 	if (![super createObjects])
 		return FALSE;
+
+	return TRUE;
+}
+
+// -----------------------------------------------------------------------------
+
+- (BOOL) decodeObjects:(NSCoder *)decoder
+{
+	if (![super decodeObjects:decoder])
+		return FALSE;
+
+	if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
+		return FALSE;
+
+	if ((self.dos29 = [decoder decodeObjectForKey:@"dos29"]) == nil)
+		return FALSE;
+
+	self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"];
 
 	return TRUE;
 }
@@ -176,12 +194,6 @@ static uint32_t colors[] =
 
 - (BOOL) mapObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
-		return FALSE;
-
-	if ((self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
-		return FALSE;
-
 	[self.crt setFontOffset:0x0C00];
 
 	if (self.isColor)
@@ -195,14 +207,20 @@ static uint32_t colors[] =
 		[self.crt setColors:NULL attributeMask:0x22];
 	}
 
-	[self.cpu mapObject:self.ram atPage:0x00 count:0x80];
-	[self.cpu mapObject:self.kbd atPage:0x80 count:0x20];
-	[self.cpu mapObject:self.ext atPage:0xA0 count:0x20];
-	[self.cpu mapObject:self.crt atPage:0xC0 count:0x20];
-	[self.cpu mapObject:self.dma atPage:0xE0 count:0x20];
-	[self.cpu mapObject:self.rom atPage:0xF0 count:0x10];
-
 	self.cpu.INTE = self;
+
+	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];
+	[self.cpu mapObject:self.kbd from:0x8000 to:0x9FFF];
+	[self.cpu mapObject:self.ext from:0xA000 to:0xBFFF];
+	[self.cpu mapObject:self.crt from:0xC000 to:0xDFFF];
+	[self.cpu mapObject:self.dma from:0xE000 to:0xFFFF WO:YES];
+	[self.cpu mapObject:self.rom from:0xF000 to:0xFFFF RO:YES];
+
+	[self.cpu mapObject:self.dos29 atPage:1 from:0xE000 to:0xEFFF RO:YES];
+	[self.cpu mapObject:self.floppy atPage:1 from:0xF000 to:0xF7FF];
+
+	if (self.isFloppy)
+		[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
@@ -214,7 +232,7 @@ static uint32_t colors[] =
 	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
 	self.outHook.extension = @"rkr";
 
-	return TRUE;
+	return [super mapObjects];
 }
 
 // -----------------------------------------------------------------------------
@@ -224,25 +242,11 @@ static uint32_t colors[] =
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[super encodeWithCoder:encoder];
+
 	[encoder encodeObject:self.floppy forKey:@"floppy"];
-}
+	[encoder encodeObject:self.dos29 forKey:@"dos29"];
 
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super initWithCoder:decoder])
-	{
-		if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) != nil)
-		{
-			[self.cpu mapObject:self.dma atPage:0xE0 count:0x20];
-
-			[self.cpu mapObject:self.floppy atPage:0xF0 count:0x08];
-			[self.cpu mapObject:self.dos29 atPage:0xE0 count:0x10];
-			[self.cpu mapObject:self.rom atPage:0xF8 count:0x08];
-		}
-	}
-
-	return self;
+	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
 }
 
 @end

@@ -9,4 +9,6 @@
 @property Floppy *floppy;
 @property ROM *dos29;
 
+@property BOOL isFloppy;
+
 @end

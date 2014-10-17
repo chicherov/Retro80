@@ -92,6 +92,9 @@ static uint32_t colors[] =
 
 - (BOOL) createObjects
 {
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
+		return FALSE;
+
 	if ((self.ram = [[RAM alloc] initWithLength:0xEC00 mask:0xFFFF]) == nil)
 		return FALSE;
 
@@ -114,19 +117,16 @@ static uint32_t colors[] =
 
 - (BOOL) mapObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
-		return FALSE;
-
 	[self.crt setColors:self.isColor ? colors : 0 attributeMask:0xFF];
 	[self.crt setFontOffset:self.cpu.IF ? 0x2400 : 0x2000];
 
-	[self.cpu mapObject:self.ram atPage:0x00 count:0xEC];
-	[self.cpu mapObject:self.snd atPage:0xEC];
-	[self.cpu mapObject:self.kbd atPage:0xED];
-	[self.cpu mapObject:self.ext atPage:0xEE];
-	[self.cpu mapObject:self.crt atPage:0xEF];
-	[self.cpu mapObject:self.dma atPage:0xF0 count:0x08];
-	[self.cpu mapObject:self.rom atPage:0xF0 count:0x10];
+	[self.cpu mapObject:self.ram from:0x0000 to:0xEBFF];
+	[self.cpu mapObject:self.snd from:0xEC00 to:0xECFF];
+	[self.cpu mapObject:self.kbd from:0xED00 to:0xEDFF];
+	[self.cpu mapObject:self.ext from:0xEE00 to:0xEEFF];
+	[self.cpu mapObject:self.crt from:0xEF00 to:0xEFFF];
+	[self.cpu mapObject:self.dma from:0xF000 to:0xF7FF WO:YES];
+	[self.cpu mapObject:self.rom from:0xF000 to:0xFFFF RO:YES];
 
 	self.cpu.INTE = self;
 
@@ -140,7 +140,7 @@ static uint32_t colors[] =
 	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
 	self.outHook.extension = @"rka";
 
-	return TRUE;
+	return [super mapObjects];
 }
 
 @end
