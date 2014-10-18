@@ -39,8 +39,7 @@
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
-		D9EBB62919B47ECA00C833CA /* ram.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* ram.m */; };
-		D9EBB62A19B47ECA00C833CA /* rom.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62819B47ECA00C833CA /* rom.m */; };
+		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
 		D9FE179D19B9F874008EBD32 /* Computer.m in Sources */ = {isa = PBXBuildFile; fileRef = D9FE179C19B9F874008EBD32 /* Computer.m */; };
 /* End PBXBuildFile section */
 
@@ -94,12 +93,10 @@
 		D9CC91F419BEF8840038106A /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Retro80/ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
 		D9EBB61F19B47E1300C833CA /* x8080.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8080.m; sourceTree = "<group>"; };
-		D9EBB62219B47E8B00C833CA /* ram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ram.h; sourceTree = "<group>"; };
+		D9EBB62219B47E8B00C833CA /* mem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mem.h; sourceTree = "<group>"; };
 		D9EBB62319B47E8B00C833CA /* x8255.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8255.h; sourceTree = "<group>"; };
 		D9EBB62419B47E8B00C833CA /* x8255.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8255.m; sourceTree = "<group>"; };
-		D9EBB62619B47ECA00C833CA /* ram.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ram.m; sourceTree = "<group>"; };
-		D9EBB62719B47ECA00C833CA /* rom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rom.h; sourceTree = "<group>"; };
-		D9EBB62819B47ECA00C833CA /* rom.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = rom.m; sourceTree = "<group>"; };
+		D9EBB62619B47ECA00C833CA /* mem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mem.m; sourceTree = "<group>"; };
 		D9EBB62B19B4808A00C833CA /* Micro80.fnt */ = {isa = PBXFileReference; lastKnownFileType = text; name = Micro80.fnt; path = Retro80/Micro80.fnt; sourceTree = "<group>"; };
 		D9EBB62C19B4808A00C833CA /* Micro80.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Micro80.bin; path = Retro80/Micro80.bin; sourceTree = "<group>"; };
 		D9EC82C619BEBD5800384F94 /* ru */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ru; path = ru.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -233,10 +230,8 @@
 				D9A4245219B8310B00DAA3E0 /* x8275.m */,
 				D9EBB62319B47E8B00C833CA /* x8255.h */,
 				D9EBB62419B47E8B00C833CA /* x8255.m */,
-				D9EBB62219B47E8B00C833CA /* ram.h */,
-				D9EBB62619B47ECA00C833CA /* ram.m */,
-				D9EBB62719B47ECA00C833CA /* rom.h */,
-				D9EBB62819B47ECA00C833CA /* rom.m */,
+				D9EBB62219B47E8B00C833CA /* mem.h */,
+				D9EBB62619B47ECA00C833CA /* mem.m */,
 			);
 			name = X8080;
 			sourceTree = "<group>";
@@ -332,11 +327,10 @@
 				D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */,
 				D929488319B5850C009BC312 /* RKRecorder.m in Sources */,
 				D974FCD519ADF2310041DF91 /* DocumentController.m in Sources */,
-				D9EBB62919B47ECA00C833CA /* ram.m in Sources */,
+				D9EBB62919B47ECA00C833CA /* mem.m in Sources */,
 				D974FCA019ADE9450041DF91 /* main.m in Sources */,
 				D929487D19B484D5009BC312 /* TextScreen.m in Sources */,
 				D9FE179D19B9F874008EBD32 /* Computer.m in Sources */,
-				D9EBB62A19B47ECA00C833CA /* rom.m in Sources */,
 				D974FCEA19AE10500041DF91 /* Apogeo.m in Sources */,
 				D974FCCC19ADEA080041DF91 /* Screen.m in Sources */,
 			);

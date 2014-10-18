@@ -9,8 +9,7 @@
 #import "x8257.h"
 #import "x8253.h"
 
-#import "ram.h"
-#import "rom.h"
+#import "mem.h"
 
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
@@ -27,8 +26,8 @@
 @property RKKeyboard *kbd;
 @property X8255 *ext;
 
-@property RAM *ram;
-@property ROM *rom;
+@property Memory *ram;
+@property Memory *rom;
 
 - (BOOL) decodeObjects:(NSCoder *)decoder;
 - (BOOL) createObjects;

@@ -152,13 +152,13 @@ static uint32_t colors[] =
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
+	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
 		return FALSE;
 
 	if ((self.ext = [[ROMDisk alloc] init]) == nil)
 		return FALSE;
 
-	if ((self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
+	if ((self.dos29 = [[Memory alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
 		return FALSE;
 
 	if ((self.floppy = [[Floppy alloc] init]) == nil)

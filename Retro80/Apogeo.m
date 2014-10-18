@@ -92,10 +92,10 @@ static uint32_t colors[] =
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
+	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[RAM alloc] initWithLength:0xEC00 mask:0xFFFF]) == nil)
+	if ((self.ram = [[Memory alloc] initWithLength:0xEC00 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ((self.ext = [[ROMDisk alloc] init]) == nil)

@@ -115,10 +115,10 @@
 	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
 		return FALSE;
 
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
+	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[RAM alloc] initWithLength:0xF800 mask:0xFFFF]) == nil)
+	if ((self.ram = [[Memory alloc] initWithLength:0xF800 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ((self.crt = [[TextScreen alloc] init]) == nil)

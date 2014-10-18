@@ -243,10 +243,10 @@ static uint32_t colors[] =
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
+	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[RAM alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
+	if ((self.ram = [[Memory alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ((self.kbd = [[MicroshaKeyboard alloc] init]) == nil)
@@ -255,7 +255,7 @@ static uint32_t colors[] =
 	if ((self.ext = [[MicroshaExt alloc] init]) == nil)
 		return FALSE;
 
-	if ((self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
+	if ((self.dos29 = [[Memory alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
 		return FALSE;
 
 	*(uint8_t *)[self.dos29 bytesAtAddress:0xEDBF] = 0xD1;

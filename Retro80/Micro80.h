@@ -1,9 +1,7 @@
 #import "Retro80.h"
 #import "x8080.h"
 #import "x8255.h"
-
-#import "ram.h"
-#import "rom.h"
+#import "mem.h"
 
 #import "TextScreen.h"
 
@@ -35,8 +33,8 @@
 @property (weak) Document *document;
 
 @property X8080 *cpu;
-@property RAM *ram;
-@property ROM *rom;
+@property Memory *rom;
+@property Memory *ram;
 
 @property TextScreen *crt;
 

@@ -37,7 +37,7 @@
 
 - (BOOL) createObjects
 {
-	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0x7FFF]) == nil)
+	if (self.ram == nil && (self.ram = [[Memory alloc] initWithLength:0x8000 mask:0x7FFF]) == nil)
 		return FALSE;
 
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000]) == nil)

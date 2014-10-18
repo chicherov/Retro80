@@ -45,7 +45,7 @@
 @property MicroshaExt *ext;
 
 @property Floppy *floppy;
-@property ROM *dos29;
+@property Memory *dos29;
 
 @property BOOL isExtRAM;
 @property BOOL isFloppy;

@@ -7,7 +7,7 @@
 @property ROMDisk *ext;
 
 @property Floppy *floppy;
-@property ROM *dos29;
+@property Memory *dos29;
 
 @property BOOL isFloppy;
 
