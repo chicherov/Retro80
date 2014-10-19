@@ -71,21 +71,32 @@
 	// -------------------------------------------------------------------------
 
 	NSData *rom; const uint8_t *font;
-	const uint32_t *colors;
+	const uint16_t *fonts;
+
 	uint8_t attributesMask;
+	const uint32_t *colors;
+
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) setColors:(const uint32_t *)ptr attributeMask:(uint8_t)mask
+- (void) setColors:(const uint32_t *)ptr attributesMask:(uint8_t)mask
 {
-	colors = ptr; attributesMask = mask;
+	colors = ptr; fonts = NULL; attributesMask = mask;
 	memset(screen, -1, sizeof(screen));
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) setFontOffset:(unsigned int)offset
+- (void) setFonts:(const uint16 *)ptr attributesMask:(uint8_t)mask
+{
+	font = (const uint8_t *)rom.bytes; fonts = ptr;
+	colors = NULL; attributesMask = mask;
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) selectFont:(unsigned int)offset
 {
 	font = (const uint8_t *)rom.bytes + offset;
 	memset(screen, -1, sizeof(screen));
@@ -343,7 +354,7 @@ CCCC[][3] =
 							ch.attr = (attr & 0x3C) | (ch.byte & 0x83);
 						}
 
-						if (status.VE && row == cursor.ROW && col == cursor.COL)
+						if (status.VE && row == cursor.ROW && col + (fonts != NULL) == cursor.COL)
 						{
 							if (hideCursor)
 								hideCursor = FALSE;
@@ -377,8 +388,8 @@ CCCC[][3] =
 						{
 							screen[frame & 1][row][col].word = ch.word;
 
-							uint32_t b0 = colors ? colors[0x0F & attributesMask] : ch.H ? 0xFF555555 : 0xFF000000;
-							uint32_t b1 = colors ? colors[ch.attr & 0x0F] : ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
+							uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
+							uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
 
 							if (frame & 1)
 							{
@@ -389,6 +400,7 @@ CCCC[][3] =
 							uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
 
 							const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
+							if (fonts) fnt += fonts[ch.attr & 0x0F];
 
 							for (unsigned L = 0; L <= config.L; L++)
 							{

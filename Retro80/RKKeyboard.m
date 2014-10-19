@@ -218,7 +218,7 @@
 
 - (uint8_t) C
 {
-	return _snd ? _C = (_C & 0xEF) | (_snd.input ? 0x00 : 0x10) : _C;
+	return _snd ? _C = (_C & ~TAPE) | (_snd.input ? 0x00 : TAPE) : _C;
 }
 
 - (void) setC:(uint8_t)C
@@ -266,6 +266,8 @@
 		RUSLAT = 0x80;
 		SHIFT = 0x20;
 		CTRL = 0x40;
+
+		TAPE = 0x10;
 	}
 	
 	return self;

@@ -119,7 +119,7 @@
 
 - (void) keyDown:(NSEvent*)theEvent
 {
-	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0)
+	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0 && theEvent.characters.length != 0)
 	{
 		NSString *typing = NSLocalizedString(@"Набор на клавиатуре", "Typing");
 		unichar ch = [theEvent.characters characterAtIndex:0];

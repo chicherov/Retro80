@@ -64,7 +64,7 @@
 - (void) setB:(uint8_t)B
 {
 	if ((B ^ _B) & 0x80)
-		[self.crt setFontOffset:B & 0x80 ? 0x2800 : 0x0C00];
+		[self.crt selectFont:B & 0x80 ? 0x2800 : 0x0C00];
 
 	_B = B;
 }
@@ -166,12 +166,12 @@ static uint32_t colors[] =
 	if ((self.isColor = !self.isColor))
 	{
 		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0xD3;
-		[self.crt setColors:colors attributeMask:0xFF];
+		[self.crt setColors:colors attributesMask:0x3F];
 	}
 	else
 	{
 		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0x93;
-		[self.crt setColors:NULL attributeMask:0x22];
+		[self.crt setColors:NULL attributesMask:0x22];
 	}
 }
 
@@ -292,17 +292,17 @@ static uint32_t colors[] =
 
 - (BOOL) mapObjects
 {
-	[self.ext.crt = self.crt setFontOffset:self.ext.B & 0x80 ? 0x2800 : 0x0C00];
+	[self.ext.crt = self.crt selectFont:self.ext.B & 0x80 ? 0x2800 : 0x0C00];
 
 	if (self.isColor)
 	{
 		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0xD3;
-		[self.crt setColors:colors attributeMask:0xFF];
+		[self.crt setColors:colors attributesMask:0x3F];
 	}
 	else
 	{
 		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0x93;
-		[self.crt setColors:NULL attributeMask:0x22];
+		[self.crt setColors:NULL attributesMask:0x22];
 	}
 	
 	self.snd.channel2 = self.kbd.C & 0x04 ? TRUE : FALSE;

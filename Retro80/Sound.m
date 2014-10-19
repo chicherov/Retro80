@@ -19,9 +19,9 @@
 	SInt8 (*sample)(id, SEL, uint64_t);
 }
 
-@synthesize output = output;
-@synthesize beeper = beeper;
-@synthesize input = input;
+@synthesize output;
+@synthesize beeper;
+@synthesize input;
 
 // -----------------------------------------------------------------------------
 
@@ -84,7 +84,7 @@
 		{
 			execute(_cpu, @selector(execute:), CLK += clk);
 
-			*ptr = (output ? 25 : 0) + (beeper ? 25 : 0) + sample(self, @selector(sample:), CLK);
+			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(self, @selector(sample:), CLK);
 
 			if (streamFormat.mBitsPerChannel == 16)
 			{

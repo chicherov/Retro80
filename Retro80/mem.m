@@ -5,7 +5,9 @@
 	NSMutableData *memory;
 	uint8_t *mutableBytes;
 	NSUInteger length;
+
 	uint16_t mask;
+	BOOL readOnly;
 }
 
 - (uint8_t *) mutableBytesAtAddress:(uint16_t)addr
@@ -25,7 +27,8 @@
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-	mutableBytes[addr & mask] = data;
+	if (!readOnly)
+		mutableBytes[addr & mask] = data;
 }
 
 // -----------------------------------------------------------------------------
@@ -43,6 +46,7 @@
 			return self = nil;
 
 		mutableBytes = memory.mutableBytes;
+		readOnly = TRUE;
 		mask = m;
 	}
 
@@ -61,6 +65,7 @@
 			return self = nil;
 
 		mutableBytes = memory.mutableBytes;
+		readOnly = FALSE;
 		mask = m;
 	}
 
@@ -74,6 +79,7 @@
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeObject:memory forKey:@"dump"];
+	[encoder encodeBool:readOnly forKey:@"ro"];
 	[encoder encodeInt:mask forKey:@"mask"];
 }
 
@@ -84,6 +90,7 @@
 		if ((memory = [decoder decodeObjectForKey:@"dump"]) == nil)
 			return self = nil;
 
+		readOnly = [decoder decodeBoolForKey:@"ro"];
 		mask = [decoder decodeIntForKey:@"mask"];
 
 		if ((length = memory.length) == 0)

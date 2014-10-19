@@ -13,8 +13,8 @@
 @property (readonly) BOOL isInput;
 @property (readonly) BOOL input;
 
+@property uint16_t beeper;
 @property BOOL output;
-@property BOOL beeper;
 
 - (SInt8) sample:(uint64_t)clock;
 

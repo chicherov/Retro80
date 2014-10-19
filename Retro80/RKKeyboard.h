@@ -15,6 +15,10 @@
 	uint8_t RUSLAT;
 	uint8_t SHIFT;
 	uint8_t CTRL;
+
+	// Маска магнитофона
+
+	uint8_t TAPE;
 }
 
 // Последняя нажатая кнопка

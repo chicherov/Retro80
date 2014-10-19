@@ -264,7 +264,7 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
 
 - (void) mapHook:(NSObject<Hook> *)object atAddress:(uint16_t)addr
 {
-	if (MEMR(self, addr, 0) == 0xC3)
+	while (MEMR(self, addr, 0) == 0xC3)
 		addr = MEMR(self, addr + 1, 0) | (MEMR(self, addr + 2, 0) << 8);
 
 	HOOK[addr] = object;

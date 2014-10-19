@@ -74,9 +74,12 @@
 }
 
 - (void) setColors:(const uint32_t *)colors
-	 attributeMask:(uint8_t)attributesMask;
+	attributesMask:(uint8_t)attributesMask;
 
-- (void) setFontOffset:(unsigned)offset;
+- (void) setFonts:(const uint16 *)fonts
+   attributesMask:(uint8_t)attributesMask;
+
+- (void) selectFont:(unsigned)offset;
 
 @property X8257* dma;
 
