@@ -13,7 +13,6 @@
 
 - (void) setPage:(uint8_t)data
 {
-	NSLog(@"Page: %d", data);
 	[partner.cpu selectPage:page = data & 0x0F from:0x0000 to:0xFFFF];
 }
 
@@ -40,7 +39,9 @@
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [super init])
+	{
 		page = [decoder decodeIntForKey:@"page"];
+	}
 
 	return self;
 }
@@ -48,25 +49,32 @@
 @end
 
 // -----------------------------------------------------------------------------
-// Системнный регистр 2 - выбор станицы адресного простарнства
+// Системнный регистр 2 - выбор внешнего устройства
 // -----------------------------------------------------------------------------
 
 @implementation PartnerSystem2
 {
 	uint8_t slot;
+	BOOL mcpg;
 }
 
 @synthesize partner;
 
 - (void) setSlot:(uint8_t)data
 {
-	NSLog(@"Slot: %02X", data);
 	slot = data;
 
-	partner.ext1.object = nil;
-	partner.ext2.object = nil;
-	partner.win1.object = nil;
-	partner.win2.object = nil;
+	if (slot & 0x04 && partner.isColor)
+	{
+		partner.win1.object = partner.mcpgbios;
+		partner.win2.object = partner.mcpgfont;
+	}
+
+	else
+	{
+		partner.win1.object = nil;
+		partner.win2.object = nil;
+	}
 }
 
 - (uint8_t) slot
@@ -74,24 +82,75 @@
 	return slot;
 }
 
+- (void) setMcpg:(BOOL)data
+{
+	mcpg = data; [partner.crt setMcpg:(mcpg ? [partner.mcpgfont bytesAtAddress:0] : NULL)];
+}
+
+- (BOOL) mcpg
+{
+	return mcpg;
+}
+
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
-	if ((addr & 0x100) == 0)
+	if ((addr & 0x200) == 0)
+	{
+		if (slot & 0x04 && partner.isColor)
+		{
+			if ((addr & 0x100) == 0)
+			{
+				return self.mcpg ? 0x00 : 0xFF;
+			}
+			else
+			{
+				return [partner.snd RD:addr >> 2 CLK:clock status:status];
+			}
+		}
+
+		NSLog(@"RD: %02X", addr);
+		return status;
+	}
+
+	else if ((addr & 0x100) == 0)
 	{
 		return ~self.slot;
 	}
+
 	else
 	{
+		NSLog(@"RD: %02X", addr);
 		return status;
 	}
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-	if ((addr & 0x100) == 0)
+	if ((addr & 0x200) == 0)
+	{
+		if (slot & 0x04 && partner.isColor)
+		{
+			if ((addr & 0x100) == 0)
+			{
+				self.mcpg = data == 0x00;
+			}
+			else
+			{
+				[partner.snd WR:addr >> 2 byte:data CLK:clock];
+			}
+		}
+
+		else
+		{
+			NSLog(@"WR: %04X %02X", addr, data);
+		}
+	}
+
+	else if ((addr & 0x100) == 0)
 	{
 		self.slot = ~(data | 0xF0);
 	}
+
 	else
 	{
 		NSLog(@"WR: %04X %02X", addr, data);
@@ -100,13 +159,17 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeInteger:slot forKey:@"slot"];
+	[encoder encodeInt:slot forKey:@"slot"];
+	[encoder encodeBool:mcpg forKey:@"mcpg"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [super init])
+	{
 		slot = [decoder decodeIntForKey:@"slot"];
+		mcpg = [decoder decodeBoolForKey:@"mcpg"];
+	}
 
 	return self;
 }
@@ -175,6 +238,43 @@
 }
 
 // -----------------------------------------------------------------------------
+// validateMenuItem
+// -----------------------------------------------------------------------------
+
+- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
+{
+	if (menuItem.action == @selector(colorModule:))
+	{
+		menuItem.state = self.isColor;
+		return (self.sys2.slot & 0x04) == 0;
+	}
+
+	return [super validateMenuItem:menuItem];
+}
+
+// -----------------------------------------------------------------------------
+// МОДУЛЬ ЦВЕТНОЙ ПСЕВДОГРАФИЧЕСКИЙ "ПАРТНЕР 01.61"
+// -----------------------------------------------------------------------------
+
+- (IBAction) colorModule:(NSMenuItem *)menuItem
+{
+	@synchronized(self.snd)
+	{
+		if ((self.sys2.slot & 0x04) == 0)
+		{
+			[self.document registerUndoWithMenuItem:menuItem];
+			self.isColor = !self.isColor;
+
+			self.snd.channel0 = self.isColor;
+			self.snd.channel1 = self.isColor;
+			self.snd.channel2 = self.isColor;
+
+			self.sys2.mcpg = self.isColor;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
 // createObjects
 // -----------------------------------------------------------------------------
 
@@ -201,13 +301,21 @@
 	if ((self.sys2 = [[PartnerSystem2 alloc] init]) == nil)
 		return FALSE;
 
+	if ((self.mcpgbios = [[Memory alloc] initWithContentsOfResource:@"mcpg" mask:0x07FF]) == nil)
+		return FALSE;
+
+	if ((self.mcpgfont = [[Memory alloc] initWithLength:0x1000 mask:0x0FFF]) == nil)
+		return FALSE;
+
 	if (![super createObjects])
 		return FALSE;
 
+	self.isColor = TRUE;
 	return TRUE;
-
 }
 
+// -----------------------------------------------------------------------------
+// decodeObjects
 // -----------------------------------------------------------------------------
 
 - (BOOL) decodeObjects:(NSCoder *)decoder
@@ -227,9 +335,17 @@
 	if ((self.sys2 = [decoder decodeObjectForKey:@"sys2"]) == nil)
 		return FALSE;
 
+	if ((self.mcpgbios = [decoder decodeObjectForKey:@"mcpgbios"]) == nil)
+		return FALSE;
+
+	if ((self.mcpgfont = [decoder decodeObjectForKey:@"mcpgfont"]) == nil)
+		return FALSE;
+
 	return TRUE;
 }
 
+// -----------------------------------------------------------------------------
+// encodeWithCoder
 // -----------------------------------------------------------------------------
 
 - (void) encodeWithCoder:(NSCoder *)encoder
@@ -240,28 +356,34 @@
 	[encoder encodeObject:self.ram2 forKey:@"ram2"];
 	[encoder encodeObject:self.sys1 forKey:@"sys1"];
 	[encoder encodeObject:self.sys2 forKey:@"sys2"];
+
+	[encoder encodeObject:self.mcpgbios forKey:@"mcpgbios"];
+	[encoder encodeObject:self.mcpgfont forKey:@"mcpgfont"];
 }
 
 // -----------------------------------------------------------------------------
 // mapObjects
 // -----------------------------------------------------------------------------
 
-static uint16_t fonts[] =
-{
-	0x0000, 0x1000, 0x0000, 0x1000,
-	0x0400, 0x1400, 0x0400, 0x1400,
-	0x0800, 0x1800, 0x0800, 0x1800,
-	0x0C00, 0x1C00, 0x0C00, 0x1C00
-};
-
 - (BOOL) mapObjects
 {
-	[self.crt setFonts:fonts attributesMask:0x3F];
+	static uint16_t fonts[16] =
+	{
+		0x0000, 0x1000, 0x0000, 0x1000,
+		0x0400, 0x1400, 0x0400, 0x1400,
+		0x0800, 0x1800, 0x0800, 0x1800,
+		0x0C00, 0x1C00, 0x0C00, 0x1C00
+	};
+	
+	[self.crt setColors:NULL attributesMask:0x3F];
+	[self.crt setFonts:fonts];
+
+	self.snd.channel0 = self.isColor;
+	self.snd.channel1 = self.isColor;
+	self.snd.channel2 = self.isColor;
 
 	// Окошки для внешних устройств
 
-	self.ext1 = [[PartnerExternal alloc] init];
-	self.ext2 = [[PartnerExternal alloc] init];
 	self.win1 = [[PartnerExternal alloc] init];
 	self.win2 = [[PartnerExternal alloc] init];
 
@@ -271,15 +393,14 @@ static uint16_t fonts[] =
 	[self.cpu mapObject:self.kbd	from:0xD900 to:0xD9FF];
 	[self.cpu mapObject:self.sys1	from:0xDA00 to:0xDAFF];
 	[self.cpu mapObject:self.dma	from:0xDB00 to:0xDBFF];
-	[self.cpu mapObject:self.ext1	from:0xDC00 to:0xDCFF];
-	[self.cpu mapObject:self.ext2	from:0xDD00 to:0xDDFF];
-	[self.cpu mapObject:self.sys2	from:0xDE00 to:0xDFFF];
+	[self.cpu mapObject:self.sys2	from:0xDC00 to:0xDFFF];
 
 	self.sys1.partner = self;
 	self.sys1.page = self.sys1.page;
 
 	self.sys2.partner = self;
 	self.sys2.slot = self.sys2.slot;
+	self.sys2.mcpg = self.sys2.mcpg;
 
 	// Страница 2 идет в виде базовой страницы
 
@@ -337,13 +458,11 @@ static uint16_t fonts[] =
 	[self.cpu mapObject:self.win1	atPage:9 from:0x8000 to:0x9FFF];
 	[self.cpu mapObject:self.win2	atPage:9 from:0xC800 to:0xD7FF];
 
-
 	// Странца 10
 
 	[self.cpu mapObject:self.win1	atPage:10 from:0x4000 to:0x5FFF];
 	[self.cpu mapObject:self.win2	atPage:10 from:0x8000 to:0xBFFF];
 	[self.cpu mapObject:self.rom	atPage:10 from:0xC000 to:0xCFFF];
-
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 

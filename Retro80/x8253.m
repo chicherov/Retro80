@@ -145,7 +145,8 @@
 		{
 			if (timer[addr].mode.RL != 3)
 			{
-				timer[addr].CLK = clock + 18;
+				if (timer[addr].CLK == 0)
+					timer[addr].CLK = clock + 18;
 				timer[addr].count = data;
 			}
 			else
@@ -157,7 +158,8 @@
 		else
 		{
 			timer[addr].count = (data << 8);
-			timer[addr].CLK = clock + 18;
+			if (timer[addr].CLK == 0)
+				timer[addr].CLK = clock + 18;
 
 			if (timer[addr].mode.RL == 3)
 			{

@@ -21,6 +21,7 @@
 @interface PartnerSystem2 : NSObject <ReadWrite, NSCoding>
 
 @property uint8_t slot;
+@property BOOL mcpg;
 
 @property (weak) Partner *partner;
 
@@ -50,8 +51,6 @@
 
 @property PartnerKeyboard *kbd;
 
-@property PartnerExternal *ext1;
-@property PartnerExternal *ext2;
 @property PartnerExternal *win1;
 @property PartnerExternal *win2;
 
@@ -60,5 +59,8 @@
 
 @property Memory *basic;
 @property Memory *ram2;
+
+@property Memory *mcpgbios;
+@property Memory *mcpgfont;
 
 @end

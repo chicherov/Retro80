@@ -72,6 +72,7 @@
 
 	NSData *rom; const uint8_t *font;
 	const uint16_t *fonts;
+	const uint8_t *mcpg;
 
 	uint8_t attributesMask;
 	const uint32_t *colors;
@@ -82,16 +83,23 @@
 
 - (void) setColors:(const uint32_t *)ptr attributesMask:(uint8_t)mask
 {
-	colors = ptr; fonts = NULL; attributesMask = mask;
+	colors = ptr; fonts = NULL; mcpg = NULL; attributesMask = mask;
 	memset(screen, -1, sizeof(screen));
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) setFonts:(const uint16 *)ptr attributesMask:(uint8_t)mask
+- (void) setFonts:(const uint16 *)ptr
 {
 	font = (const uint8_t *)rom.bytes; fonts = ptr;
-	colors = NULL; attributesMask = mask;
+	memset(screen, -1, sizeof(screen));
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) setMcpg:(const uint8_t *)ptr;
+{
+	mcpg = ptr; memset(screen, -1, sizeof(screen));
 }
 
 // -----------------------------------------------------------------------------
@@ -388,49 +396,124 @@ CCCC[][3] =
 						{
 							screen[frame & 1][row][col].word = ch.word;
 
-							uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
-							uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
-
-							if (frame & 1)
+							if (mcpg == NULL || (ch.attr & 0x0D) == 0x0C)
 							{
-								b0 &= 0x7FFFFFFF;
-								b1 &= 0x7FFFFFFF;
+								uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
+								uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
+
+								if (frame & 1)
+								{
+									b0 &= 0x7FFFFFFF;
+									b1 &= 0x7FFFFFFF;
+								}
+
+								uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
+
+								const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
+								if (fonts) fnt += fonts[ch.attr & 0x0F];
+
+								for (unsigned L = 0; L <= config.L; L++)
+								{
+									uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
+
+									if ((ch.byte & 0x80) == 0x00)
+									{
+										if (config.U & 0x08 && (L == 0 || L == config.L))
+											byte = 0x00;
+									}
+									else
+									{
+										struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
+
+										//									byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
+
+										if (special->VSP)
+											byte = 0x00;
+
+										if (special->LTEN)
+											byte = 0xFF;
+									}
+
+									if (L == config.U && ch.U) byte = 0xFF;
+									if (ch.R) byte = ~byte;
+
+									for (int i = 0; i < 6; i++, byte <<= 1)
+										*ptr ++ = byte & 0x20 ? b1 : b0;
+									
+									ptr += config.H * 6;
+								}
 							}
 
-							uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
-
-							const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
-							if (fonts) fnt += fonts[ch.attr & 0x0F];
-
-							for (unsigned L = 0; L <= config.L; L++)
+							else
 							{
-								uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
-
-								if ((ch.byte & 0x80) == 0x00)
+								static uint32_t backround[] =
 								{
-									if (config.U & 0x08 && (L == 0 || L == config.L))
-										byte = 0x00;
-								}
-								else
+									0xFF000000, 0xFFFF0000, 0xFF000000, 0xFFFF0000,
+									0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF,
+									0xFF00FF00, 0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00,
+									0xFF00FFFF, 0xFFFFFFFF, 0xFF00FFFF, 0xFFFFFFFF
+								};
+
+								static uint32_t foreground[] =
 								{
-									struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
+									0xFFFFFFFF, 0xFFFFFF00,
+									0xFFFF00FF, 0xFFFF0000,
+									0xFF00FFFF, 0xFF00FF00,
+									0xFF0000FF, 0xFF000000
+								};
 
-//									byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
+								uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
+								const unsigned char *fnt = mcpg + (ch.R ? 0x400 : 0x000) + ((ch.byte & 0x7F) << 3);
 
-									if (special->VSP)
-										byte = 0x00;
+								for (unsigned L = 0; L <= config.L; L++)
+								{
+									uint8_t fnt1 = fnt[0x000 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
+									uint8_t fnt2 = fnt[0x800 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
 
-									if (special->LTEN)
-										byte = 0xFF;
+									if ((ch.byte & 0x80) == 0x00)
+									{
+										if (config.U & 0x08 && (L == 0 || L == config.L))
+											fnt1 = fnt2 = 0xFF;
+									}
+									else
+									{
+										struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
+
+										if (special->VSP)
+											fnt1 = fnt2 = 0xFF;
+
+										if (special->LTEN)
+											fnt1 = fnt2 = 0x00;
+									}
+
+									if (L == config.U && ch.U)
+									{
+										fnt1 ^= 0x3F;
+										fnt2 ^= 0x3F;
+									}
+
+									uint32_t color1 = foreground [(fnt1 & 0x38) >> 3];
+									if (color1 == 0xFF000000) color1 = backround[ch.attr & 0x0F];
+
+									uint32_t color2 = foreground [fnt1 & 0x07];
+									if (color2 == 0xFF000000) color2 = backround[ch.attr & 0x0F];
+
+									uint32_t color3 = foreground [(fnt2 & 0x38) >> 3];
+									if (color3 == 0xFF000000) color3 = backround[ch.attr & 0x0F];
+
+									uint32_t color4 = foreground [fnt2 & 0x07];
+									if (color4 == 0xFF000000) color4 = backround[ch.attr & 0x0F];
+
+									*ptr++ = color1;
+									*ptr++ = color2;
+									*ptr++ = color2;
+
+									*ptr++ = color3;
+									*ptr++ = color4;
+									*ptr++ = color4;
+
+									ptr += config.H * 6;
 								}
-
-								if (L == config.U && ch.U) byte = 0xFF;
-								if (ch.R) byte = ~byte;
-
-								for (int i = 0; i < 6; i++, byte <<= 1)
-									*ptr ++ = byte & 0x20 ? b1 : b0;
-
-								ptr += config.H * 6;
 							}
 						}
 					}

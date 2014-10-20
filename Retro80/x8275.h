@@ -76,8 +76,9 @@
 - (void) setColors:(const uint32_t *)colors
 	attributesMask:(uint8_t)attributesMask;
 
-- (void) setFonts:(const uint16 *)fonts
-   attributesMask:(uint8_t)attributesMask;
+- (void) setFonts:(const uint16 *)fonts;
+
+- (void) setMcpg:(const uint8_t *)mcpg;
 
 - (void) selectFont:(unsigned)offset;
 

@@ -36,6 +36,7 @@
 		D9A4245C19B8421900DAA3E0 /* Microsha.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245919B8421900DAA3E0 /* Microsha.bin */; };
 		D9A4245D19B8421900DAA3E0 /* Radio86RK.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A4245A19B8421900DAA3E0 /* Radio86RK.bin */; };
 		D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */; };
+		D9B10F9C19F409D300705ABB /* mcpg.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9B10F9B19F409D300705ABB /* mcpg.bin */; };
 		D9CBF33119C8C8B800A7E0B6 /* Apogeo.icns in Resources */ = {isa = PBXBuildFile; fileRef = D9CBF33019C8C8B800A7E0B6 /* Apogeo.icns */; };
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
@@ -94,6 +95,7 @@
 		D9A4245A19B8421900DAA3E0 /* Radio86RK.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Radio86RK.bin; path = Retro80/Radio86RK.bin; sourceTree = "<group>"; };
 		D9A4245E19B8974A00DAA3E0 /* ROMDisk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ROMDisk.h; sourceTree = "<group>"; };
 		D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ROMDisk.m; sourceTree = "<group>"; };
+		D9B10F9B19F409D300705ABB /* mcpg.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = mcpg.bin; path = Retro80/mcpg.bin; sourceTree = "<group>"; };
 		D9CBF33019C8C8B800A7E0B6 /* Apogeo.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = Apogeo.icns; path = ../Apogeo.icns; sourceTree = "<group>"; };
 		D9CC91F419BEF8840038106A /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Retro80/ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
@@ -134,6 +136,7 @@
 				D9EBB62B19B4808A00C833CA /* Micro80.fnt */,
 				D9F4EBA219F3F65000480886 /* Partner.bin */,
 				D9F4EBA419F3F66000480886 /* Basic.bin */,
+				D9B10F9B19F409D300705ABB /* mcpg.bin */,
 			);
 			name = Resources;
 			path = ..;
@@ -306,6 +309,7 @@
 				D9F4EBA519F3F66000480886 /* Basic.bin in Resources */,
 				D929487919B4832B009BC312 /* Micro80.bin in Resources */,
 				D9A4245719B8418600DAA3E0 /* SYMGEN.BIN in Resources */,
+				D9B10F9C19F409D300705ABB /* mcpg.bin in Resources */,
 				D974FCAD19ADE9450041DF91 /* MainMenu.xib in Resources */,
 				D982B4E919BCB7FF005350CC /* dos29.bin in Resources */,
 				D9A4245C19B8421900DAA3E0 /* Microsha.bin in Resources */,
