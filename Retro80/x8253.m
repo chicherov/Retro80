@@ -13,12 +13,7 @@
 	SInt8 sample = 0; for (int i = 0; i < 3; i++)
 	{
 		if (((i == 0 && _channel0) || (i == 1 && _channel1) || (i == 2 && _channel2)) && timer[i].CLK && timer[i].mode.MODE == 3 && timer[i].count > 40)
-		{
-			if (timer[i].count)
-				sample += (timer[i].count - ((clock - timer[i].CLK) / 9) % timer[i].count) > (timer[i].count >> 1) ? 20 : -20;
-			else
-				sample += (timer[i].count - ((clock - timer[i].CLK) / 9) & 0xFFFF) > 0x8000 ? 20 : -20;
-		}
+			sample += (timer[i].count - clock / 9 % timer[i].count) > (timer[i].count >> 1) ? 20 : -20;
 	}
 
 	return sample;
@@ -145,8 +140,7 @@
 		{
 			if (timer[addr].mode.RL != 3)
 			{
-				if (timer[addr].CLK == 0)
-					timer[addr].CLK = clock + 18;
+				timer[addr].CLK = clock + 18;
 				timer[addr].count = data;
 			}
 			else
@@ -158,8 +152,7 @@
 		else
 		{
 			timer[addr].count = (data << 8);
-			if (timer[addr].CLK == 0)
-				timer[addr].CLK = clock + 18;
+			timer[addr].CLK = clock + 18;
 
 			if (timer[addr].mode.RL == 3)
 			{
