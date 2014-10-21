@@ -54,7 +54,7 @@ static uint32_t colors[] =
 	}
 	else
 	{
-		[self.crt setColors:NULL attributesMask:0x3F];
+		[self.crt setColors:NULL attributesMask:0x33];
 	}
 }
 
@@ -117,7 +117,11 @@ static uint32_t colors[] =
 
 - (BOOL) mapObjects
 {
-	[self.crt setColors:self.isColor ? colors : NULL attributesMask:0x3F];
+	if (self.isColor)
+		[self.crt setColors:colors attributesMask:0x3F];
+	else
+		[self.crt setColors:NULL attributesMask:0x33];
+
 	[self.crt selectFont:self.cpu.IF ? 0x2400 : 0x2000];
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0xEBFF];
