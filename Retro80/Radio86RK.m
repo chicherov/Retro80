@@ -107,13 +107,9 @@ static uint32_t colors[] =
 		@synchronized(self.snd)
 		{
 			if ((self.isFloppy = !self.isFloppy))
-			{
 				[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
-			}
 			else
-			{
 				[self.cpu selectPage:0 from:0xE000 to:0xF7FF];
-			}
 		}
 	}
 	else
@@ -135,6 +131,16 @@ static uint32_t colors[] =
 			[self.floppy setDisk:menuItem.tag URL:nil];
 		}
 	}
+}
+
+// -----------------------------------------------------------------------------
+// По сигналу RESET сбрасываем также контролерс НГМД
+// -----------------------------------------------------------------------------
+
+- (void) RESET
+{
+	[super RESET];
+	[self.floppy RESET];
 }
 
 // -----------------------------------------------------------------------------

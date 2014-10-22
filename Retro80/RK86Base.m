@@ -16,8 +16,7 @@
 	{
 		if (!self.snd.isInput)
 		{
-			self.cpu.PC = 0xF800;
-			self.cpu.IF = FALSE;
+			[self RESET];
 			return;
 		}
 	}
@@ -25,10 +24,18 @@
 	[self.snd stop];
 	[self.snd close];
 
-	self.cpu.PC = 0xF800;
-	self.cpu.IF = FALSE;
+	[self RESET];
 
 	[self.snd start];
+}
+
+- (void) RESET
+{
+	[self.kbd RESET];
+	[self.ext RESET];
+
+	self.cpu.PC = 0xF800;
+	self.cpu.IF = FALSE;
 }
 
 // -----------------------------------------------------------------------------

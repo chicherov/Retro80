@@ -51,6 +51,8 @@
 {
 	if (self.window.styleMask & NSFullScreenWindowMask)
 		[self mouseMoved:nil];
+
+	[self.document.computer.kbd keyUp:nil];
 }
 
 - (void) windowWillEnterFullScreen:(NSNotification *)notification

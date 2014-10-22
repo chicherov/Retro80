@@ -8,6 +8,7 @@
 
 	uint16_t latch;
 	uint32_t addr;
+	uint8_t out;
 
 	NSDirectoryEnumerator *dir;
 	NSFileHandle *file, *file2;
@@ -86,10 +87,10 @@
 - (uint8_t) A
 {
 	if (romMode)
-		return _A;
+		return out;
 
 	if (_length <= 0x10000)
-		addr = (_C << 8) | _B;
+		addr = (C << 8) | B;
 
 	if (addr < _length)
 		return _bytes[addr];
@@ -99,18 +100,18 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) setB:(uint8_t)B
+- (void) setB:(uint8_t)data
 {
 	switch (romMode)
 	{
 		case 0:
 		{
-			if ((B ^ _B) & 0x01)
+			if ((data ^ B) & 0x01)
 			{
-				if (B & 0x01)
-					addr = (((_C & 0x0F) << 7 | (B >> 1)) << 11) | latch;
+				if (data & 0x01)
+					addr = (((C & 0x0F) << 7 | (data >> 1)) << 11) | latch;
 				else
-					latch = (_C & 0x0F) << 7 | (B >> 1);
+					latch = (C & 0x0F) << 7 | (data >> 1);
 			}
 
 			break;
@@ -118,9 +119,9 @@
 
 		case 1:
 		{
-			_A = (B & 0x7F) < _length ? _bytes[B & 0x7F] : 0xFF;
+			out = (data & 0x7F) < _length ? _bytes[data & 0x7F] : 0xFF;
 
-			if (_B == 0x44 && B == 0x40)
+			if (B == 0x44 && data == 0x40)
 				romMode++;
 
 			break;
@@ -128,16 +129,20 @@
 
 		case 2:
 		{
-			if ((_B & 0x20) && (B & 0x20) == 0x00)
+			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
-				if (B == 0x00)
+				if (data == 0x00)
 				{
-					_A = 0x40; romMode++;
+					out = 0x40; romMode++;
 				}
 				else
 				{
 					romMode = 1;
 				}
+			}
+			else if (data & ~0x20)
+			{
+				romMode = 1;
 			}
 
 			break;
@@ -145,18 +150,18 @@
 
 		case 3:
 		{
-			if ((_B & 0x20) && (B & 0x20) == 0x00)
+			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
-				if (B == 0x00)
+				if (data == 0x00)
 				{
-					if (_A == 0x42)
+					if (out == 0x42)
 					{
 						blen = bpos = 0;
 						romMode++;
 					}
 					else
 					{
-						_A = 0x42;
+						out = 0x42;
 					}
 				}
 				else
@@ -164,15 +169,19 @@
 					romMode = 1;
 				}
 			}
+			else if (data & ~0x20)
+			{
+				romMode = 1;
+			}
 
 			break;
 		}
 
 		case 4:
 		{
-			if ((_B & 0x20) && (B & 0x20) == 0x00)
+			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
-				if (B == 0x00)
+				if (data == 0x00)
 				{
 					if ([self execute])
 					{
@@ -185,29 +194,35 @@
 					romMode = 1;
 				}
 			}
+			else if (data & ~0x20)
+			{
+				romMode = 1;
+			}
 
 			break;
 		}
 
 		case 5:
 		{
-			if ((_B & 0x20) && (B & 0x20) == 0x00)
+			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
-				if (B == 0x00 && bpos < blen)
+				if (data == 0x00 && bpos < blen)
 				{
-					_A = buffer[bpos++];
+					out = buffer[bpos++];
 				}
 				else
 				{
 					romMode = 1;
 				}
 			}
-			
+			else if (data & ~0x20)
+			{
+				romMode = 1;
+			}
+
 			break;
 		}
 	}
-	
-	_B = B;
 }
 
 // -----------------------------------------------------------------------------
@@ -310,7 +325,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 - (BOOL) cmd_exec
 {
-	if (_A)
+	if (A)
 		return FALSE;
 
 	blen = 0;
@@ -333,7 +348,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 {
 	if (bpos != 2)
 	{
-		if (bpos || _A == 0x00)
+		if (bpos || A == 0x00)
 		{
 			bpos++;
 		}
@@ -440,7 +455,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 - (BOOL) cmd_open
 {
-	if (blen < 3 || _A)
+	if (blen < 3 || A)
 		return FALSE;
 
 	NSString* path = [[NSURL URLWithString:stringFromPointer(buffer + 2) relativeToURL:_url] path];
@@ -652,19 +667,19 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 		case 4:
 		{
-			_A = 0x46;
+			out = 0x46;
 			break;
 		}
 
 		case 5:
 		{
-			_A = buffer[1];
+			out = buffer[1];
 			break;
 		}
 
 		case 6:
 		{
-			_A = buffer[2];
+			out = buffer[2];
 			break;
 		}
 
@@ -692,7 +707,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 {
 	if (bpos == 0)
 	{
-		if (_A == 0)
+		if (A == 0)
 			bpos = blen;
 
 		return FALSE;
@@ -700,10 +715,10 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 	else if (bpos + 1 >= blen)
 	{
-		_A = 0x46; return FALSE;
+		out = 0x46; return FALSE;
 	}
 
-	else if (_A)
+	else if (A)
 	{
 		return FALSE;
 	}
@@ -732,9 +747,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 - (BOOL) execute
 {
-//	NSLog(@"%s: %02X", blen == 0 ? "Command" : "Data", _A);
-
-	buffer[blen++] = _A; switch (buffer[0])
+	buffer[blen++] = A; switch (buffer[0])
 	{
 		case 0:		// cmd_boot();
 		{

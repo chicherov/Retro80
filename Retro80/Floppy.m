@@ -21,7 +21,7 @@
 	BOOL update;
 	BOOL ready;
 
-	uint8_t _D;
+	uint8_t D;
 }
 
 // -----------------------------------------------------------------------------
@@ -33,9 +33,7 @@
 		@synchronized(self)
 		{
 			if (disk != selected)
-			{
 				URLs[disk-1] = url;
-			}
 		}
 	}
 }
@@ -43,9 +41,7 @@
 - (NSURL *) getDisk:(NSInteger)disk;
 {
 	if (disk == 1 || disk == 2)
-	{
 		return URLs[disk-1];
-	}
 
 	return nil;
 }
@@ -59,7 +55,7 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) write
+- (void) flush
 {
 	if (update)
 	{
@@ -71,47 +67,83 @@
 
 - (void) read
 {
-	[self write];
+	[self flush];
 	memset(buffer, 0x00, sizeof(buffer));
 	[file seekToFileOffset:offset = (track * 2 + head) * sizeof(buffer)];
 	[[file readDataOfLength:sizeof(buffer)] getBytes:buffer length:sizeof(buffer)];
 }
 
-- (void) setA:(uint8_t)A
+// -----------------------------------------------------------------------------
+
+- (void) select:(int)disk
 {
-	_A = A; if (ready && (_C & 0x01) == 0x00)
+	if (selected != disk)
 	{
-		buffer[pos] = A;
+		if (file)
+		{
+			[self flush]; [file closeFile];
+			file = nil; selected = 0;
+		}
+
+		if (disk)
+		{
+			if (URLs[disk - 1] != nil && (file = [NSFileHandle fileHandleForUpdatingURL:URLs[disk - 1] error:NULL]) != nil)
+			{
+				selected = disk; readonly = FALSE;
+				started = current + 16000000;
+				[self read];
+			}
+			else if (URLs[disk - 1] != nil && (file = [NSFileHandle fileHandleForReadingFromURL:URLs[disk - 1] error:NULL]) != nil)
+			{
+				selected = disk; readonly = TRUE;
+				started = current + 16000000;
+				[self read];
+			}
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) setA:(uint8_t)data
+{
+	if (ready && (C & 0x01) == 0x00)
+	{
+		buffer[pos] = data;
 		update = TRUE;
 		ready = FALSE;
 	}
 }
 
+// -----------------------------------------------------------------------------
+
 - (uint8_t) D
 {
-	if (ready && (_C & 0x01) == 0x01)
+	if (ready && (C & 0x01) == 0x01)
 	{
-		_D = buffer[pos];
+		D = buffer[pos];
 		ready = FALSE;
 	}
 
-	return _D;
+	return D;
 }
 
 
+// -----------------------------------------------------------------------------
+
 - (uint8_t) B
 {
-	_B = 0xFF; if (selected)
+	uint8_t status = 0xFF; if (selected)
 	{
 		if (track == 0)
-			_B &= ~0x20;					// РВ5 - трек 00
+			status &= ~0x20;				// РВ5 - трек 00
 
 		if (readonly)
-			_B &= ~0x08;					// РВЗ - защита записи
+			status &= ~0x08;				// РВЗ - защита записи
 
 		if (current > started)
 		{
-			_B &= ~0x10;					// РВ4 - готовность НГМД
+			status &= ~0x10;				// РВ4 - готовность НГМД
 
 			unsigned p = (current - started) / 1024 % sizeof(buffer);
 
@@ -122,122 +154,69 @@
 			}
 
 			if (pos == sizeof(buffer) - 1)
-				_B &= ~0x40;				// РВ6 - индекс
+				status &= ~0x40;			// РВ6 - индекс
 
 			if (!ready)
-				_B &= ~0x80;				// РВ7 - триггер готовности
+				status &= ~0x80;			// РВ7 - триггер готовности
 		}
 	}
 	else
 	{
-		_B &= ~0x80;
+		status &= ~0x80;
 	}
 
-	return _B;
+	return status;
 }
 
-- (void) setC:(uint8_t)C
+// -----------------------------------------------------------------------------
+
+- (void) setC:(uint8_t)data
 {
-	if ((C & 0x20) == 0)			// PC5 - выбор первого накопителя
+	if ((data & 0x28) == 0x08)		// PC5 - выбор первого накопителя
 	{
-		if (selected != 1)
-		{
-			[self write]; if (file)
-			{
-				[file closeFile];
-				file = nil;
-			}
-
-			if (URLs[0] != nil && (file = [NSFileHandle fileHandleForUpdatingURL:URLs[0] error:NULL]) != nil)
-			{
-				selected = 1; readonly = FALSE;
-				started = current + 16000000;
-				[self read];
-			}
-			else if (URLs[0] != nil && (file = [NSFileHandle fileHandleForReadingFromURL:URLs[0] error:NULL]) != nil)
-			{
-				selected = 1; readonly = TRUE;
-				started = current + 16000000;
-				[self read];
-			}
-			else
-			{
-				selected = 0;
-			}
-		}
+		[self select:1];
 	}
-	else if ((C & 0x08) == 0)		// РСЗ - выбор второго накопителя
+	else if ((data & 0x28) == 0x20)	// РСЗ - выбор второго накопителя
 	{
-		if (selected != 2)
-		{
-			[self write]; if (file)
-			{
-				[file closeFile];
-				file = nil;
-			}
-
-			if (URLs[1] != nil && (file = [NSFileHandle fileHandleForUpdatingURL:URLs[1] error:NULL]) != nil)
-			{
-				selected = 2; readonly = FALSE;
-				started = current + 16000000;
-				[self read];
-			}
-			else if (URLs[1] != nil && (file = [NSFileHandle fileHandleForReadingFromURL:URLs[1] error:NULL]) != nil)
-			{
-				selected = 2; readonly = TRUE;
-				started = current + 16000000;
-				[self read];
-			}
-			else
-			{
-				selected = 0;
-			}
-		}
+		[self select:2];
 	}
 	else
 	{
-		[self write]; if (file)
-		{
-			[file closeFile];
-			file = nil;
-		}
-
-		selected = 0;
+		[self select:0];
 	}
 
-	if (selected && (_C & 0x10) == 0x10 && (C & 0x10) == 0x00)	// РС4 - шаг
+	if (selected && (C & 0x10) == 0x10 && (data & 0x10) == 0x00)	// РС4 - шаг
 	{
-		if (((C & 0x02) == 0x00) && track < 79)		// РС1 - направление шага
+		if (((data & 0x02) == 0x00) && track < 79)		// РС1 - направление шага
 		{
 			if (current > started)
 				started = current + 1600000;
 
-			[self write]; track++;
-			[self read];
+			head = (C & 0x04) != 0;
+			track++; [self read];
 		}
 
-		if (((C & 0x02) == 0x02) && track > 0)		// РС1 - направление шага
+		if (((data & 0x02) == 0x02) && track > 0)		// РС1 - направление шага
 		{
 			if (current > started)
 				started = current + 1600000;
 
-			[self write]; track--;
-			[self read];
+			head = (C & 0x04) != 0;
+			track--; [self read];
 		}
 	}
 
-	if (selected && ((C & 0x04) != 0) != head)		// РС2 - выбор поверхности
+	if (selected && ((data & 0x04) != 0) != head)		// РС2 - выбор поверхности
 	{
 		if (current > started)
 			started = current + 800000;
 
-		[self write];
 		head = (C & 0x04) != 0;
 		[self read];
 	}
-
-	_C = C;
 }
+
+// -----------------------------------------------------------------------------
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
@@ -246,6 +225,8 @@
 		current = clock; return (addr & 0x07) == 0x04 ? self.D : [super RD:addr CLK:clock status:status];
 	}
 }
+
+// -----------------------------------------------------------------------------
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {

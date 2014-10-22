@@ -9,6 +9,10 @@
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock;
 @end
 
+@protocol Reset <NSObject>
+- (void) RESET;
+@end
+
 @protocol Bytes <NSObject>
 - (uint8_t *) mutableBytesAtAddress:(uint16_t)addr;
 - (const uint8_t *) bytesAtAddress:(uint16_t)addr;

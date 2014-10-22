@@ -39,7 +39,7 @@
 
 @property BOOL isColor;
 
-- (void) reset;
+- (void) RESET;
 
 @end
 

@@ -42,15 +42,12 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) setC:(uint8_t)C
+- (void) setC:(uint8_t)data
 {
-	if ((C ^ _C) & 0x06)
-		self.snd.channel2 = (C & 0x06) == 0x06 ? TRUE : FALSE;
+	self.snd.channel2 = (data & 0x06) == 0x06 ? TRUE : FALSE;
+	self.snd.beeper = data & 0x02 ? TRUE : FALSE;
 
-	if ((C ^ _C) & 0x02)
-		self.snd.beeper = C & 0x02 ? TRUE : FALSE;
-
-	[super setC:C];
+	[super setC:data];
 }
 
 @end
@@ -61,27 +58,24 @@
 
 @implementation MicroshaExt
 
-- (void) setB:(uint8_t)B
+- (void) setB:(uint8_t)data
 {
-	if ((B ^ _B) & 0x80)
-		[self.crt selectFont:B & 0x80 ? 0x2800 : 0x0C00];
-
-	_B = B;
+	[self.crt selectFont:data & 0x80 ? 0x2800 : 0x0C00];
 }
 
 - (uint8_t) A
 {
-	return _mode.A ? 0x00 : _A;
+	return 0x00;
 }
 
 - (uint8_t) B
 {
-	return _mode.B ? 0x00 : _B;
+	return 0x00;
 }
 
 - (uint8_t) C
 {
-	return (_mode.H ? 0x00 : _C & 0xF0) | (_mode.L ? 0x00 : _C & 0x0F);
+	return 0x00;
 }
 
 @end
@@ -209,13 +203,9 @@ static uint32_t colors[] =
 		@synchronized(self.snd)
 		{
 			if ((self.isFloppy = !self.isFloppy))
-			{
 				[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
-			}
 			else
-			{
 				[self.cpu selectPage:0 from:0xE000 to:0xF7FF];
-			}
 		}
 	}
 	else
@@ -237,6 +227,16 @@ static uint32_t colors[] =
 			[self.floppy setDisk:menuItem.tag URL:nil];
 		}
 	}
+}
+
+// -----------------------------------------------------------------------------
+// По сигналу RESET сбрасываем также контролерс НГМД
+// -----------------------------------------------------------------------------
+
+- (void) RESET
+{
+	[super RESET];
+	[self.floppy RESET];
 }
 
 // -----------------------------------------------------------------------------

@@ -9,23 +9,28 @@
 @interface RKKeyboard : X8255 <Keyboard>
 {
 	// Раскладка клавиатуры (64 кода)
+
 	NSArray* kbdmap;
 
 	// Маски служебных клавиш
+
 	uint8_t RUSLAT;
 	uint8_t SHIFT;
 	uint8_t CTRL;
 
-	// Маска магнитофона
+	// Маски магнитофона
 
-	uint8_t TAPE;
+	uint8_t TAPEI;
+	uint8_t TAPEO;
 }
 
 // Последняя нажатая кнопка
+
 @property uint8_t key;
 - (BOOL) isPaste;
 
 // Для интерфейса магнитофона
+
 @property Sound *snd;
 
 @end
@@ -42,7 +47,7 @@
 @end
 
 // -----------------------------------------------------------------------------
-// F812 -
+// F812 - Опрос состояния клавиатуры
 // -----------------------------------------------------------------------------
 
 @interface F812 : NSObject <Hook, Adjustment>

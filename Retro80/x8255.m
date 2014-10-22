@@ -10,39 +10,73 @@
 // @property uint8_t mode
 //------------------------------------------------------------------------------
 
-- (void) setMode:(uint8_t)mode
+- (void) setMode:(uint8_t)data
 {
-	_mode.byte = mode & 0x3F;
+	mode.byte = data & 0x7F;
 
-	if (_mode.A == 1)
-		_A = 0xFF;
-	else
-		self.A = 0x00;
+#ifdef DEBUG
+	if (mode.GA)
+		NSLog(@"Group A mode: %d", mode.GA);
+	if (mode.GB)
+		NSLog(@"Group B mode: %d", mode.GB);
+#endif
 
-	if (_mode.B == 1)
-		_B = 0xFF;
-	else
-		self.B = 0x00;
-
-	if (_mode.H == 1)
-	{
-		if (_mode.L == 1)
-			_C = 0xFF;
-		else
-			self.C = _C = 0xF0;
-	}
-	else
-	{
-		if (_mode.L == 0)
-			self.C = 0x00;
-		else
-			self.C = _C = 0x0F;
-	}
+	A = self.A = 0x00;
+	B = self.B = 0x00;
+	C = self.C = 0x00;
 }
 
 - (uint8_t) mode
 {
-	return _mode.byte;
+	return mode.byte;
+}
+
+//------------------------------------------------------------------------------
+// @property uint8_t A
+//------------------------------------------------------------------------------
+
+- (void) setA:(uint8_t)data
+{
+}
+
+- (uint8_t) A
+{
+	return 0xFF;
+}
+
+//------------------------------------------------------------------------------
+// @property uint8_t B
+//------------------------------------------------------------------------------
+
+- (void) setB:(uint8_t)data
+{
+}
+
+- (uint8_t) B
+{
+	return 0xFF;
+}
+
+//------------------------------------------------------------------------------
+// @property uint8_t C
+//------------------------------------------------------------------------------
+
+- (void) setC:(uint8_t)data
+{
+}
+
+- (uint8_t) C
+{
+	return 0xFF;
+}
+
+//------------------------------------------------------------------------------
+// RESET/RD/WR
+//------------------------------------------------------------------------------
+
+- (void) RESET
+{
+	self.mode = 0x1B;
 }
 
 //------------------------------------------------------------------------------
@@ -53,15 +87,28 @@
 	{
 		case 0:
 
-			return self.A;
+			return mode.A ? self.A : A;
 
 		case 1:
 
-			return self.B;
+			return mode.B ? self.B : B;
 
 		case 2:
 
-			return self.C;
+			if (mode.H)
+			{
+				if (mode.L)
+					return self.C;
+				else
+					return (self.C & 0xF0) | (C & 0x0F);
+			}
+			else
+			{
+				if (mode.L)
+					return (C & 0xF0) | (self.C & 0x0F);
+				else
+					return C;
+			}
 	}
 
 	return 0xFF;
@@ -75,109 +122,50 @@
 	{
 		case 0:
 
-			if (_mode.A == 0)
-				self.A = data;
+			if (!mode.A)
+				A = self.A = data;
 
 			break;
 
 		case 1:
 
-			if (_mode.B == 0)
-				self.B = data;
-
-			break;
-
-		case 2:
-
-			if (_mode.H == 0 && _mode.L == 0)
-			{
-				self.C = data;
-			}
-
-			else if (_mode.H == 0)
-			{
-				self.C = (data & 0xF0) | (_C & 0x0F);
-			}
-
-			else if (_mode.L == 0)
-			{
-				self.C = (_C & 0xF0) | (data & 0x0F);
-			}
+			if (!mode.B)
+				B = self.B = data;
 
 			break;
 
 		case 3:
 
-			if ((data & 0x80) == 0x00)
+			if ((data & 0x80) == 0x80)
 			{
-				switch (data & 0x0E)
-				{
-					case 0x00:
+				self.mode = data;
+				break;
+			}
+			else
+			{
+				uint8_t mask = 0x01 << ((data & 0x0E) >> 1);
+				data = data & 1 ? C | mask : C & ~mask;
+			}
 
-						if (_mode.L == 0)
-							self.C = (_C & ~0x01) | ((data & 0x01) << 0);
+		case 2:
 
-						break;
+			if (!mode.H && !mode.L)
+			{
+				C = self.C = data;
+			}
 
-					case 0x02:
-
-						if (_mode.L == 0)
-							self.C = (_C & ~0x02) | ((data & 0x01) << 1);
-
-						break;
-
-					case 0x04:
-
-						if (_mode.L == 0)
-							self.C = (_C & ~0x04) | ((data & 0x01) << 2);
-
-						break;
-
-
-					case 0x06:
-
-						if (_mode.L == 0)
-							self.C = (_C & ~0x08) | ((data & 0x01) << 3);
-
-						break;
-
-
-					case 0x08:
-
-						if (_mode.H == 0)
-							self.C = (_C & ~0x10) | ((data & 0x01) << 4);
-
-						break;
-
-					case 0x0A:
-
-						if (_mode.H == 0)
-							self.C = (_C & ~0x20) | ((data & 0x01) << 5);
-
-						break;
-
-					case 0x0C:
-
-						if (_mode.H == 0)
-							self.C = (_C & ~0x40) | ((data & 0x01) << 6);
-
-						break;
-
-					case 0x0E:
-
-						if (_mode.H == 0)
-							self.C = (_C & ~0x80) | ((data & 0x01) << 7);
-
-						break;
-				}
+			else if (!mode.H)
+			{
+				C = self.C = data & 0xF0;
 			}
 
 			else
 			{
-				self.mode = data;
+				C = self.C = data & 0x0F;
 			}
 
 			break;
+
 	}
 }
 
@@ -189,15 +177,7 @@
 {
 	if (self = [super init])
 	{
-		_mode.A = 1;
-		_A = 0xFF;
-
-		_mode.B = 1;
-		_B = 0xFF;
-
-		_mode.H = 1;
-		_mode.L = 1;
-		_C = 0xFF;
+		[self RESET];
 	}
 
 	return self;
@@ -209,20 +189,20 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeInt:_mode.byte forKey:@"mode"];
-	[encoder encodeInt:_A forKey:@"A"];
-	[encoder encodeInt:_B forKey:@"B"];
-	[encoder encodeInt:_C forKey:@"C"];
+	[encoder encodeInt:mode.byte forKey:@"mode"];
+	[encoder encodeInt:A forKey:@"A"];
+	[encoder encodeInt:B forKey:@"B"];
+	[encoder encodeInt:C forKey:@"C"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [self init])
 	{
-		_mode.byte = [decoder decodeIntForKey:@"mode"];
-		_A = [decoder decodeIntForKey:@"A"];
-		_B = [decoder decodeIntForKey:@"B"];
-		_C = [decoder decodeIntForKey:@"C"];
+		mode.byte = [decoder decodeIntForKey:@"mode"];
+		A = [decoder decodeIntForKey:@"A"];
+		B = [decoder decodeIntForKey:@"B"];
+		C = [decoder decodeIntForKey:@"C"];
 	}
 
 	return self;

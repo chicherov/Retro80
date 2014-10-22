@@ -4,7 +4,7 @@
 
 #import "x8080.h"
 
-@interface X8255 : NSObject<ReadWrite, NSCoding>
+@interface X8255 : NSObject<ReadWrite, Reset, NSCoding>
 {
 	union i8255_mode
 	{
@@ -16,14 +16,14 @@
 
 			unsigned H:1;	// Port C 4-7: 0-output, 1-input
 			unsigned A:1;	// Port A: 0-output, 1-input
-			unsigned GA:1;	// Group A mode
+			unsigned GA:2;	// Group A mode
 		};
 		
-	} _mode;
+	} mode;
 
-	uint8_t _A;
-	uint8_t _B;
-	uint8_t _C;
+	uint8_t A;
+	uint8_t B;
+	uint8_t C;
 }
 
 @property uint8_t mode;

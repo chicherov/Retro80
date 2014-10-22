@@ -6,16 +6,15 @@
 
 @implementation RKKeyboard
 {
-	NSTimeInterval keyboard[64];
-	NSDictionary *keyCode;
+	NSDictionary *kbdCode;
 
-	NSTimeInterval _down;
-	BOOL _ruslat;
-	uint8_t _key;
+	NSUInteger modifierFlags;
+	BOOL keyboard[64];
+	uint8_t key;
 
 	NSData *clipboard;
-	NSUInteger length;
 	const char *paste;
+	NSUInteger length;
 
 	unsigned count;
 }
@@ -26,23 +25,7 @@
 
 - (void) flagsChanged:(NSEvent*)theEvent
 {
-	if (RUSLAT >= 0x10 ? _mode.H : _mode.L)
-	{
-		NSUInteger flags = [theEvent modifierFlags];
-
-		_ruslat = (flags & NSAlternateKeyMask) != 0;
-
-		_C &= ~(RUSLAT | CTRL | SHIFT);
-
-		if (!(flags & (RUSLAT >= 0x10 ? NSAlternateKeyMask : NSAlphaShiftKeyMask)))
-			_C |= RUSLAT;
-
-		if (!(flags & NSControlKeyMask))
-			_C |= CTRL;
-
-		if (!(flags & NSShiftKeyMask))
-			_C |= SHIFT;
-	}
+	modifierFlags = [theEvent modifierFlags];
 }
 
 // -----------------------------------------------------------------------------
@@ -51,33 +34,29 @@
 
 - (void) keyDown:(NSEvent*)theEvent
 {
-	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0)
+	if (((modifierFlags = theEvent.modifierFlags) & NSCommandKeyMask) == 0)
 	{
-		NSUInteger key = [kbdmap indexOfObject:[NSNumber numberWithShort:theEvent.keyCode]];
+		NSNumber *keyCode = [NSNumber numberWithShort:theEvent.keyCode];
 
-		if (key != NSNotFound && key < 64)
-			keyboard[key] = theEvent.timestamp;
+		NSUInteger index = [kbdmap indexOfObject:keyCode];
 
-		NSNumber* ch = [keyCode objectForKey:[NSNumber numberWithShort:theEvent.keyCode]];
+		if (index != NSNotFound && index < 64)
+			keyboard[index] = TRUE;
 
-		if (ch != nil)
+		NSNumber* fkey = [kbdCode objectForKey:keyCode];
+
+		if (fkey != nil)
 		{
-			if (key != NSNotFound)
-			{
-				_down = theEvent.timestamp;
-				_key = [ch charValue];
-			}
+			if (index != NSNotFound)
+				key = [fkey charValue];
 		}
 
 		else
 		{
-			const char* ptr = [theEvent.characters.uppercaseString cStringUsingEncoding:(NSStringEncoding) 0x80000A02];
+			const uint8_t *ptr = (const uint8_t *)[theEvent.characters.uppercaseString cStringUsingEncoding:(NSStringEncoding) 0x80000A02];
 
-			if (ptr && (*(uint8_t *)ptr <= 0x5F || *(uint8_t *)ptr >= 0xE0))
-			{
-				_key = *(uint8_t *)ptr & 0x7F;
-				_down = theEvent.timestamp;
-			}
+			if (ptr && (*ptr <= 0x5F || *ptr >= 0xE0))
+				key = *ptr & 0x7F;
 		}
 
 		@synchronized(self)
@@ -93,12 +72,20 @@
 
 - (void) keyUp:(NSEvent*)theEvent
 {
-	NSUInteger key = [kbdmap indexOfObject:[NSNumber numberWithShort:[theEvent keyCode]]];
+	if (theEvent)
+	{
+		NSUInteger index = [kbdmap indexOfObject:[NSNumber numberWithShort:[theEvent keyCode]]];
 
-	if (key != NSNotFound && key < 64)
-		keyboard[key] = 0;
+		if (index != NSNotFound && index < 64)
+			keyboard[index] = FALSE;
+	}
+	else
+	{
+		for (int i = 0; i < 64; i++)
+			keyboard[i] = FALSE;
+	}
 
-	_down = 0;
+	key = 0xFF;
 }
 
 // -----------------------------------------------------------------------------
@@ -124,37 +111,29 @@
 	{
 		if (length)
 		{
-			if (_key == 0xFF)
-			{
-				if ((_key = *paste & 0x7F) == '\n')
-					_key = 0x0D;
+			if ((key = *paste & 0x7F) == '\n')
+				key = 0x0D;
 
-				paste++; length--;
-				return _key;
-			}
+			if (++count < 51)
+				return key;
 
-			if ((_key = *paste & 0x7F) == '\n')
-				_key = 0x0D;
+			if (count < 60)
+				return 0xFF;
 
-			if (++count < 23)
-				return _key;
-
-			if (count > 30)
-			{
-				paste++; length--;
-				count = 0;
-			}
-
-			return 0xFF;
+			count = 0; length--; paste++;
+			return key = 0xFF;
 		}
 	}
 
-	return _ruslat ? 0xFE : _down > [NSProcessInfo processInfo].systemUptime - 0.7 ? _key : 0xFF;
+	if ((modifierFlags & (RUSLAT >= 0x10 ? NSAlternateKeyMask : NSAlphaShiftKeyMask)))
+		return 0xFE;
+
+	return key;
 }
 
-- (void) setKey:(uint8_t)key
+- (void) setKey:(uint8_t)data
 {
-	_key = key;
+	key = data;
 }
 
 - (BOOL) isPaste
@@ -168,23 +147,13 @@
 
 - (uint8_t) A
 {
-	if (_mode.A == 1 && _mode.B == 0)
+	uint8_t data = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 	{
-		_A = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
-		{
-			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.7)
-			{
-				if ((_B & (0x01 << (i & 0x07))) == 0)
-					_A &= (0x80 >> (i >> 3)) ^ 0xFF;
-			}
-			else
-			{
-				keyboard[i] = 0;
-			}
-		}
+		if ((B & (0x01 << (i & 0x07))) == 0)
+			data &= (0x80 >> (i >> 3)) ^ 0xFF;
 	}
 
-	return _A;
+	return data;
 }
 
 // -----------------------------------------------------------------------------
@@ -193,23 +162,13 @@
 
 - (uint8_t) B
 {
-	if (_mode.A == 0 && _mode.B == 1)
+	uint8_t data = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 	{
-		_B = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
-		{
-			if (keyboard[i] > [NSProcessInfo processInfo].systemUptime - 0.7)
-			{
-				if ((_A & (0x80 >> (i >> 3))) == 0)
-					_B &= (0x01 << (i & 0x07)) ^ 0xFF;
-			}
-			else
-			{
-				keyboard[i] = 0;
-			}
-		}
+		if ((A & (0x80 >> (i >> 3))) == 0)
+			data &= (0x01 << (i & 0x07)) ^ 0xFF;
 	}
 
-	return _B;
+	return data;
 }
 
 // -----------------------------------------------------------------------------
@@ -218,15 +177,42 @@
 
 - (uint8_t) C
 {
-	return _snd ? _C = (_C & ~TAPE) | (_snd.input ? 0x00 : TAPE) : _C;
+	uint8_t data = 0xFF & ~(RUSLAT | CTRL | SHIFT | TAPEI);
+
+	if (!(modifierFlags & (RUSLAT >= 0x10 ? NSAlternateKeyMask : NSAlphaShiftKeyMask)))
+		data |= RUSLAT;
+
+	if (!(modifierFlags & NSControlKeyMask))
+		data |= CTRL;
+
+	if (!(modifierFlags & NSShiftKeyMask))
+		data |= SHIFT;
+
+	if (TAPEI && _snd && _snd.input)
+		data |= TAPEI;
+
+	return data;
 }
 
-- (void) setC:(uint8_t)C
+- (void) setC:(uint8_t)data
 {
-	if (_snd && (C ^ _C) & 0x01)
-		_snd.output = C & 0x01 ? TRUE : FALSE;
+	if (TAPEO && _snd)
+		_snd.output = data & TAPEO ? TRUE : FALSE;
+}
 
-	_C = C;
+// -----------------------------------------------------------------------------
+// RESET
+// -----------------------------------------------------------------------------
+
+- (void) RESET
+{
+	for (int i = 0; i < 64; i++)
+		keyboard[i] = FALSE;
+
+	modifierFlags = 0;
+	key = 0xFF;
+
+	[super RESET];
 }
 
 // -----------------------------------------------------------------------------
@@ -237,7 +223,7 @@
 {
 	if (self = [super init])
 	{
-		keyCode = @{
+		kbdCode = @{
 					@123: @0x08, @124: @0x18, @126: @0x19, @125: @0x1A, @115: @0x0C,
 					@36:  @0x0D, @76:  @0x0A, @53:  @0x1B, @48:  @0x09, @117: @0x1F,
 					@122: @0x00, @120: @0x01, @99:  @0x02, @118: @0x03, @96:  @0x04,
@@ -267,7 +253,8 @@
 		SHIFT = 0x20;
 		CTRL = 0x40;
 
-		TAPE = 0x10;
+		TAPEI = 0x10;
+		TAPEO = 0x01;
 	}
 	
 	return self;
@@ -285,19 +272,19 @@
 	unsigned count;
 }
 
+@synthesize enabled;
+
 - (id) initWithRKKeyboard:(RKKeyboard *)kbd
 {
 	if (self = [super init])
-	{
 		keyboard = kbd;
-	}
 
 	return self;
 }
 
 - (int) execute:(X8080 *)cpu
 {
-	if (_enabled)
+	if (enabled)
 	{
 		if (count--)
 			return 0;
@@ -306,24 +293,13 @@
 
 		if (key == 0xFE)
 		{
-			count = 10;
+			count = 1;
 			return 0;
 		}
 
-		if (key != 0xFF)
-		{
-			cpu.A = key;
-			count = 450;
-		}
-		else
-		{
-			cpu.A = 0xFF;
-			count = 35;
-		}
+		count = keyboard.isPaste ? 1 : key == 0xFF ? 35 : 450;
 
-		if (keyboard.isPaste)
-			count = 1;
-
+		cpu.A = key;
 		return 1;
 	}
 
@@ -340,15 +316,17 @@
 {
 	RKKeyboard* keyboard;
 	unsigned count;
-	uint8_t _key;
+	uint8_t key;
 }
+
+@synthesize enabled;
 
 - (id) initWithRKKeyboard:(RKKeyboard *)kbd
 {
 	if (self = [super init])
 	{
 		keyboard = kbd;
-		_key = 0xFF;
+		key = 0xFF;
 	}
 
 	return self;
@@ -356,7 +334,7 @@
 
 - (int) execute:(X8080 *)cpu
 {
-	if (_enabled)
+	if (enabled)
 	{
 		if (count--)
 			return 0;
@@ -378,18 +356,16 @@
 	return 2;
 }
 
-- (void) setKey:(uint8_t)key
+- (void) setKey:(uint8_t)data
 {
-	_key = key;
+	while (keyboard.isPaste && key == keyboard.key);
+	keyboard.key = key = data;
 }
 
 - (uint8_t) key
 {
-	if (_key >= 0xFE)
-		_key = keyboard.key;
-
-	keyboard.key = 0xFF;
-	return _key;
+	key = keyboard.key;
+	return key;
 }
 
 @end

@@ -61,6 +61,9 @@
 		RUSLAT = 0x01;
 		SHIFT = 0x04;
 		CTRL = 0x02;
+
+		TAPEI = 0x00;
+		TAPEO = 0x00;
 	}
 
 	return self;
