@@ -153,6 +153,8 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
+	[super encodeWithCoder:encoder];
+
 	[encoder encodeObject:self.cpu forKey:@"cpu"];
 	[encoder encodeObject:self.crt forKey:@"crt"];
 	[encoder encodeObject:self.dma forKey:@"dma"];
@@ -172,15 +174,18 @@
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (![self decodeObjects:decoder])
-		return self = nil;
+	if (self = [super initWithCoder:decoder])
+	{
+		if (![self decodeObjects:decoder])
+			return self = nil;
 
-	if (![self mapObjects])
-		return self = nil;
+		if (![self mapObjects])
+			return self = nil;
 
-	self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
-	self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
-	self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+		self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
+		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
+		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+	}
 
 	return self;
 }

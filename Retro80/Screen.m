@@ -149,17 +149,24 @@
 	glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
 	glEnd();
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
-	glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
-	glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
-	glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
-	glEnd();
+	if (gigaScreen)
+	{
+		if (gigaScreen == 1)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
+		else
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)(graphics.width / 1.5), (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
+
+		glBegin(GL_QUADS);
+		glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+		glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+		glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+		glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+		glEnd();
+
+	}
 
 	glDisable(GL_TEXTURE_2D);
 

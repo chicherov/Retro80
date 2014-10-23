@@ -132,7 +132,7 @@
 		{
 			if ((addr & 0x100) == 0)
 			{
-				self.mcpg = data == 0x00;
+				self.mcpg = data != 0xFF;
 			}
 			else
 			{

@@ -9,12 +9,14 @@
 	uint32_t *bitmap;
 	NSSize graphics;
 	unsigned frame;
+	int gigaScreen;
 
 	BOOL isSelected;
 	NSRect selected;
 
 	BOOL isText;
 	NSSize text;
+
 }
 
 @property NSTextField *textField;
@@ -30,5 +32,6 @@
 - (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y;
 
 - (IBAction) copy:(id)sender;
+
 
 @end

@@ -49,13 +49,9 @@ static uint32_t colors[] =
 	[self.document registerUndoWithMenuItem:menuItem];
 
 	if ((self.isColor = !self.isColor))
-	{
 		[self.crt setColors:colors attributesMask:0x3F];
-	}
 	else
-	{
 		[self.crt setColors:NULL attributesMask:0x33];
-	}
 }
 
 // -----------------------------------------------------------------------------

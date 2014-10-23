@@ -83,16 +83,17 @@
 
 - (void) setColors:(const uint32_t *)ptr attributesMask:(uint8_t)mask
 {
-	colors = ptr; fonts = NULL; mcpg = NULL; attributesMask = mask;
-	memset(screen, -1, sizeof(screen));
+	colors = ptr; memset(screen, -1, sizeof(screen));
+	attributesMask = mask; fonts = NULL; mcpg = NULL;
+	gigaScreen = ptr ? 1 : 0;
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) setFonts:(const uint16 *)ptr
 {
-	font = (const uint8_t *)rom.bytes; fonts = ptr;
-	memset(screen, -1, sizeof(screen));
+	fonts = ptr; memset(screen, -1, sizeof(screen));
+	font = (const uint8_t *)rom.bytes;
 }
 
 // -----------------------------------------------------------------------------
@@ -100,6 +101,7 @@
 - (void) setMcpg:(const uint8_t *)ptr;
 {
 	mcpg = ptr; memset(screen, -1, sizeof(screen));
+	gigaScreen = ptr ? 2 : 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -304,12 +306,14 @@ CCCC[][3] =
 				{
 					row = 0; attr = 0x80; EoS = FALSE;
 
-					if (frame++ & 1)
+					if (frame++ & 1 || gigaScreen != 1)
 						self.needsDisplay = TRUE;
 				}
 
 				if (row <= config.R)
 				{
+					BOOL page = gigaScreen == 1 && frame & 1;
+					
 					if (pos != config.H + 1)
 					{
 						status.DU = 1;
@@ -322,46 +326,60 @@ CCCC[][3] =
 
 					EoR = FALSE; for (uint8_t col = 0, f = 0; col <= config.H; col++)
 					{
-						union i8275_char ch;
-
-						if (status.VE && !EoS && !EoR)
-							ch.byte = buffer[col];
-						else
-							ch.byte = 0x00;
-
-						if ((ch.byte & 0x80) == 0x00)					// 0xxxxxxx
+						union i8275_char ch; if (status.VE && !EoS && !EoR)
 						{
-							ch.attr = attr;
-						}
-
-						else if ((ch.byte & 0xC0) == 0x80)				// 10xxxxxx
-						{
-							attr = ch.byte; if (config.F)
+							if (((ch.byte = buffer[col]) & 0x80) == 0x00)	// 0xxxxxxx
 							{
-								ch.attr = (attributesMask & 0x0D) == 0x0D ? 0 : attr;
-								ch.byte = 0xF0;
-							}
-							else
-							{
-								ch.byte = fifo[f++ & 0x0F];
 								ch.attr = attr;
+
+								if (col < config.H && (buffer[col+1] & 0xC0) == 0x80 && config.F && colors == NULL && mcpg == NULL)
+								{
+									if (fonts == NULL)
+									{
+										ch.attr &= buffer[col+1] & ~0x1D;
+										ch.attr |= buffer[col+1] & 0x0D;
+									}
+									else
+									{
+										ch.attr &= buffer[col+1] & ~0x1D;
+										ch.attr |= buffer[col+1] & 0x2D;
+									}
+								}
 							}
+
+							else if ((ch.byte & 0xC0) == 0x80)			// 10xxxxxx
+							{
+								ch.attr = attr = ch.byte; if (config.F == 0)
+								{
+									ch.byte = fifo[f++ & 0x0F];
+								}
+								else
+								{
+									ch.byte = 0xF0;
+								}
+							}
+
+							else if ((ch.byte & 0xF0) == 0xF0)			// 1111xxxx
+							{
+								if (ch.byte & 0x02)
+									EoS = TRUE;
+								else
+									EoR = TRUE;
+
+								ch.byte = 0xF0;
+								ch.attr = 0x00;
+							}
+
+							else										// 11xxxxxx
+							{
+								ch.attr = ch.byte & 0x83;
+							}
+							
 						}
-
-						else if ((ch.byte & 0xF0) == 0xF0)				// 1111xxxx
+						else
 						{
-							if (ch.byte & 0x02)
-								EoS = TRUE;
-							else
-								EoR = TRUE;
-
-							ch.attr = attr;
-							ch.byte = 0x00;
-						}
-
-						else											// 11xxxxxx
-						{
-							ch.attr = (attr & 0x3C) | (ch.byte & 0x83);
+							ch.byte = 0xF0;
+							ch.attr = 0x00;
 						}
 
 						if (status.VE && row == cursor.ROW && col + (fonts != NULL) == cursor.COL)
@@ -394,66 +412,63 @@ CCCC[][3] =
 
 						ch.attr &= attributesMask;
 
-						if (screen[frame & 1][row][col].word != ch.word)
+						if (screen[page][row][col].word != ch.word)
 						{
-							screen[frame & 1][row][col].word = ch.word;
+							screen[page][row][col].word = ch.word;
 
-							if (mcpg == NULL || (ch.attr & 0x0D) == 0x0C)
+							uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
+							uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
+
+							if (page)
 							{
-								uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
-								uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
-
-								if (frame & 1)
-								{
-									b0 &= 0x7FFFFFFF;
-									b1 &= 0x7FFFFFFF;
-								}
-
-								uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
-
-								const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
-								if (fonts) fnt += fonts[ch.attr & 0x0F];
-
-								for (unsigned L = 0; L <= config.L; L++)
-								{
-									uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
-
-									if ((ch.byte & 0x80) == 0x00)
-									{
-										if (config.U & 0x08 && (L == 0 || L == config.L))
-											byte = 0x00;
-									}
-									else
-									{
-										struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
-
-										//									byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
-
-										if (special->VSP)
-											byte = 0x00;
-
-										if (special->LTEN)
-											byte = 0xFF;
-									}
-
-									if (L == config.U && ch.U) byte = 0xFF;
-									if (ch.R) byte = ~byte;
-
-									for (int i = 0; i < 6; i++, byte <<= 1)
-										*ptr ++ = byte & 0x20 ? b1 : b0;
-									
-									ptr += config.H * 6;
-								}
+								b0 &= 0x7FFFFFFF;
+								b1 &= 0x7FFFFFFF;
 							}
 
-							else
+							uint32_t *ptr = bitmap + ((row + (page ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
+
+							const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
+							if (fonts) fnt += fonts[ch.attr & 0x0F];
+
+							for (unsigned L = 0; L <= config.L; L++)
+							{
+								uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
+
+								if ((ch.byte & 0x80) == 0x00)
+								{
+									if (config.U & 0x08 && (L == 0 || L == config.L))
+										byte = 0x00;
+								}
+								else
+								{
+									struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
+
+									// byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
+
+									if (special->VSP)
+										byte = 0x00;
+
+									if (special->LTEN)
+										byte = 0xFF;
+								}
+
+								if (L == config.U && ch.U) byte = 0xFF;
+								if (ch.R) byte = ~byte;
+
+								for (int i = 0; i < 6; i++, byte <<= 1)
+									*ptr ++ = byte & 0x20 ? b1 : b0;
+
+								ptr += config.H * 6;
+							}
+
+							if (gigaScreen == 2)
 							{
 								static uint32_t backround[] =
 								{
 									0xFF000000, 0xFFFF0000, 0xFF000000, 0xFFFF0000,
 									0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF,
 									0xFF00FF00, 0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00,
-									0xFF00FFFF, 0xFFFFFFFF, 0xFF00FFFF, 0xFFFFFFFF
+									0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF
 								};
 
 								static uint32_t foreground[] =
@@ -464,8 +479,11 @@ CCCC[][3] =
 									0xFF0000FF, 0xFF000000
 								};
 
-								uint32_t *ptr = bitmap + ((row + (frame & 1 ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
+								uint32_t *ptr = bitmap + (config.R + 1) * (config.L + 1) * (config.H + 1) * 6;
+								ptr += (row * (config.L + 1) * (config.H + 1) + col) * 4;
 								const unsigned char *fnt = mcpg + (ch.R ? 0x400 : 0x000) + ((ch.byte & 0x7F) << 3);
+
+								foreground[7] = backround[ch.attr & 0x0F];
 
 								for (unsigned L = 0; L <= config.L; L++)
 								{
@@ -494,27 +512,12 @@ CCCC[][3] =
 										fnt2 ^= 0x3F;
 									}
 
-									uint32_t color1 = foreground [(fnt1 & 0x38) >> 3];
-									if (color1 == 0xFF000000) color1 = backround[ch.attr & 0x0F];
+									*ptr++ = foreground[7] ? foreground [(fnt1 & 0x38) >> 3] : 0;
+									*ptr++ = foreground[7] ? foreground [fnt1 & 0x07] : 0;
+									*ptr++ = foreground[7] ? foreground [(fnt2 & 0x38) >> 3] : 0;
+									*ptr++ = foreground[7] ? foreground [fnt2 & 0x07] : 0;
 
-									uint32_t color2 = foreground [fnt1 & 0x07];
-									if (color2 == 0xFF000000) color2 = backround[ch.attr & 0x0F];
-
-									uint32_t color3 = foreground [(fnt2 & 0x38) >> 3];
-									if (color3 == 0xFF000000) color3 = backround[ch.attr & 0x0F];
-
-									uint32_t color4 = foreground [fnt2 & 0x07];
-									if (color4 == 0xFF000000) color4 = backround[ch.attr & 0x0F];
-
-									*ptr++ = color1;
-									*ptr++ = color2;
-									*ptr++ = color2;
-
-									*ptr++ = color3;
-									*ptr++ = color4;
-									*ptr++ = color4;
-
-									ptr += config.H * 6;
+									ptr += config.H * 4;
 								}
 							}
 						}

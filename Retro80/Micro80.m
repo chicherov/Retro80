@@ -191,6 +191,8 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
+	[super encodeWithCoder:encoder];
+
 	[encoder encodeObject:self.cpu forKey:@"cpu"];
 	[encoder encodeObject:self.rom forKey:@"rom"];
 	[encoder encodeObject:self.ram forKey:@"ram"];
@@ -204,27 +206,30 @@
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
-		return self = nil;
+	if (self = [super initWithCoder:decoder])
+	{
+		if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+			return self = nil;
 
-	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
-		return self = nil;
+		if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
+			return self = nil;
 
-	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-		return self = nil;
+		if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
+			return self = nil;
 
-	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
-		return self = nil;
+		if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
+			return self = nil;
 
-	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
-		return self = nil;
+		if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
+			return self = nil;
 
-	if (![self mapObjects])
-		return self = nil;
+		if (![self mapObjects])
+			return self = nil;
 
-	self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
-	self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
-	self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+		self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
+		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
+		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+	}
 
 	return self;
 }

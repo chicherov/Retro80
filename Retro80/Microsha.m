@@ -42,10 +42,18 @@
 
 // -----------------------------------------------------------------------------
 
+- (void) setSnd:(X8253 *)snd
+{
+	snd.channel2 = (C & 0x06) == 0x06;
+	[super setSnd:snd];
+}
+
+// -----------------------------------------------------------------------------
+
 - (void) setC:(uint8_t)data
 {
-	self.snd.channel2 = (data & 0x06) == 0x06 ? TRUE : FALSE;
 	self.snd.beeper = data & 0x02 ? TRUE : FALSE;
+	self.snd.channel2 = (data & 0x06) == 0x06;
 
 	[super setC:data];
 }
@@ -57,10 +65,23 @@
 // -----------------------------------------------------------------------------
 
 @implementation MicroshaExt
+{
+	X8275 *_crt;
+}
+
+- (void) setCrt:(X8275 *)crt
+{
+	[_crt = crt selectFont:B & 0x80 ? 0x2800 : 0x0C00];
+}
+
+- (X8275*) crt
+{
+	return _crt;
+}
 
 - (void) setB:(uint8_t)data
 {
-	[self.crt selectFont:data & 0x80 ? 0x2800 : 0x0C00];
+	[_crt selectFont:data & 0x80 ? 0x2800 : 0x0C00];
 }
 
 - (uint8_t) A
@@ -292,7 +313,7 @@ static uint32_t colors[] =
 
 - (BOOL) mapObjects
 {
-	[self.ext.crt = self.crt selectFont:self.ext.B & 0x80 ? 0x2800 : 0x0C00];
+	self.ext.crt = self.crt;
 
 	if (self.isColor)
 	{
@@ -304,8 +325,6 @@ static uint32_t colors[] =
 		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0x93;
 		[self.crt setColors:NULL attributesMask:0x22];
 	}
-	
-	self.snd.channel2 = self.kbd.C & 0x04 ? TRUE : FALSE;
 	
 	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];
 	[self.cpu mapObject:self.kbd from:0xC000 to:0xC7FF];
