@@ -12,7 +12,7 @@
 
 - (uint8_t *) mutableBytesAtAddress:(uint16_t)addr
 {
-	return mutableBytes + (addr & mask);
+	return readOnly ? NULL : mutableBytes + (addr & mask);
 }
 
 - (const uint8_t *) bytesAtAddress:(uint16_t)addr

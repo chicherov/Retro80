@@ -92,8 +92,18 @@
 	NSObject<ReadWrite> *WR[16][0x10000];
 	uint8_t PAGE[0x10000];
 
+	const uint8* RDMEM[16][0x10000];
+	uint8* WRMEM[16][0x10000];
+
 	NSObject<ReadWrite> *IO[256];
 	BOOL PMIO;
+
+	// -------------------------------------------------------------------------
+	// Сигнал HLDA
+	// -------------------------------------------------------------------------
+
+	unsigned (*CallHLDA) (id, SEL, uint64_t, BOOL);
+	NSObject<HLDA> *HLDA;
 }
 
 // -----------------------------------------------------------------------------
@@ -149,7 +159,6 @@
 // Сигнналы процессора
 // -----------------------------------------------------------------------------
 
-@synthesize HLDA;
 @synthesize INTE;
 
 // -----------------------------------------------------------------------------
@@ -158,23 +167,70 @@
 
 - (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to
 {
-	for (unsigned address = from; address <= to; address++)
+	if ([object conformsToProtocol:@protocol(Bytes)])
 	{
-		RD[page][address] = object;
-		WR[page][address] = object;
+		for (unsigned address = from; address <= to; address++)
+		{
+			WRMEM[page][address] = [(NSObject<Bytes>*)object mutableBytesAtAddress:address];
+			RDMEM[page][address] = [(NSObject<Bytes>*)object bytesAtAddress:address];
+			RD[page][address] = object;
+			WR[page][address] = object;
+		}
+	}
+	else
+	{
+		for (unsigned address = from; address <= to; address++)
+		{
+			WRMEM[page][address] = NULL;
+			RDMEM[page][address] = NULL;
+			RD[page][address] = object;
+			WR[page][address] = object;
+		}
+		
 	}
 }
 
 - (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to RO:(BOOL)ro
 {
-	for (unsigned address = from; address <= to; address++)
-		RD[page][address] = object;
+	if ([object conformsToProtocol:@protocol(Bytes)])
+	{
+		for (unsigned address = from; address <= to; address++)
+		{
+			RDMEM[page][address] = [(NSObject<Bytes>*)object bytesAtAddress:address];
+			RD[page][address] = object;
+		}
+	}
+	else
+	{
+		for (unsigned address = from; address <= to; address++)
+		{
+			RDMEM[page][address] = NULL;
+			RD[page][address] = object;
+		}
+		
+	}
 }
 
 - (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to WO:(BOOL)wo
 {
-	for (unsigned address = from; address <= to; address++)
-		WR[page][address] = object;
+	if ([object conformsToProtocol:@protocol(Bytes)])
+	{
+		for (unsigned address = from; address <= to; address++)
+		{
+			WRMEM[page][address] = [(NSObject<Bytes>*)object mutableBytesAtAddress:address];
+			WR[page][address] = object;
+		}
+	}
+	else
+	{
+		for (unsigned address = from; address <= to; address++)
+		{
+			WRMEM[page][address] = NULL;
+			WR[page][address] = object;
+		}
+		
+	}
+
 }
 
 // -----------------------------------------------------------------------------
@@ -201,7 +257,9 @@
 
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status)
 {
-	if (cpu->RD[cpu->PAGE[addr]][addr])
+	const uint8_t *ptr = cpu->RDMEM[cpu->PAGE[addr]][addr]; if (ptr) return *ptr;
+
+	else if (cpu->RD[cpu->PAGE[addr]][addr])
 		return [cpu->RD[cpu->PAGE[addr]][addr] RD:addr CLK:cpu->CLK status:status];
 	else
 		return status;
@@ -211,7 +269,9 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status)
 
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data)
 {
-	if (cpu->WR[cpu->PAGE[addr]][addr])
+	uint8_t *ptr = cpu->WRMEM[cpu->PAGE[addr]][addr]; if (ptr) *ptr = data;
+
+	else if (cpu->WR[cpu->PAGE[addr]][addr])
 		[cpu->WR[cpu->PAGE[addr]][addr] WR:addr byte:data CLK:cpu->CLK];
 }
 
@@ -274,9 +334,19 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
 // Работа с сигналом HLDA
 // -----------------------------------------------------------------------------
 
+- (void) setHLDA:(NSObject<HLDA> *)object
+{
+	CallHLDA = (unsigned (*) (id, SEL, uint64_t, BOOL)) [HLDA = object methodForSelector:@selector(HLDA:WR:)];
+}
+
+- (NSObject<HLDA> *)HLDA
+{
+	return HLDA;
+}
+
 static unsigned HOLD(X8080* cpu, unsigned clk, BOOL wr)
 {
-	unsigned clkHOLD = [cpu->HLDA HLDA:cpu->CLK WR:wr];
+	unsigned clkHOLD = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:WR:), cpu->CLK, wr) : 0;
 	return clk > clkHOLD ? clk : clkHOLD;
 }
 
