@@ -10,12 +10,11 @@
 
 	NSTimer *timer;
 
-	NSMutableData *data;
+	NSMutableData *data1;
+	NSMutableData *data2;
 
-	uint32_t *bitmap;
 	NSSize graphics;
-	unsigned frame;
-	int gigaScreen;
+	NSSize overlay;
 
 	BOOL isSelected;
 	NSRect selected;
@@ -149,7 +148,7 @@
 	if (sender != nil && sender.tag >= 1 && sender.tag <= 9)
 		scale = sender.tag;
 
-	if (data != nil && scale >= 1 && scale <= 9)
+	if (data1 != nil && scale >= 1 && scale <= 9)
 	{
 		NSRect rect = self.window.frame; rect.origin.y += rect.size.height;
 		CGFloat addHeight = rect.size.height - self.frame.size.height;
@@ -188,39 +187,48 @@
 
 - (uint32_t *) setupGraphicsWidth:(NSUInteger)width height:(NSUInteger)height
 {
-	if (data == nil || graphics.width != width || graphics.height != height)
+	if (data1 == nil || graphics.width != width || graphics.height != height)
 	{
-		bitmap = (data = [NSMutableData dataWithLength:width * height * 8]).mutableBytes;
+		data1 = [NSMutableData dataWithLength:width * height * 4];
 		graphics.width = width; graphics.height = height;
+		data2 = nil; overlay = NSZeroSize;
 
 		[self performSelectorOnMainThread:@selector(scale:)
 							   withObject:nil
 							waitUntilDone:FALSE];
 	}
 
-	isSelected = FALSE;
-	isText = FALSE;
-	return bitmap;
+	isSelected = FALSE; isText = FALSE;
+	return data1.mutableBytes;
+}
+
+- (uint32_t *) setupOverlayWidth:(NSUInteger)width height:(NSUInteger)height
+{
+	if (data2 == nil || overlay.width != width || overlay.height != height)
+	{
+		data2 = [NSMutableData dataWithLength:width * height * 4];
+		overlay.width = width; overlay.height = height;
+	}
+
+	return data2.mutableBytes;
 }
 
 - (uint32_t *) setupTextWidth:(NSUInteger)width height:(NSUInteger)height cx:(NSUInteger)cx cy:(NSUInteger)cy
 {
-	if (data == nil || graphics.width != width * cx || graphics.height != height * cy)
+	if (data1 == nil || graphics.width != width * cx || graphics.height != height * cy)
 	{
-		bitmap = (data = [NSMutableData dataWithLength:(width * cx) * (height * cy) * 8]).mutableBytes;
+		data1 = [NSMutableData dataWithLength:(width * cx) * (height * cy) * 4];
 		graphics.width = width * cx; graphics.height = height * cy;
+		data2 = nil; overlay = NSZeroSize;
 
 		[self performSelectorOnMainThread:@selector(scale:)
 							   withObject:nil
 							waitUntilDone:FALSE];
 	}
 
-	text.height = height;
-	text.width = width;
-
-	isSelected = FALSE;
-	isText = TRUE;
-	return bitmap;
+	text.height = height; text.width = width;
+	isSelected = FALSE; isText = TRUE;
+	return data1.mutableBytes;
 }
 
 // -----------------------------------------------------------------------------
@@ -234,14 +242,14 @@
 	backingPixelHeight = (GLsizei)(backingBounds.size.height);
 	glViewport(0, 0, backingPixelWidth, backingPixelHeight);
 
-	if (bitmap)
+	if (data1)
 	{
 		glEnable(GL_TEXTURE_2D);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.bytes);
 
 		glBegin(GL_QUADS);
 		glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
@@ -253,12 +261,9 @@
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		if (gigaScreen)
+		if (data2)
 		{
-			if (gigaScreen == 1)
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
-			else
-				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)(graphics.width / 1.5), (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)overlay.width, (GLsizei)overlay.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2.bytes);
 
 			glBegin(GL_QUADS);
 			glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
@@ -462,8 +467,10 @@ BOOL isAlphaNumber(uint8_t byte)
 				NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 				[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeTIFF] owner:nil];
 
+				uint8_t *bytes = data1.mutableBytes;
+
 				NSBitmapImageRep *image = [[NSBitmapImageRep alloc]
-										   initWithBitmapDataPlanes:(uint8_t **)&bitmap
+										   initWithBitmapDataPlanes:&bytes
 										   pixelsWide:graphics.width
 										   pixelsHigh:graphics.height
 										   bitsPerSample:8

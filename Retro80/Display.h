@@ -13,11 +13,13 @@
 - (uint32_t *) setupGraphicsWidth:(NSUInteger)width
 						   height:(NSUInteger)height;
 
+- (uint32_t *) setupOverlayWidth:(NSUInteger)width
+						  height:(NSUInteger)height;
+
 - (uint32_t *) setupTextWidth:(NSUInteger)width
 					   height:(NSUInteger)height
 						   cx:(NSUInteger)cx
 						   cy:(NSUInteger)cy;
-
 
 @property (assign) IBOutlet NSResponder *nextResponder;
 

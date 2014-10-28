@@ -6,8 +6,8 @@
 
 @implementation X8275
 {
-	unsigned gigaScreen;
-	uint32_t *bitmap;
+	uint32_t *bitmap[2];
+	BOOL gigaScreen;
 	unsigned frame;
 
 	union i8275_config cfg;	// Новая конфигурация
@@ -89,7 +89,7 @@
 {
 	colors = ptr; memset(screen, -1, sizeof(screen));
 	attributesMask = mask; fonts = NULL; mcpg = NULL;
-	gigaScreen = ptr ? 1 : 0;
+	gigaScreen = ptr != NULL;
 }
 
 // -----------------------------------------------------------------------------
@@ -105,7 +105,7 @@
 - (void) setMcpg:(const uint8_t *)ptr;
 {
 	mcpg = ptr; memset(screen, -1, sizeof(screen));
-	gigaScreen = ptr ? 2 : 0;
+	if (mcpg) gigaScreen = FALSE;
 }
 
 // -----------------------------------------------------------------------------
@@ -267,13 +267,8 @@ CCCC[][3] =
 				{
 					if (*(uint32_t*)config.byte != *(uint32_t*)cfg.byte)
 					{
-						config = cfg; memset(screen, -1, sizeof(screen));
-
-						bitmap = NULL;
-
+						config = cfg; memset(screen, -1, sizeof(screen)); bitmap[0] = bitmap[1] = NULL;
 						rowClock = (config.H + 1 + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
-//						rowTimer = clock; rowTimer += 12 - (rowTimer % 12);
-//						row = config.R + config.V;
 					}
 				}
 			}
@@ -307,13 +302,13 @@ CCCC[][3] =
 				{
 					row = 0; attr = 0x80; EoS = FALSE;
 
-					if (frame++ & 1 || gigaScreen != 1)
+					if (frame++ & 1 || gigaScreen == FALSE)
 						self.display.needsDisplay = TRUE;
 				}
 
 				if (row <= config.R)
 				{
-					BOOL page = gigaScreen == 1 && frame & 1;
+					BOOL page = gigaScreen && frame & 1;
 					
 					if (pos != config.H + 1)
 					{
@@ -415,119 +410,133 @@ CCCC[][3] =
 
 						if (screen[page][row][col].word != ch.word)
 						{
-							if (bitmap == NULL)
-								bitmap = [self.display setupTextWidth:config.H + 1
-															   height:config.R + 1
-																   cx:6
-																   cy:config.L + 1];
-
-							if (bitmap)
+							if (bitmap[page] == NULL)
 							{
-								screen[page][row][col].word = ch.word;
-
-								uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
-								uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
-
-								if (page)
+								if (page == 0)
 								{
-									b0 &= 0x7FFFFFFF;
-									b1 &= 0x7FFFFFFF;
+									bitmap[0] = [self.display setupTextWidth:config.H + 1
+																	  height:config.R + 1
+																		  cx:6
+																		  cy:config.L + 1];
+
+									bitmap[1] = NULL;
+								}
+								else
+								{
+									bitmap[1] = [self.display setupOverlayWidth:(config.H + 1) * 6
+																   height:(config.R + 1) * (config.L + 1)];
+								}
+							}
+
+							screen[page][row][col].word = ch.word;
+
+							uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
+							uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
+
+							if (page)
+							{
+								b0 &= 0x7FFFFFFF;
+								b1 &= 0x7FFFFFFF;
+							}
+
+							uint32_t *ptr = bitmap[page] + (row * (config.L + 1) * (config.H + 1) + col) * 6;
+
+							const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
+							if (fonts) fnt += fonts[ch.attr & 0x0F];
+
+							for (unsigned L = 0; L <= config.L; L++)
+							{
+								uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
+
+								if ((ch.byte & 0x80) == 0x00)
+								{
+									if (config.U & 0x08 && (L == 0 || L == config.L))
+										byte = 0x00;
+								}
+								else
+								{
+									struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
+
+									// byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
+
+									if (special->VSP)
+										byte = 0x00;
+
+									if (special->LTEN)
+										byte = 0xFF;
 								}
 
-								uint32_t *ptr = bitmap + ((row + (page ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
+								if (L == config.U && ch.U) byte = 0xFF;
+								if (ch.R) byte = ~byte;
 
-								const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
-								if (fonts) fnt += fonts[ch.attr & 0x0F];
+								for (int i = 0; i < 6; i++, byte <<= 1)
+									*ptr ++ = byte & 0x20 ? b1 : b0;
+
+								ptr += config.H * 6;
+							}
+
+							if (mcpg)
+							{
+								if (bitmap[1] == NULL)
+								{
+									bitmap[1] = [self.display setupOverlayWidth:(config.H + 1) * 4
+																		 height:(config.R + 1) * (config.L + 1)];
+								}
+
+								static uint32_t backround[] =
+								{
+									0xFF000000, 0xFFFF0000, 0xFF000000, 0xFFFF0000,
+									0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF,
+									0xFF00FF00, 0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00,
+									0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF
+								};
+
+								static uint32_t foreground[] =
+								{
+									0xFFFFFFFF, 0xFFFFFF00,
+									0xFFFF00FF, 0xFFFF0000,
+									0xFF00FFFF, 0xFF00FF00,
+									0xFF0000FF, 0xFF000000
+								};
+
+								const unsigned char *fnt = mcpg + (ch.R ? 0x400 : 0x000) + ((ch.byte & 0x7F) << 3);
+								uint32_t *ptr = bitmap[1] + (row * (config.L + 1) * (config.H + 1) + col) * 4;
+
+								foreground[7] = backround[ch.attr & 0x0F];
 
 								for (unsigned L = 0; L <= config.L; L++)
 								{
-									uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
+									uint8_t fnt1 = fnt[0x000 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
+									uint8_t fnt2 = fnt[0x800 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
 
 									if ((ch.byte & 0x80) == 0x00)
 									{
 										if (config.U & 0x08 && (L == 0 || L == config.L))
-											byte = 0x00;
+											fnt1 = fnt2 = 0xFF;
 									}
 									else
 									{
 										struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
 
-										// byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
-
 										if (special->VSP)
-											byte = 0x00;
+											fnt1 = fnt2 = 0xFF;
 
 										if (special->LTEN)
-											byte = 0xFF;
+											fnt1 = fnt2 = 0x00;
 									}
 
-									if (L == config.U && ch.U) byte = 0xFF;
-									if (ch.R) byte = ~byte;
-
-									for (int i = 0; i < 6; i++, byte <<= 1)
-										*ptr ++ = byte & 0x20 ? b1 : b0;
-
-									ptr += config.H * 6;
-								}
-
-								if (gigaScreen == 2)
-								{
-									static uint32_t backround[] =
+									if (L == config.U && ch.U)
 									{
-										0xFF000000, 0xFFFF0000, 0xFF000000, 0xFFFF0000,
-										0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF,
-										0xFF00FF00, 0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00,
-										0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF
-									};
-
-									static uint32_t foreground[] =
-									{
-										0xFFFFFFFF, 0xFFFFFF00,
-										0xFFFF00FF, 0xFFFF0000,
-										0xFF00FFFF, 0xFF00FF00,
-										0xFF0000FF, 0xFF000000
-									};
-
-									uint32_t *ptr = bitmap + (config.R + 1) * (config.L + 1) * (config.H + 1) * 6;
-									ptr += (row * (config.L + 1) * (config.H + 1) + col) * 4;
-									const unsigned char *fnt = mcpg + (ch.R ? 0x400 : 0x000) + ((ch.byte & 0x7F) << 3);
-
-									foreground[7] = backround[ch.attr & 0x0F];
-
-									for (unsigned L = 0; L <= config.L; L++)
-									{
-										uint8_t fnt1 = fnt[0x000 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
-										uint8_t fnt2 = fnt[0x800 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
-
-										if ((ch.byte & 0x80) == 0x00)
-										{
-											if (config.U & 0x08 && (L == 0 || L == config.L))
-												fnt1 = fnt2 = 0xFF;
-										}
-										else
-										{
-											struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
-
-											if (special->VSP)
-												fnt1 = fnt2 = 0xFF;
-
-											if (special->LTEN)
-												fnt1 = fnt2 = 0x00;
-										}
-
-										if (L == config.U && ch.U)
-										{
-											fnt1 ^= 0x3F;
-											fnt2 ^= 0x3F;
-										}
-
-										*ptr++ = foreground[7] ? foreground [(fnt1 & 0x38) >> 3] : 0;
-										*ptr++ = foreground[7] ? foreground [fnt1 & 0x07] : 0;
-										*ptr++ = foreground[7] ? foreground [(fnt2 & 0x38) >> 3] : 0;
-										*ptr++ = foreground[7] ? foreground [fnt2 & 0x07] : 0;
-										
-										ptr += config.H * 4;
+										fnt1 ^= 0x3F;
+										fnt2 ^= 0x3F;
 									}
+
+									*ptr++ = foreground[7] ? foreground [(fnt1 & 0x38) >> 3] : 0;
+									*ptr++ = foreground[7] ? foreground [fnt1 & 0x07] : 0;
+									*ptr++ = foreground[7] ? foreground [(fnt2 & 0x38) >> 3] : 0;
+									*ptr++ = foreground[7] ? foreground [fnt2 & 0x07] : 0;
+									
+									ptr += config.H * 4;
 								}
 							}
 
