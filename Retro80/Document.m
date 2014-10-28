@@ -24,23 +24,31 @@
 	return self;
 }
 
+- (id) initWithComputer:(Computer *)computer type:(NSString *)typeName error:(NSError **)outError
+{
+	if (self = [super initWithType:typeName error:outError])
+	{
+		self.computer = computer;
+	}
+
+	return self;
+}
+
 // -----------------------------------------------------------------------------
 // Undo/Redo
 // -----------------------------------------------------------------------------
 
 - (void) performUndo:(NSData *)data
 {
-	[self.computer stop]; [self.computer.crt removeFromSuperviewWithoutNeedingDisplay];
+	[self.windowControllers.firstObject windowWillClose:nil];
 
 	[self.undoManager registerUndoWithTarget:self
 									selector:lastUndoAction = @selector(performUndo:)
 									  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
 
-	lastUndoType = 0;
+	lastUndoType = 0; lastUndoAction = nil;
 
 	self.computer = [NSKeyedUnarchiver unarchiveObjectWithData:data];
-	self.computer.document = self;
-
 	[self.windowControllers.firstObject windowDidLoad];
 }
 
@@ -48,16 +56,15 @@
 
 - (void) registerUndoWitString:(NSString *)string type:(NSInteger)type
 {
-	@synchronized(self.computer.snd)
+	@synchronized(self.sound)
 	{
 		if (type != lastUndoType)
 		{
-			lastUndoType = type;
-
 			[self.undoManager registerUndoWithTarget:self
 											selector:@selector(performUndo:)
 											  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
 
+			lastUndoType = type; lastUndoAction = nil;
 			[self.undoManager setActionName:string];
 		}
 	}
@@ -67,50 +74,27 @@
 
 - (void) registerUndoWithMenuItem:(NSMenuItem *)menuItem
 {
-	@synchronized(self.computer.snd)
+	@synchronized(self.sound)
 	{
 		if (lastUndoType || menuItem.action != lastUndoAction)
 		{
-			lastUndoType = 0; lastUndoAction = menuItem.action;
-
 			[self.undoManager registerUndoWithTarget:self
 											selector:@selector(performUndo:)
 											  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
 
+			lastUndoType = 0; lastUndoAction = menuItem.action;
 			[self.undoManager setActionName:menuItem.title];
 		}
 	}
 }
 
 // -----------------------------------------------------------------------------
-//
+// Save/Load
 // -----------------------------------------------------------------------------
-
-- (NSString *) defaultDraftName
-{
-	if (self.computer)
-	{
-		return [[self.computer class] title];
-	}
-	else
-	{
-		return [super defaultDraftName];
-	}
-}
-
-- (void) makeWindowControllers
-{
-	[self addWindowController:[[WindowController alloc] initWithWindowNibName:@"Document"]];
-}
-
-+ (BOOL) autosavesInPlace
-{
-    return YES;
-}
 
 - (NSData *) dataOfType:(NSString *)typeName error:(NSError **)outError
 {
-	@synchronized(self.computer.snd)
+	@synchronized(self.sound)
 	{
 		return [NSKeyedArchiver archivedDataWithRootObject:self.computer];
 	}
@@ -125,8 +109,9 @@
 		{
 			if (self.computer)
 			{
-				[self.computer stop]; [self.computer.crt removeFromSuperviewWithoutNeedingDisplay];
-				self.computer = object; [self.windowControllers.firstObject windowDidLoad];
+				[self.windowControllers.firstObject windowWillClose:nil];
+				self.computer = object;
+				[self.windowControllers.firstObject windowDidLoad];
 			}
 			else
 			{
@@ -142,14 +127,30 @@
 		NSLog(@"%@", exception);
 	}
 
-	if (outError)
-	{
-		*outError = [NSError errorWithDomain:@"ru.uart.Retro80"
-										code:2
-									userInfo:nil];
-	}
-
+	*outError = nil;
 	return FALSE;
+}
+
+// -----------------------------------------------------------------------------
+// NSDocument
+// -----------------------------------------------------------------------------
+
+- (void) makeWindowControllers
+{
+	[self addWindowController:[[WindowController alloc] initWithWindowNibName:@"Document" owner:self]];
+}
+
+- (NSString *) defaultDraftName
+{
+	if (self.computer)
+		return [[self.computer class] title];
+	else
+		return [super defaultDraftName];
+}
+
++ (BOOL) autosavesInPlace
+{
+    return YES;
 }
 
 @end

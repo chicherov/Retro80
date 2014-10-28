@@ -9,12 +9,12 @@
 
 - (void) start
 {
-	[self.snd start];
+	[self.snd.sound start];
 }
 
 - (void) stop
 {
-	[self.snd stop];
+	[self.snd.sound stop];
 }
 
 // -----------------------------------------------------------------------------
@@ -42,7 +42,7 @@
 
 	if (menuItem.action == @selector(inpHook:))
 	{
-		if (self.snd.isInput)
+		if (self.snd.sound.isInput)
 		{
 			menuItem.state = FALSE;
 			return NO;
@@ -50,11 +50,6 @@
 
 		menuItem.state = self.inpHook.enabled;
 		return self.inpHook != nil;
-	}
-
-	if (menuItem.action == @selector(paste:))
-	{
-		return self.kbd && [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] != nil;
 	}
 
 	menuItem.state = FALSE;
@@ -86,7 +81,22 @@
 - (IBAction) reset:(NSMenuItem *)menuItem
 {
 	[self.document registerUndoWithMenuItem:menuItem];
+
+	@synchronized(self.snd.sound)
+	{
+		if (!self.snd.sound.isInput)
+		{
+			[self performSelector:@selector(reset)];
+			return;
+		}
+	}
+
+	[self stop];
+	[self.snd.sound close];
+
 	[self performSelector:@selector(reset)];
+
+	[self start];
 }
 
 // -----------------------------------------------------------------------------
@@ -106,49 +116,6 @@
 - (IBAction) outHook:(NSMenuItem *)menuItem
 {
 	self.outHook.enabled = !self.outHook.enabled;
-}
-
-// -----------------------------------------------------------------------------
-// События клавиатуры
-// -----------------------------------------------------------------------------
-
-- (void) flagsChanged:(NSEvent*)theEvent
-{
-	[self.kbd flagsChanged:theEvent];
-}
-
-- (void) keyDown:(NSEvent*)theEvent
-{
-	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0 && theEvent.characters.length != 0)
-	{
-		NSString *typing = NSLocalizedString(@"Набор на клавиатуре", "Typing");
-		unichar ch = [theEvent.characters characterAtIndex:0];
-
-		if (ch == 0x09 || (ch >= 0x20 && ch < 0x7F) || (ch >= 0x410 && ch <= 0x44F))
-			[self.document registerUndoWitString:typing type:1];
-		else if (ch == 0xF700 || ch == 0xF701 || ch == 0xF702 || ch == 0xF703)
-			[self.document registerUndoWitString:typing type:2];
-		else if (ch == 0x7F)
-			[self.document registerUndoWitString:typing type:3];
-		else if (ch == 0x0D)
-			[self.document registerUndoWitString:typing type:4];
-		else
-			[self.document registerUndoWitString:typing type:5];
-	}
-
-	[self.kbd keyDown:theEvent];
-//	isSelected = FALSE;
-}
-
-- (void) keyUp:(NSEvent*)theEvent
-{
-	[self.kbd keyUp:theEvent];
-}
-
-- (IBAction) paste:(NSMenuItem *)menuItem
-{
-	[self.document registerUndoWithMenuItem:menuItem];
-	[self.kbd paste:[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString]];
 }
 
 // -----------------------------------------------------------------------------

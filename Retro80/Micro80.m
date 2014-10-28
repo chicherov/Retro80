@@ -1,79 +1,8 @@
+/*******************************************************************************
+ ПЭВМ «Микро-80»
+ ******************************************************************************/
+
 #import "Micro80.h"
-#import "Sound.h"
-
-// -----------------------------------------------------------------------------
-// Интерфейс сопряжения "Микро-80"
-// -----------------------------------------------------------------------------
-
-@implementation Micro80Recorder
-
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
-{
-	self.output = data != 0x00;
-}
-
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
-{
-	return self.input;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// Интерфейс клавиатуры "Микро-80"
-// -----------------------------------------------------------------------------
-
-@implementation Micro80Keyboard
-
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
-{
-	[super WR:addr ^ 3 byte:data CLK:clock];
-}
-
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
-{
-	return [super RD:addr ^ 3 CLK:clock status:status];
-}
-
-- (id) init
-{
-	if (self = [super init])
-	{
-		kbdmap = @[
-				   // 18 08    19    1A    0D    1F    0C    ?
-				   @124, @123, @126, @125, @36,  @117, @115, @-1,
-				   // 5A 5B    5C    5D    5E    5F    20    ?
-				   @35,  @34,  @39,  @31,  @7,   @24,  @49,  @-1,
-				   // 53 54    55    56    57    58    59    ?
-				   @8,   @45,  @14,  @41,  @2,   @46,  @1,   @-1,
-				   // 4C 4D    4E    4F    50    51    52    ?
-				   @40,  @9,   @16,  @38,  @5,   @6,   @4,   @-1,
-				   // 45 46    47    48    49    4A    4B    ?
-				   @17,  @0,   @32,  @33,  @11,  @12,  @15,  @-1,
-				   // 2E 2F    40    41    42    43    44    ?
-				   @42,  @50,  @47,  @3,   @43,  @13,  @37,  @-1,
-				   // 37 38    39    3A    3B    2C    2D    ?
-				   @26,  @28,  @25,  @30,  @10,  @44,  @27,  @-1,
-				   // 30 31    32    33    34    35    36    ?
-				   @29,  @18,  @19,  @20,  @21,  @23,  @22,  @-1
-				   ];
-
-		RUSLAT = 0x01;
-		SHIFT = 0x04;
-		CTRL = 0x02;
-
-		TAPEI = 0x00;
-		TAPEO = 0x00;
-	}
-
-	return self;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// ПЭВМ "Микро-80"
-// -----------------------------------------------------------------------------
 
 @implementation Micro80
 
@@ -86,27 +15,10 @@
 // Управление компьютером
 // -----------------------------------------------------------------------------
 
-- (void) start
-{
-	[self.snd start];
-}
-
 - (void) reset
 {
-	[self stop];
-
-	if (self.snd.isInput)
-		[self.snd close];
-
 	self.cpu.PC = 0xF800;
 	self.cpu.IF = FALSE;
-
-	[self start];
-}
-
-- (void) stop
-{
-	[self.snd stop];
 }
 
 // -----------------------------------------------------------------------------
@@ -138,8 +50,6 @@
 	if ((self.snd = [[Micro80Recorder alloc] init]) == nil)
 		return FALSE;
 
-	self.snd.cpu = self.cpu;
-
 	self.cpu.HLDA = self.crt;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0xF7FF];
@@ -159,7 +69,6 @@
 
 	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
 	self.outHook.extension = @"rk8";
-	self.outHook.Micro80 = TRUE;
 
 	return TRUE;
 }
@@ -182,7 +91,6 @@
 	}
 
 	return self;
-	
 }
 
 // -----------------------------------------------------------------------------
@@ -229,6 +137,83 @@
 		self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
 		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
 		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+	}
+	
+	return self;
+}
+
+@end
+
+// -----------------------------------------------------------------------------
+// Интерфейс сопряжения "Микро-80"
+// -----------------------------------------------------------------------------
+
+@implementation Micro80Recorder
+
+@synthesize sound;
+
+- (SInt8) sample:(uint64_t)clock
+{
+	return 0;
+}
+
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+{
+	return sound.input;
+}
+
+- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+{
+	sound.output = data != 0x00;
+}
+
+@end
+
+// -----------------------------------------------------------------------------
+// Интерфейс клавиатуры "Микро-80"
+// -----------------------------------------------------------------------------
+
+@implementation Micro80Keyboard
+
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+{
+	return [super RD:addr ^ 3 CLK:clock status:status];
+}
+
+- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+{
+	[super WR:addr ^ 3 byte:data CLK:clock];
+}
+
+- (id) init
+{
+	if (self = [super init])
+	{
+		kbdmap = @[
+				   // 18 08    19    1A    0D    1F    0C    ?
+				   @124, @123, @126, @125, @36,  @117, @115, @-1,
+				   // 5A 5B    5C    5D    5E    5F    20    ?
+				   @35,  @34,  @39,  @31,  @7,   @24,  @49,  @-1,
+				   // 53 54    55    56    57    58    59    ?
+				   @8,   @45,  @14,  @41,  @2,   @46,  @1,   @-1,
+				   // 4C 4D    4E    4F    50    51    52    ?
+				   @40,  @9,   @16,  @38,  @5,   @6,   @4,   @-1,
+				   // 45 46    47    48    49    4A    4B    ?
+				   @17,  @0,   @32,  @33,  @11,  @12,  @15,  @-1,
+				   // 2E 2F    40    41    42    43    44    ?
+				   @42,  @50,  @47,  @3,   @43,  @13,  @37,  @-1,
+				   // 37 38    39    3A    3B    2C    2D    ?
+				   @26,  @28,  @25,  @30,  @10,  @44,  @27,  @-1,
+				   // 30 31    32    33    34    35    36    ?
+				   @29,  @18,  @19,  @20,  @21,  @23,  @22,  @-1
+				   ];
+
+		RUSLAT = 0x01;
+		SHIFT = 0x04;
+		CTRL = 0x02;
+
+		TAPEI = 0x00;
+		TAPEO = 0x00;
 	}
 
 	return self;

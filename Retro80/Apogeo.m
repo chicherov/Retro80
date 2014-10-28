@@ -78,12 +78,16 @@ static uint32_t colors[] =
 }
 
 // -----------------------------------------------------------------------------
+// В Апогей БК-01 на INTE сидит переключение знакогенератора
+// -----------------------------------------------------------------------------
 
 - (void) INTE:(BOOL)IF
 {
 	[self.crt selectFont:IF ? 0x2400 : 0x2000];
 }
 
+// -----------------------------------------------------------------------------
+// createObjects
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
@@ -100,6 +104,8 @@ static uint32_t colors[] =
 	if (![super createObjects])
 		return FALSE;
 
+	[self.crt selectFont:0x2000];
+
 	self.snd.channel0 = TRUE;
 	self.snd.channel1 = TRUE;
 	self.snd.channel2 = TRUE;
@@ -110,6 +116,8 @@ static uint32_t colors[] =
 }
 
 // -----------------------------------------------------------------------------
+// mapObjects
+// -----------------------------------------------------------------------------
 
 - (BOOL) mapObjects
 {
@@ -118,7 +126,7 @@ static uint32_t colors[] =
 	else
 		[self.crt setColors:NULL attributesMask:0x33];
 
-	[self.crt selectFont:self.cpu.IF ? 0x2400 : 0x2000];
+	self.cpu.INTE = self;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0xEBFF];
 	[self.cpu mapObject:self.snd from:0xEC00 to:0xECFF];
@@ -127,8 +135,6 @@ static uint32_t colors[] =
 	[self.cpu mapObject:self.crt from:0xEF00 to:0xEFFF];
 	[self.cpu mapObject:self.dma from:0xF000 to:0xF7FF WO:YES];
 	[self.cpu mapObject:self.rom from:0xF000 to:0xFFFF RO:YES];
-
-	self.cpu.INTE = self;
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
@@ -139,6 +145,7 @@ static uint32_t colors[] =
 
 	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
 	self.outHook.extension = @"rka";
+	self.outHook.type = 1;
 
 	return [super mapObjects];
 }

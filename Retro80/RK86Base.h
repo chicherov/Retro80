@@ -2,17 +2,15 @@
  ПЭВМ «Радио-86РК»
  ******************************************************************************/
 
-#import "Retro80.h"
-
 #import "x8080.h"
 #import "x8275.h"
 #import "x8257.h"
 #import "x8253.h"
 
-#import "mem.h"
-
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
+
+#import "mem.h"
 
 // -----------------------------------------------------------------------------
 
@@ -26,10 +24,10 @@
 @property RKKeyboard *kbd;
 @property X8255 *ext;
 
-@property Memory *ram;
 @property Memory *rom;
+@property Memory *ram;
 
-- (BOOL) decodeObjects:(NSCoder *)decoder;
+- (BOOL) decodeWithCoder:(NSCoder *)decoder;
 - (BOOL) createObjects;
 - (BOOL) mapObjects;
 
@@ -39,7 +37,7 @@
 
 @property BOOL isColor;
 
-- (void) RESET;
+- (void) reset;
 
 @end
 

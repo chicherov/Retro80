@@ -1,4 +1,4 @@
-#import "Screen.h"
+#import "Display.h"
 #import "Sound.h"
 
 @class Document;
@@ -25,6 +25,30 @@
 @end
 
 // -----------------------------------------------------------------------------
+// Протокол контролера дисплея
+// -----------------------------------------------------------------------------
+
+@protocol DisplayController <NSObject>
+
+@property Display* display;
+
+- (unichar) charAtX:(unsigned)x Y:(unsigned)y;
+
+@end
+
+// -----------------------------------------------------------------------------
+// Протокол контролера дисплея
+// -----------------------------------------------------------------------------
+
+@protocol SoundController <NSObject>
+
+@property Sound* sound;
+
+- (SInt8) sample:(uint64_t)clock;
+
+@end
+
+// -----------------------------------------------------------------------------
 // Протокол клавиатуры
 // -----------------------------------------------------------------------------
 
@@ -39,17 +63,17 @@
 @end
 
 // -----------------------------------------------------------------------------
-// Бащовый класс произвольного компьютера
+// Базовый класс произвольного компьютера
 // -----------------------------------------------------------------------------
 
 @interface Computer : NSResponder
 
-@property (weak) Document *document;
-
-@property Screen *crt;
-@property Sound *snd;
+@property Document *document;
 
 @property NSObject <Processor> *cpu;
+
+@property NSObject <DisplayController> *crt;
+@property NSObject <SoundController> *snd;
 @property NSObject <Keyboard> *kbd;
 
 + (NSString *) title;
@@ -76,9 +100,16 @@
 
 @property Computer *computer;
 
+@property IBOutlet Display *display;
+@property IBOutlet Sound *sound;
+
 - (void) registerUndoWitString:(NSString *)string type:(NSInteger)type;
 - (void) registerUndoWithMenuItem:(NSMenuItem *)menuItem;
 - (void) performUndo:(NSData *)data;
+
+- (id) initWithComputer:(Computer *)computer
+				   type:(NSString *)typeName
+				  error:(NSError **)outError;
 
 @end
 
@@ -96,9 +127,6 @@
 
 @interface WindowController : NSWindowController <NSWindowDelegate>
 
-@property IBOutlet NSLayoutConstraint *constraint;
-@property IBOutlet NSTextField *text1;
-@property IBOutlet NSTextField *text2;
-@property IBOutlet NSView *view;
+@property (weak) Document *document;
 
 @end

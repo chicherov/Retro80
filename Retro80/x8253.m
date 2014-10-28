@@ -6,6 +6,8 @@
 
 @implementation X8253
 
+@synthesize sound;
+
 // -----------------------------------------------------------------------------
 
 - (SInt8) sample:(uint64_t)clock
@@ -208,5 +210,16 @@
 
 	return self;
 }
+
+// -----------------------------------------------------------------------------
+// DEBUG: dealloc
+// -----------------------------------------------------------------------------
+
+#ifdef DEBUG
+- (void) dealloc
+{
+	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
+}
+#endif
 
 @end

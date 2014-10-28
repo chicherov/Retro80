@@ -1,17 +1,30 @@
 #import "Retro80.h"
-#import "Screen.h"
+#import "Display.h"
 
-@implementation Screen
+@implementation Display
 {
-	NSMutableData *data;
+	IBOutlet NSLayoutConstraint *constraint;
+
+	BOOL hideStatusLine;
 	NSInteger scale;
+
+	NSTimer *timer;
+
+	NSMutableData *data;
+
+	uint32_t *bitmap;
+	NSSize graphics;
+	unsigned frame;
+	int gigaScreen;
+
+	BOOL isSelected;
+	NSRect selected;
+
+	BOOL isText;
+	NSSize text;
 
 	NSPoint mark;
 	BOOL isMark;
-
-#ifdef DEBUG
-	NSTimeInterval frameRate[10];
-#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -20,7 +33,13 @@
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(zoom:))
+	if (menuItem.action == @selector(statusLine:))
+	{
+		menuItem.state = constraint.constant == 22;
+		return (self.window.styleMask & NSFullScreenWindowMask) == 0;
+	}
+
+	if (menuItem.action == @selector(scale:))
 	{
 		menuItem.state = FALSE;
 
@@ -46,14 +65,86 @@
 		return isText && isSelected;
 	}
 
+	if (menuItem.action == @selector(paste:))
+	{
+		return self.kbd && [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] != nil;
+	}
+
 	return NO;
 }
 
 // -----------------------------------------------------------------------------
-// zoom
+// Обработка наличия строки состояния
 // -----------------------------------------------------------------------------
 
-- (IBAction) zoom:(NSMenuItem *)sender
+- (IBAction) statusLine:(id)sender
+{
+	if ((self.window.styleMask & NSFullScreenWindowMask) == 0)
+	{
+		NSRect windowFrame = self.window.frame; if ((hideStatusLine = !hideStatusLine))
+		{
+			if (constraint.constant == 22)
+			{
+				windowFrame.size.height -= 22;
+				windowFrame.origin.y += 22;
+
+				[self.window setFrame:windowFrame display:FALSE];
+				constraint.constant = 0;
+			}
+		}
+		else if (constraint.constant == 0)
+		{
+			windowFrame.size.height += 22;
+			windowFrame.origin.y -= 22;
+
+			[self.window setFrame:windowFrame display:FALSE];
+			constraint.constant = 22;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Обработка FullScreen
+// -----------------------------------------------------------------------------
+
+- (void) mouseMoved:(NSEvent *)theEvent
+{
+	[timer invalidate];
+
+	timer = [NSTimer scheduledTimerWithTimeInterval:2.0
+											 target:self
+										   selector:@selector(hideMouse)
+										   userInfo:nil
+											repeats:NO];
+}
+
+- (void) hideMouse
+{
+	[NSCursor setHiddenUntilMouseMoves:YES];
+}
+
+- (void) windowWillEnterFullScreen:(NSNotification *)notification
+{
+	[self mouseMoved:nil];
+	[self.window setAcceptsMouseMovedEvents:YES];
+
+	constraint.constant = 0;
+}
+
+- (void) windowWillExitFullScreen:(NSNotification *)notification
+{
+	constraint.constant = hideStatusLine ? 0 : 22;
+
+	[self.window setAcceptsMouseMovedEvents:NO];
+	[NSCursor setHiddenUntilMouseMoves:NO];
+	[timer invalidate];
+}
+
+// -----------------------------------------------------------------------------
+// Обработка масштабирования
+// -----------------------------------------------------------------------------
+
+- (IBAction) scale:(NSMenuItem *)sender
 {
 	if (sender != nil && sender.tag >= 1 && sender.tag <= 9)
 		scale = sender.tag;
@@ -75,41 +166,61 @@
 }
 
 // -----------------------------------------------------------------------------
+// Обработка фокуса приложения
+// -----------------------------------------------------------------------------
+
+- (void) windowDidBecomeKey:(NSNotification *)notification
+{
+	if (self.window.styleMask & NSFullScreenWindowMask)
+		[self mouseMoved:nil];
+
+	[self.kbd keyUp:nil];
+}
+
+- (void) windowWillClose:(NSNotification *)notification
+{
+	[[self.document.windowControllers firstObject] windowWillClose:notification];
+}
+
+// -----------------------------------------------------------------------------
 // setupGraphics/setupText
 // -----------------------------------------------------------------------------
 
-- (void) setupGraphicsWidth:(NSUInteger)width height:(NSUInteger)height
+- (uint32_t *) setupGraphicsWidth:(NSUInteger)width height:(NSUInteger)height
 {
 	if (data == nil || graphics.width != width || graphics.height != height)
 	{
 		bitmap = (data = [NSMutableData dataWithLength:width * height * 8]).mutableBytes;
 		graphics.width = width; graphics.height = height;
 
-		[self performSelectorOnMainThread:@selector(zoom:)
+		[self performSelectorOnMainThread:@selector(scale:)
 							   withObject:nil
 							waitUntilDone:FALSE];
 	}
 
 	isSelected = FALSE;
 	isText = FALSE;
+	return bitmap;
 }
 
-- (void) setupTextWidth:(NSUInteger)width height:(NSUInteger)height cx:(NSUInteger)cx cy:(NSUInteger)cy
+- (uint32_t *) setupTextWidth:(NSUInteger)width height:(NSUInteger)height cx:(NSUInteger)cx cy:(NSUInteger)cy
 {
 	if (data == nil || graphics.width != width * cx || graphics.height != height * cy)
 	{
 		bitmap = (data = [NSMutableData dataWithLength:(width * cx) * (height * cy) * 8]).mutableBytes;
 		graphics.width = width * cx; graphics.height = height * cy;
 
-		[self performSelectorOnMainThread:@selector(zoom:)
+		[self performSelectorOnMainThread:@selector(scale:)
 							   withObject:nil
 							waitUntilDone:FALSE];
 	}
 
 	text.height = height;
 	text.width = width;
+
 	isSelected = FALSE;
 	isText = TRUE;
+	return bitmap;
 }
 
 // -----------------------------------------------------------------------------
@@ -118,46 +229,19 @@
 
 - (void) drawRect:(NSRect)rect
 {
-#ifdef DEBUG
-	if (frame % 50 == 0)
-	{
-		unsigned pos = frame / 50 % 10; NSTimeInterval uptime = frameRate[pos] = [NSProcessInfo processInfo].systemUptime;
-
-		if (frameRate[pos = (pos + 1) % 10] != 0.0)
-			self.textField.stringValue = [NSString stringWithFormat:@"%2.2f fps", 450 / (uptime - frameRate[pos])];
-		else if (frameRate[pos = (pos + 8) % 10] != 0.0)
-			self.textField.stringValue = [NSString stringWithFormat:@"%2.2f fps", 50 / (uptime - frameRate[pos])];
-	}
-#endif
-
 	NSRect backingBounds = [self convertRectToBacking:[self bounds]];
 	GLsizei backingPixelWidth  = (GLsizei)(backingBounds.size.width),
 	backingPixelHeight = (GLsizei)(backingBounds.size.height);
 	glViewport(0, 0, backingPixelWidth, backingPixelHeight);
 
-	glEnable(GL_TEXTURE_2D);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
-	glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
-	glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
-	glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
-	glEnd();
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	if (gigaScreen)
+	if (bitmap)
 	{
-		if (gigaScreen == 1)
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
-		else
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)(graphics.width / 1.5), (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
+		glEnable(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap);
 
 		glBegin(GL_QUADS);
 		glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
@@ -166,35 +250,58 @@
 		glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
 		glEnd();
 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		if (gigaScreen)
+		{
+			if (gigaScreen == 1)
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
+			else
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)(graphics.width / 1.5), (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmap + (unsigned)(graphics.width * graphics.height));
+
+			glBegin(GL_QUADS);
+			glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+			glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+			glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+			glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+			glEnd();
+
+		}
+
+		glDisable(GL_TEXTURE_2D);
+
+		if (isSelected)
+		{
+			glBegin(GL_QUADS);
+			glColor4f(1.0, 1.0, 1.0, 0.5);
+
+			if (isText)
+			{
+				glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
+				glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
+				glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
+				glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
+			}
+			else
+			{
+				glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
+				glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
+				glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
+				glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
+			}
+
+			glColor4f(1.0, 1.0, 1.0, 1.0);
+			glEnd();
+		}
+		
+		glDisable(GL_BLEND);
 	}
-
-	glDisable(GL_TEXTURE_2D);
-
-	if (isSelected)
+	else
 	{
-		glBegin(GL_QUADS);
-		glColor4f(1.0, 1.0, 1.0, 0.5);
-
-		if (isText)
-		{
-			glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
-			glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
-			glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
-			glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
-		}
-		else
-		{
-			glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
-			glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
-			glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
-			glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
-		}
-
-		glColor4f(1.0, 1.0, 1.0, 1.0);
-		glEnd();
+		glClear(GL_COLOR_BUFFER_BIT);
 	}
 
-	glDisable(GL_BLEND);
 	glFlush();
 }
 
@@ -234,7 +341,7 @@ BOOL isAlphaNumber(uint8_t byte)
 		isSelected = FALSE;
 		isMark = TRUE;
 
-		if (isText && theEvent.clickCount == 2 && isAlphaNumber([self byteAtX:mark.x y:mark.y]))
+		if (isText && theEvent.clickCount == 2 && isAlphaNumber([self.crt charAtX:mark.x Y:mark.y]))
 		{
 			selected.size.height = 1;
 			selected.size.width = 1;
@@ -242,12 +349,12 @@ BOOL isAlphaNumber(uint8_t byte)
 			selected.origin = mark;
 			isSelected = TRUE;
 
-			while (selected.origin.x + selected.size.width < text.width && isAlphaNumber([self byteAtX:selected.origin.x + selected.size.width y:selected.origin.y]))
+			while (selected.origin.x + selected.size.width < text.width && isAlphaNumber([self.crt charAtX:selected.origin.x + selected.size.width Y:selected.origin.y]))
 			{
 				selected.size.width += 1;
 			}
 
-			while (selected.origin.x >= 1 && isAlphaNumber([self byteAtX:selected.origin.x - 1 y:selected.origin.y]))
+			while (selected.origin.x >= 1 && isAlphaNumber([self.crt charAtX:selected.origin.x - 1 Y:selected.origin.y]))
 			{
 				selected.origin.x -= 1; selected.size.width += 1;
 			}
@@ -308,11 +415,6 @@ BOOL isAlphaNumber(uint8_t byte)
 // copy/paste
 // -----------------------------------------------------------------------------
 
-- (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y
-{
-	return 0;
-}
-
 - (IBAction) copy:(id)sender
 {
 	@synchronized(self)
@@ -330,7 +432,7 @@ BOOL isAlphaNumber(uint8_t byte)
 				{
 					for (unsigned x = selected.origin.x; x < selected.origin.x + selected.size.width; x++)
 					{
-						if ((*ptr = [self byteAtX:x y:y]) < 0x20 || *ptr > 0x80) *ptr = 0x20;
+						if ((*ptr = [self.crt charAtX:x Y:y]) < 0x20 || *ptr > 0x80) *ptr = 0x20;
 						else if (*ptr >= 0x60) *ptr |= 0x80;
 						ptr++;
 					}
@@ -381,47 +483,55 @@ BOOL isAlphaNumber(uint8_t byte)
 }
 
 // -----------------------------------------------------------------------------
+// События клавиатуры
+// -----------------------------------------------------------------------------
+
+- (void) flagsChanged:(NSEvent*)theEvent
+{
+	[self.kbd flagsChanged:theEvent];
+}
+
+- (void) keyDown:(NSEvent*)theEvent
+{
+	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0 && theEvent.characters.length != 0)
+	{
+		NSString *typing = NSLocalizedString(@"Набор на клавиатуре", "Typing");
+		unichar ch = [theEvent.characters characterAtIndex:0];
+
+		if (ch == 0x09 || (ch >= 0x20 && ch < 0x7F) || (ch >= 0x410 && ch <= 0x44F))
+			[self.document registerUndoWitString:typing type:1];
+		else if (ch == 0xF700 || ch == 0xF701 || ch == 0xF702 || ch == 0xF703)
+			[self.document registerUndoWitString:typing type:2];
+		else if (ch == 0x7F)
+			[self.document registerUndoWitString:typing type:3];
+		else if (ch == 0x0D)
+			[self.document registerUndoWitString:typing type:4];
+		else
+			[self.document registerUndoWitString:typing type:5];
+	}
+
+	[self.kbd keyDown:theEvent];
+	//	isSelected = FALSE;
+}
+
+- (void) keyUp:(NSEvent*)theEvent
+{
+	[self.kbd keyUp:theEvent];
+}
+
+- (IBAction) paste:(NSMenuItem *)menuItem
+{
+	[self.document registerUndoWithMenuItem:menuItem];
+	[self.kbd paste:[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString]];
+}
+
+// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
-- (id) init
+- (void) awakeFromNib
 {
-	if (self = [super init])
-	{
-		scale = 2;
-	}
-
-	return self;
+	scale = 2;
 }
-
-// -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[super encodeWithCoder:encoder];
-}
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super initWithCoder:decoder])
-	{
-		scale = 2;
-	}
-
-	return self;
-}
-
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
-
-#ifdef DEBUG
-- (void) dealloc
-{
-	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
-}
-#endif
 
 @end

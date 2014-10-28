@@ -7,63 +7,60 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="Document">
             <connections>
-                <outlet property="constraint" destination="gbT-Sp-6N3" id="yPj-sh-vLc"/>
-                <outlet property="text1" destination="14K-ON-n2y" id="NHN-Ob-JfT"/>
-                <outlet property="text2" destination="jGl-2V-2o1" id="aDB-Ln-Ag5"/>
-                <outlet property="view" destination="IGy-j5-4pC" id="yYz-dd-16y"/>
-                <outlet property="window" destination="xOd-HO-29H" id="JIz-fz-R2o"/>
+                <outlet property="display" destination="ELn-iW-TvI" id="ZFd-fu-f5l"/>
+                <outlet property="sound" destination="43H-H2-5a3" id="lGS-Fe-enX"/>
+                <outlet property="window" destination="O9k-RO-V98" id="IgL-Za-qFb"/>
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="xOd-HO-29H" userLabel="Window">
+        <customObject id="43H-H2-5a3" customClass="Sound">
+            <connections>
+                <outlet property="textField" destination="ggy-Fu-duH" id="h4r-9z-4l3"/>
+            </connections>
+        </customObject>
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="O9k-RO-V98">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowCollectionBehavior key="collectionBehavior" fullScreenPrimary="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="50" y="500" width="468" height="322"/>
+            <rect key="contentRect" x="100" y="500" width="468" height="322"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
             <value key="minSize" type="size" width="468" height="322"/>
-            <view key="contentView" id="gIp-Ho-8D9">
+            <view key="contentView" id="VHf-sT-NAQ">
                 <rect key="frame" x="0.0" y="0.0" width="468" height="322"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
-                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="IGy-j5-4pC">
+                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="ELn-iW-TvI" customClass="Display">
                         <rect key="frame" x="0.0" y="22" width="468" height="300"/>
+                        <connections>
+                            <outlet property="constraint" destination="2e6-Zo-PUb" id="vcN-eU-Dt2"/>
+                            <outlet property="nextResponder" destination="43H-H2-5a3" id="Lok-Ks-Gfu"/>
+                        </connections>
                     </customView>
-                    <textField hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="14K-ON-n2y" userLabel="Text1">
-                        <rect key="frame" x="5" y="4" width="38" height="17"/>
-                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="4mj-pi-S7h">
-                            <font key="font" metaFont="system"/>
-                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
-                        </textFieldCell>
-                    </textField>
-                    <textField hidden="YES" horizontalHuggingPriority="251" verticalHuggingPriority="750" misplaced="YES" translatesAutoresizingMaskIntoConstraints="NO" id="jGl-2V-2o1" userLabel="Text2">
-                        <rect key="frame" x="416" y="1" width="47" height="20"/>
+                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ggy-Fu-duH">
+                        <rect key="frame" x="5" y="0.0" width="38" height="22"/>
                         <constraints>
-                            <constraint firstAttribute="height" constant="20" id="EYB-PL-583"/>
+                            <constraint firstAttribute="height" constant="22" id="rJP-rM-255"/>
                         </constraints>
-                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="DEBUG" id="qyd-RI-bjX">
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="H4c-W7-g6n">
                             <font key="font" metaFont="system"/>
-                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                            <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
                 </subviews>
                 <constraints>
-                    <constraint firstItem="IGy-j5-4pC" firstAttribute="top" secondItem="gIp-Ho-8D9" secondAttribute="top" id="0gx-QE-s0G"/>
-                    <constraint firstAttribute="bottom" secondItem="jGl-2V-2o1" secondAttribute="bottom" constant="1" id="6cw-Ho-QVO"/>
-                    <constraint firstItem="IGy-j5-4pC" firstAttribute="leading" secondItem="gIp-Ho-8D9" secondAttribute="leading" id="Hgg-QJ-fOx"/>
-                    <constraint firstItem="14K-ON-n2y" firstAttribute="leading" secondItem="gIp-Ho-8D9" secondAttribute="leading" constant="7" id="cng-rf-RRG"/>
-                    <constraint firstAttribute="trailing" secondItem="jGl-2V-2o1" secondAttribute="trailing" constant="7" id="d7k-ac-JNY"/>
-                    <constraint firstAttribute="bottom" secondItem="IGy-j5-4pC" secondAttribute="bottom" constant="22" id="gbT-Sp-6N3"/>
-                    <constraint firstItem="14K-ON-n2y" firstAttribute="top" secondItem="IGy-j5-4pC" secondAttribute="bottom" constant="1" id="quE-L7-8aD"/>
-                    <constraint firstAttribute="trailing" secondItem="IGy-j5-4pC" secondAttribute="trailing" id="ro7-JB-a0h"/>
+                    <constraint firstAttribute="bottom" secondItem="ELn-iW-TvI" secondAttribute="bottom" constant="22" id="2e6-Zo-PUb"/>
+                    <constraint firstItem="ELn-iW-TvI" firstAttribute="leading" secondItem="VHf-sT-NAQ" secondAttribute="leading" id="E94-kJ-nuR"/>
+                    <constraint firstItem="ggy-Fu-duH" firstAttribute="leading" secondItem="VHf-sT-NAQ" secondAttribute="leading" constant="7" id="InQ-j3-e1K"/>
+                    <constraint firstAttribute="bottom" secondItem="ggy-Fu-duH" secondAttribute="bottom" id="eu8-YM-pAG"/>
+                    <constraint firstAttribute="trailing" secondItem="ELn-iW-TvI" secondAttribute="trailing" id="kcv-gh-kx9"/>
+                    <constraint firstItem="ELn-iW-TvI" firstAttribute="top" secondItem="VHf-sT-NAQ" secondAttribute="top" id="q9T-J4-cSJ"/>
                 </constraints>
             </view>
             <contentBorderThickness minY="22"/>
             <connections>
-                <outlet property="delegate" destination="-2" id="0bl-1N-x8E"/>
+                <outlet property="delegate" destination="ELn-iW-TvI" id="Zbw-gI-0q3"/>
             </connections>
         </window>
     </objects>

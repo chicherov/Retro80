@@ -4,123 +4,6 @@
 
 #import "Microsha.h"
 
-// -----------------------------------------------------------------------------
-// Первый интерфейс 8255, вариант клавиатуры РК86 для Микроши
-// -----------------------------------------------------------------------------
-
-@implementation MicroshaKeyboard
-
-- (id) init
-{
-	if (self = [super init])
-	{
-		kbdmap = @[
-				   // 58 59    5A    5B    5C    5D    5E    5F
-				   @46,  @1,   @35,  @34,  @39,  @31,  @7,   @24,
-				   // 50 51    52    53    54    55    56    57
-				   @5,   @6,   @4,   @8,   @45,  @14,  @41,  @2,
-				   // 48 49    4A    4B    4C    4D    4E    4F
-				   @33,  @11,  @12,  @15,  @40,  @9,   @16,  @38,
-				   // 40 41    42    43    44    45    46    47
-				   @47,  @3,   @43,  @13,  @37,  @17,  @0,   @32,
-				   // 38 39    3A    3B    2C    2D    2E    2F
-				   @28,  @25,  @30,  @10,  @44,  @27,  @42,  @50,
-				   // 30 31    32    33    34    35    36    37
-				   @29,  @18,  @19,  @20,  @21,  @23,  @22,  @26,
-				   // 19 1A    0C    00    01     02   03    04
-				   @126, @125, @115, @122, @120,  @99, @118, @96,
-				   // 20 1B    09    0A    0D    1F    08    18
-				   @49,  @53,  @48,  @76,  @36,  @117, @123, @124
-				   ];
-
-		RUSLAT = 0x20;
-		SHIFT = 0x80;
-	}
-
-	return self;
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) setSnd:(X8253 *)snd
-{
-	snd.channel2 = (C & 0x06) == 0x06;
-	[super setSnd:snd];
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) setC:(uint8_t)data
-{
-	self.snd.beeper = data & 0x02 ? TRUE : FALSE;
-	self.snd.channel2 = (data & 0x06) == 0x06;
-
-	[super setC:data];
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// Второй интерфейс 8255, управление знакогенератором
-// -----------------------------------------------------------------------------
-
-@implementation MicroshaExt
-{
-	X8275 *_crt;
-}
-
-- (void) setCrt:(X8275 *)crt
-{
-	[_crt = crt selectFont:B & 0x80 ? 0x2800 : 0x0C00];
-}
-
-- (X8275*) crt
-{
-	return _crt;
-}
-
-- (void) setB:(uint8_t)data
-{
-	[_crt selectFont:data & 0x80 ? 0x2800 : 0x0C00];
-}
-
-- (uint8_t) A
-{
-	return 0x00;
-}
-
-- (uint8_t) B
-{
-	return 0x00;
-}
-
-- (uint8_t) C
-{
-	return 0x00;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// FCAB - Вывод байта на магнитофон (Микроша)
-// -----------------------------------------------------------------------------
-
-@implementation FCAB
-
-- (int) execute:(X8080 *)cpu
-{
-	if (cpu.SP == 0x76CD && MEMR(cpu, 0x76CD, 0) == 0x9D && MEMR(cpu, 0x76CE, 0) == 0xF8)
-		return 2;
-
-	return [super execute:cpu];
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// ПЭВМ Микроша
-// -----------------------------------------------------------------------------
-
 @implementation Microsha
 
 + (NSString *) title
@@ -198,16 +81,12 @@ static uint32_t colors[] =
 {
 	[self.document registerUndoWithMenuItem:menuItem];
 
-	@synchronized(self.snd)
+	@synchronized(self.snd.sound)
 	{
 		if ((self.isExtRAM = !self.isExtRAM))
-		{
 			[self.cpu selectPage:1 from:0x8000 to:0xBFFF];
-		}
 		else
-		{
 			[self.cpu selectPage:0 from:0x8000 to:0xBFFF];
-		}
 	}
 }
 
@@ -221,7 +100,7 @@ static uint32_t colors[] =
 
 	if (menuItem.tag == 0)
 	{
-		@synchronized(self.snd)
+		@synchronized(self.snd.sound)
 		{
 			if ((self.isFloppy = !self.isFloppy))
 				[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
@@ -254,12 +133,14 @@ static uint32_t colors[] =
 // По сигналу RESET сбрасываем также контролерс НГМД
 // -----------------------------------------------------------------------------
 
-- (void) RESET
+- (void) reset
 {
-	[super RESET];
+	[super reset];
 	[self.floppy RESET];
 }
 
+// -----------------------------------------------------------------------------
+// createObjects/encodeWithCoder/decodeWithCoder
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
@@ -280,21 +161,36 @@ static uint32_t colors[] =
 		return FALSE;
 
 	*(uint8_t *)[self.dos29 bytesAtAddress:0xEDBF] = 0xD1;
-	
+
 	if ((self.floppy = [[Floppy alloc] init]) == nil)
 		return FALSE;
 
 	if (![super createObjects])
 		return FALSE;
 
+	[self.crt selectFont:0x0C00];
+
 	return TRUE;
 }
 
 // -----------------------------------------------------------------------------
 
-- (BOOL) decodeObjects:(NSCoder *)decoder
+- (void) encodeWithCoder:(NSCoder *)encoder
 {
-	if (![super decodeObjects:decoder])
+	[super encodeWithCoder:encoder];
+
+	[encoder encodeObject:self.floppy forKey:@"floppy"];
+	[encoder encodeObject:self.dos29 forKey:@"dos29"];
+
+	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
+	[encoder encodeBool:self.isExtRAM forKey:@"isExtRAM"];
+}
+
+// -----------------------------------------------------------------------------
+
+- (BOOL) decodeWithCoder:(NSCoder *)decoder
+{
+	if (![super decodeWithCoder:decoder])
 		return FALSE;
 
 	if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
@@ -303,29 +199,25 @@ static uint32_t colors[] =
 	if ((self.dos29 = [decoder decodeObjectForKey:@"dos29"]) == nil)
 		return FALSE;
 
-	self.isExtRAM = [decoder decodeBoolForKey:@"isExtRAM"];
 	self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"];
+	self.isExtRAM = [decoder decodeBoolForKey:@"isExtRAM"];
 
 	return TRUE;
 }
 
 // -----------------------------------------------------------------------------
+// mapObjects
+// -----------------------------------------------------------------------------
 
 - (BOOL) mapObjects
 {
+	if (self.isColor)
+		[self.crt setColors:colors attributesMask:0x3F];
+	else
+		[self.crt setColors:NULL attributesMask:0x22];
+
 	self.ext.crt = self.crt;
 
-	if (self.isColor)
-	{
-		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0xD3;
-		[self.crt setColors:colors attributesMask:0x3F];
-	}
-	else
-	{
-		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0x93;
-		[self.crt setColors:NULL attributesMask:0x22];
-	}
-	
 	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];
 	[self.cpu mapObject:self.kbd from:0xC000 to:0xC7FF];
 	[self.cpu mapObject:self.ext from:0xC800 to:0xCFFF];
@@ -354,23 +246,105 @@ static uint32_t colors[] =
 
 	[self.cpu mapHook:self.outHook = [[FCAB alloc] init] atAddress:0xFCAB];
 	self.outHook.extension = @"rkm";
+	self.outHook.type = 2;
 
 	return [super mapObjects];
 }
 
+@end
+
 // -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
+// Первый интерфейс 8255, вариант клавиатуры РК86 для Микроши
 // -----------------------------------------------------------------------------
 
-- (void) encodeWithCoder:(NSCoder *)encoder
+@implementation MicroshaKeyboard
+
+- (id) init
 {
-	[super encodeWithCoder:encoder];
+	if (self = [super init])
+	{
+		kbdmap = @[
+				   // 58 59    5A    5B    5C    5D    5E    5F
+				   @46,  @1,   @35,  @34,  @39,  @31,  @7,   @24,
+				   // 50 51    52    53    54    55    56    57
+				   @5,   @6,   @4,   @8,   @45,  @14,  @41,  @2,
+				   // 48 49    4A    4B    4C    4D    4E    4F
+				   @33,  @11,  @12,  @15,  @40,  @9,   @16,  @38,
+				   // 40 41    42    43    44    45    46    47
+				   @47,  @3,   @43,  @13,  @37,  @17,  @0,   @32,
+				   // 38 39    3A    3B    2C    2D    2E    2F
+				   @28,  @25,  @30,  @10,  @44,  @27,  @42,  @50,
+				   // 30 31    32    33    34    35    36    37
+				   @29,  @18,  @19,  @20,  @21,  @23,  @22,  @26,
+				   // 19 1A    0C    00    01     02   03    04
+				   @126, @125, @115, @122, @120,  @99, @118, @96,
+				   // 20 1B    09    0A    0D    1F    08    18
+				   @49,  @53,  @48,  @76,  @36,  @117, @123, @124
+				   ];
 
-	[encoder encodeObject:self.floppy forKey:@"floppy"];
-	[encoder encodeObject:self.dos29 forKey:@"dos29"];
+		RUSLAT = 0x20;
+		SHIFT = 0x80;
+	}
 
-	[encoder encodeBool:self.isExtRAM forKey:@"isExtRAM"];
-	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
+	return self;
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) setC:(uint8_t)data
+{
+	self.snd.sound.beeper = data & 0x02 ? TRUE : FALSE;
+	self.snd.channel2 = (data & 0x06) == 0x06;
+
+	[super setC:data];
+}
+
+@end
+
+// -----------------------------------------------------------------------------
+// Второй интерфейс 8255, управление знакогенератором
+// -----------------------------------------------------------------------------
+
+@implementation MicroshaExt
+
+@synthesize crt;
+
+- (void) setB:(uint8_t)data
+{
+	[crt selectFont:data & 0x80 ? 0x2800 : 0x0C00];
+}
+
+// -----------------------------------------------------------------------------
+
+- (uint8_t) A
+{
+	return 0x00;
+}
+
+- (uint8_t) B
+{
+	return 0x00;
+}
+
+- (uint8_t) C
+{
+	return 0x00;
+}
+
+@end
+
+// -----------------------------------------------------------------------------
+// FCAB - Вывод байта на магнитофон (Микроша)
+// -----------------------------------------------------------------------------
+
+@implementation FCAB
+
+- (int) execute:(X8080 *)cpu
+{
+	if (cpu.SP == 0x76CD && MEMR(cpu, 0x76CD, 0) == 0x9D && MEMR(cpu, 0x76CE, 0) == 0xF8)
+		return 2;
+
+	return [super execute:cpu];
 }
 
 @end

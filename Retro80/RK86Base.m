@@ -12,25 +12,6 @@
 
 - (void) reset
 {
-	@synchronized(self.snd)
-	{
-		if (!self.snd.isInput)
-		{
-			[self RESET];
-			return;
-		}
-	}
-
-	[self.snd stop];
-	[self.snd close];
-
-	[self RESET];
-
-	[self.snd start];
-}
-
-- (void) RESET
-{
 	[self.kbd RESET];
 	[self.ext RESET];
 
@@ -69,41 +50,6 @@
 }
 
 // -----------------------------------------------------------------------------
-// decodeObjects
-// -----------------------------------------------------------------------------
-
-- (BOOL) decodeObjects:(NSCoder *)decoder
-{
-	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
-		return FALSE;
-
-	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
-		return FALSE;
-
-	if ((self.dma = [decoder decodeObjectForKey:@"dma"]) == nil)
-		return FALSE;
-
-	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
-		return FALSE;
-
-	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
-		return FALSE;
-
-	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
-		return FALSE;
-
-	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
-
-	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
-		return FALSE;
-
-	self.isColor = [decoder decodeBoolForKey:@"isColor"];
-
-	return TRUE;
-}
-
-// -----------------------------------------------------------------------------
 // mapObjects
 // -----------------------------------------------------------------------------
 
@@ -114,8 +60,7 @@
 	self.dma.cpu  = self.cpu;
 
 	self.kbd.snd  = self.snd;
-	self.snd.cpu  = self.cpu;
-	
+
 	return TRUE;
 }
 
@@ -138,17 +83,13 @@
 		self.kbdHook.enabled = TRUE;
 		self.inpHook.enabled = TRUE;
 		self.outHook.enabled = TRUE;
-
-#ifdef DEBUG
-		self.outHook.enabled = FALSE;
-#endif
 	}
 
 	return self;
 }
 
 // -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
+// encodeWithCoder/decodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------
 
 - (void) encodeWithCoder:(NSCoder *)encoder
@@ -161,8 +102,8 @@
 	[encoder encodeObject:self.snd forKey:@"snd"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 	[encoder encodeObject:self.ext forKey:@"ext"];
-	[encoder encodeObject:self.ram forKey:@"ram"];
 	[encoder encodeObject:self.rom forKey:@"rom"];
+	[encoder encodeObject:self.ram forKey:@"ram"];
 
 	[encoder encodeBool:self.isColor forKey:@"isColor"];
 
@@ -171,12 +112,46 @@
 	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
 
+// -----------------------------------------------------------------------------
+
+- (BOOL) decodeWithCoder:(NSCoder *)decoder
+{
+	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+		return FALSE;
+
+	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
+		return FALSE;
+
+	if ((self.dma = [decoder decodeObjectForKey:@"dma"]) == nil)
+		return FALSE;
+
+	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
+		return FALSE;
+
+	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
+		return FALSE;
+
+	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
+		return FALSE;
+
+	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
+		return FALSE;
+
+	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
+		return FALSE;
+
+	self.isColor = [decoder decodeBoolForKey:@"isColor"];
+
+	return TRUE;
+}
+
+// -----------------------------------------------------------------------------
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [super initWithCoder:decoder])
 	{
-		if (![self decodeObjects:decoder])
+		if (![self decodeWithCoder:decoder])
 			return self = nil;
 
 		if (![self mapObjects])

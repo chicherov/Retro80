@@ -1,10 +1,11 @@
-#import "Retro80.h"
+/*******************************************************************************
+ ПЭВМ «Микро-80»
+ ******************************************************************************/
+
 #import "x8080.h"
-#import "x8255.h"
 #import "mem.h"
 
 #import "TextScreen.h"
-
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
 
@@ -12,7 +13,7 @@
 // Интерфейс сопряжения "Микро-80"
 // -----------------------------------------------------------------------------
 
-@interface Micro80Recorder : Sound <ReadWrite>
+@interface Micro80Recorder : NSObject <SoundController, ReadWrite>
 
 @end
 
@@ -28,9 +29,7 @@
 // ПЭВМ "Микро-80"
 // -----------------------------------------------------------------------------
 
-@interface Micro80 : Computer <NSCoding>
-
-@property (weak) Document *document;
+@interface Micro80 : Computer
 
 @property X8080 *cpu;
 @property Memory *rom;

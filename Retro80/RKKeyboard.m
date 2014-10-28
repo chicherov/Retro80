@@ -19,6 +19,8 @@
 	unsigned count;
 }
 
+@synthesize snd;
+
 // -----------------------------------------------------------------------------
 // flagsChanged
 // -----------------------------------------------------------------------------
@@ -188,7 +190,7 @@
 	if (!(modifierFlags & NSShiftKeyMask))
 		data |= SHIFT;
 
-	if (TAPEI && _snd && _snd.input)
+	if (TAPEI && snd.sound.input)
 		data |= TAPEI;
 
 	return data;
@@ -196,8 +198,9 @@
 
 - (void) setC:(uint8_t)data
 {
-	if (TAPEO && _snd)
-		_snd.output = data & TAPEO ? TRUE : FALSE;
+	if (TAPEO)
+		snd.sound.output = data & TAPEO ? TRUE : FALSE;
+
 }
 
 // -----------------------------------------------------------------------------

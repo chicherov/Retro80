@@ -18,12 +18,12 @@
 		D974FCA719ADE9450041DF91 /* Document.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCA619ADE9450041DF91 /* Document.m */; };
 		D974FCAA19ADE9450041DF91 /* Document.xib in Resources */ = {isa = PBXBuildFile; fileRef = D974FCA819ADE9450041DF91 /* Document.xib */; };
 		D974FCAD19ADE9450041DF91 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = D974FCAB19ADE9450041DF91 /* MainMenu.xib */; };
-		D974FCCC19ADEA080041DF91 /* Screen.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCCB19ADEA080041DF91 /* Screen.m */; };
+		D974FCCC19ADEA080041DF91 /* Display.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCCB19ADEA080041DF91 /* Display.m */; };
 		D974FCCF19ADEBF00041DF91 /* WindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCCE19ADEBF00041DF91 /* WindowController.m */; };
-		D974FCD519ADF2310041DF91 /* DocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCD419ADF2310041DF91 /* DocumentController.m */; };
 		D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCDE19ADFD460041DF91 /* RK86Base.m */; };
 		D974FCE219AE08190041DF91 /* Microsha.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCE119AE08190041DF91 /* Microsha.m */; };
 		D974FCEA19AE10500041DF91 /* Apogeo.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCE919AE10500041DF91 /* Apogeo.m */; };
+		D977B7D319FD724A003A5FB6 /* DocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCD419ADF2310041DF91 /* DocumentController.m */; };
 		D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E319BCACFE005350CC /* Radio86RK.m */; };
 		D982B4E719BCB62C005350CC /* Floppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E619BCB62C005350CC /* Floppy.m */; };
 		D982B4E919BCB7FF005350CC /* dos29.bin in Resources */ = {isa = PBXBuildFile; fileRef = D982B4E819BCB7FF005350CC /* dos29.bin */; };
@@ -65,8 +65,8 @@
 		D974FC9F19ADE9450041DF91 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		D974FCA119ADE9450041DF91 /* Retro80-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Retro80-Prefix.pch"; sourceTree = "<group>"; };
 		D974FCA619ADE9450041DF91 /* Document.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Document.m; sourceTree = "<group>"; };
-		D974FCCA19ADEA080041DF91 /* Screen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Screen.h; sourceTree = "<group>"; };
-		D974FCCB19ADEA080041DF91 /* Screen.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Screen.m; sourceTree = "<group>"; };
+		D974FCCA19ADEA080041DF91 /* Display.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Display.h; sourceTree = "<group>"; };
+		D974FCCB19ADEA080041DF91 /* Display.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Display.m; sourceTree = "<group>"; };
 		D974FCCE19ADEBF00041DF91 /* WindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = WindowController.m; sourceTree = "<group>"; };
 		D974FCD419ADF2310041DF91 /* DocumentController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DocumentController.m; sourceTree = "<group>"; };
 		D974FCDD19ADFD460041DF91 /* RK86Base.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RK86Base.h; sourceTree = "<group>"; };
@@ -181,8 +181,8 @@
 				D974FCCE19ADEBF00041DF91 /* WindowController.m */,
 				D974FCA619ADE9450041DF91 /* Document.m */,
 				D9FE179C19B9F874008EBD32 /* Computer.m */,
-				D974FCCA19ADEA080041DF91 /* Screen.h */,
-				D974FCCB19ADEA080041DF91 /* Screen.m */,
+				D974FCCA19ADEA080041DF91 /* Display.h */,
+				D974FCCB19ADEA080041DF91 /* Display.m */,
 				D91FBD7C19AE60A70002128E /* Sound.h */,
 				D91FBD7D19AE60A70002128E /* Sound.m */,
 				D9EBB62119B47E1A00C833CA /* X8080 */,
@@ -337,6 +337,7 @@
 				D974FCCF19ADEBF00041DF91 /* WindowController.m in Sources */,
 				D9A4245519B8310B00DAA3E0 /* x8275.m in Sources */,
 				D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */,
+				D977B7D319FD724A003A5FB6 /* DocumentController.m in Sources */,
 				D91FBD7E19AE60A70002128E /* Sound.m in Sources */,
 				D9EBB62519B47E8B00C833CA /* x8255.m in Sources */,
 				D9A4245419B8310B00DAA3E0 /* x8257.m in Sources */,
@@ -344,13 +345,12 @@
 				D9EBB62019B47E1300C833CA /* x8080.m in Sources */,
 				D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */,
 				D929488319B5850C009BC312 /* RKRecorder.m in Sources */,
-				D974FCD519ADF2310041DF91 /* DocumentController.m in Sources */,
 				D9EBB62919B47ECA00C833CA /* mem.m in Sources */,
 				D974FCA019ADE9450041DF91 /* main.m in Sources */,
 				D929487D19B484D5009BC312 /* TextScreen.m in Sources */,
 				D9FE179D19B9F874008EBD32 /* Computer.m in Sources */,
 				D974FCEA19AE10500041DF91 /* Apogeo.m in Sources */,
-				D974FCCC19ADEA080041DF91 /* Screen.m in Sources */,
+				D974FCCC19ADEA080041DF91 /* Display.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

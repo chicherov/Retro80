@@ -104,7 +104,7 @@ static uint32_t colors[] =
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
-		@synchronized(self.snd)
+		@synchronized(self.snd.sound)
 		{
 			if ((self.isFloppy = !self.isFloppy))
 				[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
@@ -137,9 +137,9 @@ static uint32_t colors[] =
 // По сигналу RESET сбрасываем также контролерс НГМД
 // -----------------------------------------------------------------------------
 
-- (void) RESET
+- (void) reset
 {
-	[super RESET];
+	[super reset];
 	[self.floppy RESET];
 }
 
@@ -149,11 +149,11 @@ static uint32_t colors[] =
 
 - (void) INTE:(BOOL)IF
 {
-	self.snd.beeper = IF;
+	self.snd.sound.beeper = IF;
 }
 
 // -----------------------------------------------------------------------------
-// createObjects
+// createObjects/encodeWithCoder/decodeWithCoder
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
@@ -173,14 +173,28 @@ static uint32_t colors[] =
 	if (![super createObjects])
 		return FALSE;
 
+	[self.crt selectFont:0x0C00];
+
 	return TRUE;
 }
 
 // -----------------------------------------------------------------------------
 
-- (BOOL) decodeObjects:(NSCoder *)decoder
+- (void) encodeWithCoder:(NSCoder *)encoder
 {
-	if (![super decodeObjects:decoder])
+	[super encodeWithCoder:encoder];
+
+	[encoder encodeObject:self.floppy forKey:@"floppy"];
+	[encoder encodeObject:self.dos29 forKey:@"dos29"];
+
+	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
+}
+
+// -----------------------------------------------------------------------------
+
+- (BOOL) decodeWithCoder:(NSCoder *)decoder
+{
+	if (![super decodeWithCoder:decoder])
 		return FALSE;
 
 	if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
@@ -200,18 +214,10 @@ static uint32_t colors[] =
 
 - (BOOL) mapObjects
 {
-	[self.crt selectFont:0x0C00];
-
 	if (self.isColor)
-	{
-		*(uint8_t *)[self.rom bytesAtAddress:0xFADC] = 0xD3;
 		[self.crt setColors:colors attributesMask:0x3F];
-	}
 	else
-	{
-		*(uint8_t *)[self.rom bytesAtAddress:0xFADC] = 0x93;
 		[self.crt setColors:NULL attributesMask:0x22];
-	}
 
 	self.cpu.INTE = self;
 
@@ -237,22 +243,9 @@ static uint32_t colors[] =
 
 	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
 	self.outHook.extension = @"rkr";
+	self.outHook.type = 1;
 
 	return [super mapObjects];
-}
-
-// -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[super encodeWithCoder:encoder];
-
-	[encoder encodeObject:self.floppy forKey:@"floppy"];
-	[encoder encodeObject:self.dos29 forKey:@"dos29"];
-
-	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
 }
 
 @end

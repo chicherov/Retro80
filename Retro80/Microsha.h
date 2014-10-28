@@ -13,7 +13,7 @@
 
 @interface MicroshaKeyboard : RKKeyboard
 
-@property X8253* snd;
+@property (weak) X8253* snd;
 
 @end
 
@@ -23,7 +23,7 @@
 
 @interface MicroshaExt : X8255
 
-@property X8275 *crt;
+@property (weak) X8275 *crt;
 
 @end
 

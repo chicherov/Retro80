@@ -5,7 +5,7 @@
 #import "Sound.h"
 #import "x8080.h"
 
-@interface X8253 : Sound <ReadWrite, NSCoding>
+@interface X8253 : NSObject <SoundController, ReadWrite, NSCoding>
 {
 	struct i8253_timer
 	{

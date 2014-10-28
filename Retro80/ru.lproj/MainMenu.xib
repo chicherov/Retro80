@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6245" systemVersion="14A389" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="14A389" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <deployment defaultVersion="1070" identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6245"/>
+        <deployment identifier="macosx"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6250"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customObject id="cUh-eO-FMQ" customClass="DocumentController">
+        <customObject id="Ro2-68-5SS" customClass="DocumentController">
             <connections>
-                <outlet property="menuNew" destination="Was-JA-tGl" id="YlT-oK-Ibn"/>
+                <outlet property="menuNew" destination="Was-JA-tGl" id="ugE-AR-Sd0"/>
             </connections>
         </customObject>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
@@ -257,12 +257,12 @@
                         <items>
                             <menuItem title="Действительный размер" tag="1" keyEquivalent="1" id="QM0-Z2-IyG">
                                 <connections>
-                                    <action selector="zoom:" target="-1" id="geQ-1j-HNk"/>
+                                    <action selector="scale:" target="-1" id="ND4-AV-7ia"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Масштаб 2:1" tag="2" keyEquivalent="2" id="PZP-hU-vuy">
                                 <connections>
-                                    <action selector="zoom:" target="-1" id="umy-vv-h8j"/>
+                                    <action selector="scale:" target="-1" id="6g8-qx-jhE"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="fDU-PB-X5w"/>

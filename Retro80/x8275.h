@@ -2,13 +2,13 @@
  Контроллер отображения видеоинформации КР580ВГ75 (8275)
  ******************************************************************************/
 
-#import "Screen.h"
+#import "Display.h"
 #import "x8080.h"
 #import "x8257.h"
 
 // -------------------------------------------------------------------------
 
-@interface X8275 : Screen <ReadWrite, HLDA, NSCoding>
+@interface X8275 : NSObject <DisplayController, ReadWrite, HLDA, NSCoding>
 {
 	// -------------------------------------------------------------------------
 	// Регистры i8275
@@ -72,6 +72,8 @@
 	} mode;
 
 }
+
+@property Display *display;
 
 - (void) setColors:(const uint32_t *)colors
 	attributesMask:(uint8_t)attributesMask;

@@ -5,33 +5,20 @@
 	IBOutlet NSMenuItem *menuNew;
 
 	NSArray *computers;
-	NSInteger computer;
+	NSInteger index;
 }
 
 // -----------------------------------------------------------------------------
 
 - (id) makeUntitledDocumentOfType:(NSString *)typeName error:(NSError **)outError
 {
-	Document *document = [super makeUntitledDocumentOfType:typeName error:outError]; if (document)
-	{
-		document.computer = [[NSClassFromString([computers objectAtIndex:computer]) alloc] init];
+	Computer *computer = [[NSClassFromString([computers objectAtIndex:index]) alloc] init];
 
-		if (![document.computer isKindOfClass:[Computer class]])
-		{
-			if (outError)
-			{
-				*outError = [NSError errorWithDomain:@"ru.uart.Retro80"
-												code:1
-											userInfo:nil];
-			}
+	if (computer)
+		return [[Document alloc] initWithComputer:computer type:typeName error:outError];
 
-			return nil;
-		}
-
-		document.computer.document = document;
-	}
-
-	return document;
+	*outError = nil;
+	return nil;
 }
 
 // -----------------------------------------------------------------------------
@@ -55,9 +42,7 @@
 	}
 
 	if ([NSClassFromString([computers objectAtIndex:tag]) isSubclassOfClass:[Computer class]])
-	{
-		[[NSUserDefaults standardUserDefaults] setInteger:computer = tag forKey:@"computer"];
-	}
+		[[NSUserDefaults standardUserDefaults] setInteger:index = tag forKey:@"computer"];
 
 	[super newDocument:sender];
 }
@@ -67,9 +52,9 @@
 - (void) awakeFromNib
 {
 	computers = [NSArray arrayWithObjects: @"Partner", @"Apogeo", @"Radio86RK", @"Microsha", @"~", @"Micro80", @"UT88", nil];
-	computer = [[NSUserDefaults standardUserDefaults] integerForKey:@"computer"];
+	index = [[NSUserDefaults standardUserDefaults] integerForKey:@"computer"];
 
-	for (NSInteger tag = 0; tag < computers.count; tag++)
+	BOOL done = FALSE; for (NSInteger tag = 0; tag < computers.count; tag++)
 	{
 		if ([[computers objectAtIndex:tag] isEqual:@"~"])
 		{
@@ -77,21 +62,29 @@
 		}
 		else
 		{
-			Class class = NSClassFromString([computers objectAtIndex:tag]);
-
-			if ([class isSubclassOfClass:[Computer class]])
+			Class class; if ([(class = NSClassFromString([computers objectAtIndex:tag])) isSubclassOfClass:[Computer class]])
 			{
 				NSMenuItem* menuItem = [[NSMenuItem alloc] initWithTitle:[class title] action:@selector(newDocument:) keyEquivalent:@""];
 
-				if ((menuItem.tag = tag) == computer)
+				if ((menuItem.tag = tag) == index)
 				{
 					menuItem.keyEquivalent = @"n";
 					menuItem.state = NSOnState;
+					done = TRUE;
 				}
 
 				[menuNew.submenu addItem:menuItem];
 			}
 		}
+	}
+
+	if (!done)
+	{
+		NSMenuItem *menuItem = [menuNew.submenu itemAtIndex:0];
+
+		menuItem.keyEquivalent = @"n";
+		menuItem.state = NSOnState;
+		index = menuItem.tag;
 	}
 }
 

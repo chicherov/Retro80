@@ -6,6 +6,10 @@
 
 @implementation X8275
 {
+	unsigned gigaScreen;
+	uint32_t *bitmap;
+	unsigned frame;
+
 	union i8275_config cfg;	// Новая конфигурация
 	unsigned cmd:8;			// Последняя команда
 	unsigned len:8;			// Данные команды
@@ -71,12 +75,12 @@
 	// -------------------------------------------------------------------------
 
 	NSData *rom; const uint8_t *font;
-	const uint16_t *fonts;
-	const uint8_t *mcpg;
 
 	uint8_t attributesMask;
 	const uint32_t *colors;
 
+	const uint16_t *fonts;
+	const uint8_t *mcpg;
 }
 
 // -----------------------------------------------------------------------------
@@ -265,10 +269,7 @@ CCCC[][3] =
 					{
 						config = cfg; memset(screen, -1, sizeof(screen));
 
-						[self setupTextWidth:config.H + 1
-									  height:config.R + 1
-										  cx:6
-										  cy:config.L + 1];
+						bitmap = NULL;
 
 						rowClock = (config.H + 1 + ((config.Z + 1) << 1)) * (config.L + 1) * 12;
 //						rowTimer = clock; rowTimer += 12 - (rowTimer % 12);
@@ -307,7 +308,7 @@ CCCC[][3] =
 					row = 0; attr = 0x80; EoS = FALSE;
 
 					if (frame++ & 1 || gigaScreen != 1)
-						self.needsDisplay = TRUE;
+						self.display.needsDisplay = TRUE;
 				}
 
 				if (row <= config.R)
@@ -336,12 +337,12 @@ CCCC[][3] =
 								{
 									if (fonts == NULL)
 									{
-										ch.attr &= buffer[col+1] & ~0x1D;
+										ch.attr &= buffer[col+1] | ~0x1D;
 										ch.attr |= buffer[col+1] & 0x0D;
 									}
 									else
 									{
-										ch.attr &= buffer[col+1] & ~0x1D;
+										ch.attr &= buffer[col+1] | ~0x1D;
 										ch.attr |= buffer[col+1] & 0x2D;
 									}
 								}
@@ -414,112 +415,122 @@ CCCC[][3] =
 
 						if (screen[page][row][col].word != ch.word)
 						{
-							screen[page][row][col].word = ch.word;
+							if (bitmap == NULL)
+								bitmap = [self.display setupTextWidth:config.H + 1
+															   height:config.R + 1
+																   cx:6
+																   cy:config.L + 1];
 
-							uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
-							uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
-
-							if (page)
+							if (bitmap)
 							{
-								b0 &= 0x7FFFFFFF;
-								b1 &= 0x7FFFFFFF;
-							}
+								screen[page][row][col].word = ch.word;
 
-							uint32_t *ptr = bitmap + ((row + (page ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
+								uint32_t b0 = colors ? colors[0x0F & attributesMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
+								uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
 
-							const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
-							if (fonts) fnt += fonts[ch.attr & 0x0F];
-
-							for (unsigned L = 0; L <= config.L; L++)
-							{
-								uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
-
-								if ((ch.byte & 0x80) == 0x00)
+								if (page)
 								{
-									if (config.U & 0x08 && (L == 0 || L == config.L))
-										byte = 0x00;
-								}
-								else
-								{
-									struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
-
-									// byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
-
-									if (special->VSP)
-										byte = 0x00;
-
-									if (special->LTEN)
-										byte = 0xFF;
+									b0 &= 0x7FFFFFFF;
+									b1 &= 0x7FFFFFFF;
 								}
 
-								if (L == config.U && ch.U) byte = 0xFF;
-								if (ch.R) byte = ~byte;
+								uint32_t *ptr = bitmap + ((row + (page ? config.R + 1 : 0)) * (config.L + 1) * (config.H + 1) + col) * 6;
 
-								for (int i = 0; i < 6; i++, byte <<= 1)
-									*ptr ++ = byte & 0x20 ? b1 : b0;
-
-								ptr += config.H * 6;
-							}
-
-							if (gigaScreen == 2)
-							{
-								static uint32_t backround[] =
-								{
-									0xFF000000, 0xFFFF0000, 0xFF000000, 0xFFFF0000,
-									0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF,
-									0xFF00FF00, 0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00,
-									0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF
-								};
-
-								static uint32_t foreground[] =
-								{
-									0xFFFFFFFF, 0xFFFFFF00,
-									0xFFFF00FF, 0xFFFF0000,
-									0xFF00FFFF, 0xFF00FF00,
-									0xFF0000FF, 0xFF000000
-								};
-
-								uint32_t *ptr = bitmap + (config.R + 1) * (config.L + 1) * (config.H + 1) * 6;
-								ptr += (row * (config.L + 1) * (config.H + 1) + col) * 4;
-								const unsigned char *fnt = mcpg + (ch.R ? 0x400 : 0x000) + ((ch.byte & 0x7F) << 3);
-
-								foreground[7] = backround[ch.attr & 0x0F];
+								const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
+								if (fonts) fnt += fonts[ch.attr & 0x0F];
 
 								for (unsigned L = 0; L <= config.L; L++)
 								{
-									uint8_t fnt1 = fnt[0x000 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
-									uint8_t fnt2 = fnt[0x800 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
+									uint8_t byte = fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
 
 									if ((ch.byte & 0x80) == 0x00)
 									{
 										if (config.U & 0x08 && (L == 0 || L == config.L))
-											fnt1 = fnt2 = 0xFF;
+											byte = 0x00;
 									}
 									else
 									{
 										struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
 
+										// byte = special->LA1 ? (special->LA0 ? 0x3C : 0x07) : (special->LA0 ? 0x04 : 0x00);
+
 										if (special->VSP)
-											fnt1 = fnt2 = 0xFF;
+											byte = 0x00;
 
 										if (special->LTEN)
-											fnt1 = fnt2 = 0x00;
+											byte = 0xFF;
 									}
 
-									if (L == config.U && ch.U)
+									if (L == config.U && ch.U) byte = 0xFF;
+									if (ch.R) byte = ~byte;
+
+									for (int i = 0; i < 6; i++, byte <<= 1)
+										*ptr ++ = byte & 0x20 ? b1 : b0;
+
+									ptr += config.H * 6;
+								}
+
+								if (gigaScreen == 2)
+								{
+									static uint32_t backround[] =
 									{
-										fnt1 ^= 0x3F;
-										fnt2 ^= 0x3F;
+										0xFF000000, 0xFFFF0000, 0xFF000000, 0xFFFF0000,
+										0xFF0000FF, 0xFFFF00FF, 0xFF0000FF, 0xFFFF00FF,
+										0xFF00FF00, 0xFFFFFF00, 0xFF00FF00, 0xFFFFFF00,
+										0x00000000, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF
+									};
+
+									static uint32_t foreground[] =
+									{
+										0xFFFFFFFF, 0xFFFFFF00,
+										0xFFFF00FF, 0xFFFF0000,
+										0xFF00FFFF, 0xFF00FF00,
+										0xFF0000FF, 0xFF000000
+									};
+
+									uint32_t *ptr = bitmap + (config.R + 1) * (config.L + 1) * (config.H + 1) * 6;
+									ptr += (row * (config.L + 1) * (config.H + 1) + col) * 4;
+									const unsigned char *fnt = mcpg + (ch.R ? 0x400 : 0x000) + ((ch.byte & 0x7F) << 3);
+
+									foreground[7] = backround[ch.attr & 0x0F];
+
+									for (unsigned L = 0; L <= config.L; L++)
+									{
+										uint8_t fnt1 = fnt[0x000 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
+										uint8_t fnt2 = fnt[0x800 + ((config.M ? (L ? L - 1 : config.L) : L) & 7)];
+
+										if ((ch.byte & 0x80) == 0x00)
+										{
+											if (config.U & 0x08 && (L == 0 || L == config.L))
+												fnt1 = fnt2 = 0xFF;
+										}
+										else
+										{
+											struct special *special = &CCCC[(ch.byte >> 2) & 0x0F][L > config.U ? 2 : L == config.U];
+
+											if (special->VSP)
+												fnt1 = fnt2 = 0xFF;
+
+											if (special->LTEN)
+												fnt1 = fnt2 = 0x00;
+										}
+
+										if (L == config.U && ch.U)
+										{
+											fnt1 ^= 0x3F;
+											fnt2 ^= 0x3F;
+										}
+
+										*ptr++ = foreground[7] ? foreground [(fnt1 & 0x38) >> 3] : 0;
+										*ptr++ = foreground[7] ? foreground [fnt1 & 0x07] : 0;
+										*ptr++ = foreground[7] ? foreground [(fnt2 & 0x38) >> 3] : 0;
+										*ptr++ = foreground[7] ? foreground [fnt2 & 0x07] : 0;
+										
+										ptr += config.H * 4;
 									}
-
-									*ptr++ = foreground[7] ? foreground [(fnt1 & 0x38) >> 3] : 0;
-									*ptr++ = foreground[7] ? foreground [fnt1 & 0x07] : 0;
-									*ptr++ = foreground[7] ? foreground [(fnt2 & 0x38) >> 3] : 0;
-									*ptr++ = foreground[7] ? foreground [fnt2 & 0x07] : 0;
-
-									ptr += config.H * 4;
 								}
 							}
+
 						}
 					}
 				}
@@ -620,40 +631,40 @@ CCCC[][3] =
 // Световое перо
 // -----------------------------------------------------------------------------
 
-- (void) rightMouseDragged:(NSEvent *)theEvent
-{
-	[self rightMouseDown:theEvent];
-}
-
-- (void) rightMouseDown:(NSEvent *)theEvent
-{
-	NSPoint point = [self convertPoint:theEvent.locationInWindow fromView:nil];
-
-	@synchronized(self)
-	{
-		if (status.VE)
-		{
-			lightPen.ROW = trunc(text.height - point.y / self.frame.size.height * text.height);
-			lightPen.COL = trunc(point.x / self.frame.size.width * text.width) + 8;
-			rightMouse = TRUE;
-			status.LP = 1;
-		}
-	}
-}
-
-- (void) rightMouseUp:(NSEvent *)theEvent
-{
-	@synchronized(self)
-	{
-		status.LP = 0;
-	}
-}
+//- (void) rightMouseDragged:(NSEvent *)theEvent
+//{
+//	[self rightMouseDown:theEvent];
+//}
+//
+//- (void) rightMouseDown:(NSEvent *)theEvent
+//{
+//	NSPoint point = [self convertPoint:theEvent.locationInWindow fromView:nil];
+//
+//	@synchronized(self)
+//	{
+//		if (status.VE)
+//		{
+//			lightPen.ROW = trunc(text.height - point.y / self.frame.size.height * text.height);
+//			lightPen.COL = trunc(point.x / self.frame.size.width * text.width) + 8;
+//			rightMouse = TRUE;
+//			status.LP = 1;
+//		}
+//	}
+//}
+//
+//- (void) rightMouseUp:(NSEvent *)theEvent
+//{
+//	@synchronized(self)
+//	{
+//		status.LP = 0;
+//	}
+//}
 
 // -----------------------------------------------------------------------------
 // Copy to pasteboard
 // -----------------------------------------------------------------------------
 
-- (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y
+- (unichar) charAtX:(unsigned int)x Y:(unsigned int)y
 {
 	return screen[0][y][x].byte;
 }
@@ -679,7 +690,8 @@ CCCC[][3] =
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[super encodeWithCoder:encoder];
+	[encoder encodeInt:(int)(font - (const uint8_t *)rom.bytes) forKey:@"font"];
+
 	[encoder encodeInt:status.byte forKey:@"status"];
 	[encoder encodeInt32:*(uint32_t *)config.byte forKey:@"config"];
 	[encoder encodeInt:*(uint16_t *)cursor.byte forKey:@"cursor"];
@@ -699,10 +711,12 @@ CCCC[][3] =
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [super initWithCoder:decoder])
+	if (self = [super init])
 	{
 		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"SYMGEN" ofType:@"BIN"]]) == nil)
 			return self = nil;
+
+		font = rom.bytes + [decoder decodeIntForKey:@"font"];
 
 		status.byte = [decoder decodeIntForKey:@"status"];
 		*(uint32_t *)config.byte = [decoder decodeInt32ForKey:@"config"];
@@ -720,16 +734,20 @@ CCCC[][3] =
 		row = [decoder decodeIntForKey:@"row"];
 		pos = [decoder decodeIntForKey:@"pos"];
 
-		if (rowClock)
-		{
-			[self setupTextWidth:config.H + 1
-						  height:config.R + 1
-							  cx:6
-							  cy:config.L + 1];
-		}
 	}
 
 	return self;
 }
+
+// -----------------------------------------------------------------------------
+// DEBUG: dealloc
+// -----------------------------------------------------------------------------
+
+#ifdef DEBUG
+- (void) dealloc
+{
+	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
+}
+#endif
 
 @end

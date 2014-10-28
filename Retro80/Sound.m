@@ -4,6 +4,8 @@
 
 @implementation Sound
 {
+	IBOutlet NSTextField *textField;
+
 	AudioStreamBasicDescription streamFormat;
 	AudioQueueRef audioQueue;
 	BOOL pause;
@@ -19,9 +21,14 @@
 	SInt8 (*sample)(id, SEL, uint64_t);
 }
 
+NSRunLoop *runLoop;
+
 @synthesize output;
 @synthesize beeper;
 @synthesize input;
+
+@synthesize snd;
+@synthesize cpu;
 
 // -----------------------------------------------------------------------------
 
@@ -47,12 +54,15 @@
 			{
 				inAudioFilePos += ioNumPackets;
 
-				self.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
-											  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) / 60,
-											  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) % 60,
-											  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
-											  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
-											  ];
+				if ((unsigned) (inAudioFilePos / streamFormat.mSampleRate) != (unsigned) ((inAudioFilePos - ioNumPackets) / streamFormat.mSampleRate))
+				{
+					textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
+											 (unsigned) (inAudioFilePos / streamFormat.mSampleRate) / 60,
+											 (unsigned) (inAudioFilePos / streamFormat.mSampleRate) % 60,
+											 (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+											 (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+											 ];
+				}
 
 				uint8_t add = streamFormat.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger ? 0x80 : 0x00;
 				uint8_t* ptr = inBuffer->mAudioData + (streamFormat.mBitsPerChannel == 16 ? 1 : 0);
@@ -62,7 +72,7 @@
 					input = ((*ptr + add) & 0xFF) > 0x80;
 					ptr += streamFormat.mBytesPerPacket;
 
-					execute(_cpu, @selector(execute:), CLK += clk);
+					execute(cpu, @selector(execute:), CLK += clk);
 				}
 			}
 
@@ -82,9 +92,9 @@
 
 		for (inBuffer->mAudioDataByteSize = 0; inBuffer->mAudioDataByteSize < inBuffer->mAudioDataBytesCapacity; inBuffer->mAudioDataByteSize++, ptr++)
 		{
-			execute(_cpu, @selector(execute:), CLK += clk);
+			execute(cpu, @selector(execute:), CLK += clk);
 
-			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(self, @selector(sample:), CLK);
+			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(snd, @selector(sample:), CLK);
 
 			if (streamFormat.mBitsPerChannel == 16)
 			{
@@ -191,12 +201,12 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 										 userInfo:nil];
 		}
 
-		self.textField.stringValue = [NSString stringWithFormat:@"--:--/%02d:%02d",
-									  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
-									  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
-									  ];
+		textField.stringValue = [NSString stringWithFormat:@"00:00/%02d:%02d",
+								 (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+								 (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+								 ];
 
-		[self.textField setHidden:FALSE];
+		[textField setHidden:FALSE];
 
 		inAudioFilePos = 0;
 		pause = FALSE;
@@ -224,20 +234,16 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	OSStatus err; if ((err = AudioFileClose(inAudioFile)) != noErr)
 		NSLog(@"AudioFileClose error: %d", err);
 
-	self.textField.stringValue = @"";
-	[self.textField setHidden:TRUE];
+	textField.stringValue = @"";
+	[textField setHidden:TRUE];
 
 	inAudioFile = 0;
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) start
+- (void) start:(NSRunLoop *)runLoop
 {
-#ifdef DEBUG
-	NSLog(@"Sound start");
-#endif
-
 	if (inAudioFile == 0)
 	{
 		streamFormat.mSampleRate = 48000;
@@ -250,16 +256,17 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		streamFormat.mFramesPerPacket = 1;
 		streamFormat.mReserved = 0;
 
-		self.textField.stringValue = @"--:--";
+		textField.stringValue = @"--:--";
+		[textField setHidden:TRUE];
 	}
 
-	OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, NULL, NULL, 0, &audioQueue)) == noErr)
+	OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, [runLoop getCFRunLoop], NULL, 0, &audioQueue)) == noErr)
 	{
 		CLK = [self.cpu CLK];
 		clk = [self.cpu quartz] / streamFormat.mSampleRate;
 
 		execute = (void (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
-		sample = (SInt8 (*) (id, SEL, uint64_t)) [self methodForSelector:@selector(sample:)];
+		sample = (SInt8 (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
 
 		for (int i = 0; i < 3; i++)
 		{
@@ -288,7 +295,44 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	{
 		NSLog(@"AudioQueueNewOutput error: %d", err);
 	}
+
+#ifdef DEBUG
+	NSLog(@"Sound start");
+#endif
+
 }
+
+// -----------------------------------------------------------------------------
+
+- (void) thread
+{
+#ifdef DEBUG
+	NSLog(@"Thread start");
+#endif
+
+	runLoop = [NSRunLoop currentRunLoop];
+	[self start:runLoop];
+	[runLoop run];
+
+	runLoop = nil;
+
+#ifdef DEBUG
+	NSLog(@"Thread stop");
+#endif
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) start
+{
+//	[self performSelectorInBackground:@selector(thread) withObject:nil];
+
+	if (runLoop == nil)
+		[NSThread detachNewThreadSelector:@selector(thread) toTarget:self withObject:nil];
+	else
+		[self start:runLoop];
+}
+
 
 // -----------------------------------------------------------------------------
 
@@ -317,13 +361,6 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 - (BOOL) isInput
 {
 	return inAudioFile != 0;
-}
-
-// ----------------------------------------------------------------------
-
-- (SInt8) sample:(uint64_t)clock
-{
-	return 0;
 }
 
 // -----------------------------------------------------------------------------

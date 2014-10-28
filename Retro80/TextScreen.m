@@ -4,6 +4,8 @@
 {
 	NSData *rom;
 
+	uint32_t* bitmap;
+
 	uint8_t memory[32][64];
 	uint8_t screen[32][64];
 	uint64_t CLK;
@@ -44,52 +46,51 @@
 {
 	if (CLK < clock)
 	{
-		frame++; CLK += 18000000/25;
-		self.needsDisplay = TRUE;
+		for (unsigned row = 0; row < 32; row++)
+		{
+			for (unsigned col = 0; col < 64; col++)
+			{
+				uint8_t ch =  memory[row][col];
+
+				if (screen[row][col] != ch)
+				{
+					if (bitmap == NULL)
+						bitmap = [self.display setupTextWidth:64 height:32 cx:6 cy:8];
+
+					if (bitmap)
+					{
+						screen[row][col] = ch;
+
+						const uint8_t *fnt = rom.bytes + ((ch & 0x7F) << 3);
+						uint32_t *ptr = bitmap + row * 3072 + col * 6;
+
+						for (int line = 0; line < 8; line++)
+						{
+							uint8_t byte = *fnt++; if (ch & 0x80)
+								byte ^= 0xFF;
+
+							for (int i = 0; i < 6; i++, byte <<= 1)
+								*ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFFFFFFF;
+
+							ptr += 63 * 6;
+						}
+					}
+				}
+			}
+		}
+
+		self.display.needsDisplay = TRUE;
+		CLK += 18000000/25;
 	}
 
 	return 0;
 }
 
 // -----------------------------------------------------------------------------
-
-- (void)drawRect:(NSRect)rect
-{
-	for (unsigned row = 0; row < 32; row++)
-	{
-		for (unsigned col = 0; col < 64; col++)
-		{
-			uint8_t ch =  memory[row][col];
-
-			if (screen[row][col] != ch)
-			{
-				screen[row][col] = ch;
-
-				const uint8_t *fnt = rom.bytes + ((ch & 0x7F) << 3);
-				uint32_t *ptr = bitmap + row * 3072 + col * 6;
-
-				for (int line = 0; line < 8; line++)
-				{
-					uint8_t byte = *fnt++; if (ch & 0x80)
-						byte ^= 0xFF;
-
-					for (int i = 0; i < 6; i++, byte <<= 1)
-						*ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFFFFFFF;
-
-					ptr += 63 * 6;
-				}
-			}
-		}
-	}
-
-	[super drawRect:rect];
-}
-
-// -----------------------------------------------------------------------------
 // Copy to pasteboard
 // -----------------------------------------------------------------------------
 
-- (uint8_t) byteAtX:(NSUInteger)x y:(NSUInteger)y
+- (unichar) charAtX:(unsigned int)x Y:(unsigned int)y
 {
 	return screen[y][x] & 0x7F;
 }
@@ -104,12 +105,6 @@
 	{
 		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Micro80" ofType:@"fnt"]]) == nil)
 			return self = nil;
-
-		[self setupTextWidth:64 height:32 cx:6 cy:8];
-
-		text.height = 32;
-		text.width = 64;
-		isText = TRUE;
 	}
 
 	return self;
@@ -121,7 +116,7 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeBytes:memory length:sizeof(memory)];
+	[encoder encodeValueOfObjCType:"[2048c]" at:memory];
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 }
 
@@ -129,13 +124,7 @@
 {
 	if (self = [self init])
 	{
-		NSUInteger length; void *ptr = [decoder decodeBytesWithReturnedLength:&length];
-
-		if (ptr == NULL || length != sizeof(memory))
-			return self = nil;
-
-		memcpy(memory, ptr, length);
-
+		[decoder decodeValueOfObjCType:"[2048c]" at:memory];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 	}
 

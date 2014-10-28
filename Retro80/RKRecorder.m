@@ -13,8 +13,14 @@
 	NSUInteger length;
 	NSUInteger pos;
 
-	Sound __weak *snd;
+	NSObject<SoundController> __weak *snd;
 }
+
+@synthesize enabled;
+
+@synthesize extension;
+@synthesize readError;
+@synthesize type;
 
 // -----------------------------------------------------------------------------
 
@@ -45,11 +51,11 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 // -----------------------------------------------------------------------------
 
-- (id) initWithSound:(Sound *)sound
+- (id) initWithSound:(NSObject<SoundController> *)object
 {
 	if (self = [super init])
 	{
-		snd = sound; _readError = 0xF800;
+		snd = object; readError = 0xF800;
 	}
 
 	return self;
@@ -60,35 +66,35 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 {
 	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
 
-	openPanel.allowedFileTypes = [NSArray arrayWithObjects:@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension, nil];
+	openPanel.allowedFileTypes = [NSArray arrayWithObjects:@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", extension, nil];
 
 	if ([openPanel runModal] == NSFileHandlingPanelOKButton && openPanel.URLs.count == 1)
 	{
 		NSString *fileName = [[openPanel.URLs.firstObject path] stringByResolvingSymlinksInPath];
-		NSString *extension = [[fileName pathExtension]lowercaseString];
+		NSString *fileExt = [[fileName pathExtension]lowercaseString];
 
-		if ([extension isEqualToString:@"wav"])
+		if ([fileExt isEqualToString:@"wav"])
 		{
-			[snd stop];
+			[snd.sound stop];
 
-			if ([snd open:openPanel.URLs.firstObject])
+			if ([snd.sound open:openPanel.URLs.firstObject])
 			{
-				[snd start]; panel = 0; return;
+				[snd.sound start]; panel = 0; return;
 			}
 
-			[snd start];
+			[snd.sound start];
 		}
 
 		else if ((data = [NSData dataWithContentsOfFile:fileName]))
 		{
 			bytes = data.bytes; length = data.length; pos = 0;
 
-			if ([@[@"pki", @"gam", @"bss", @"bsm"] containsObject:extension])
+			if ([@[@"pki", @"gam", @"bss", @"bsm"] containsObject:fileExt])
 			{
 				if (length && bytes[0] == 0xE6)
 					pos++;
 			}
-			else if ([extension isEqualToString:@"bin"] && length <= 0x10000)
+			else if ([fileExt isEqualToString:@"bin"] && length <= 0x10000)
 			{
 				uint8_t buffer[4]; buffer[0] = 0x00; buffer[1] = 0x00;
 				buffer[2] = ((length - 1) >> 8) & 0xFF;
@@ -97,13 +103,13 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 				NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:4];
 				[mutableData appendData:data];
 
-				if (_type)
+				if (type)
 				{
-					uint16_t cs = csum(bytes, length, _type == 2);
+					uint16_t cs = csum(bytes, length, type == 2);
 					buffer[2] = cs >> 8; buffer[3] = cs & 0xFF;
 					buffer[1] = 0xE6;
 
-					if (_type == 2)
+					if (type == 2)
 						[mutableData appendBytes:buffer + 2 length:2];
 					else
 						[mutableData appendBytes:buffer length:4];
@@ -121,7 +127,7 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 - (int) execute:(X8080 *)cpu
 {
-	if (_enabled && !snd.isInput)
+	if (enabled && !snd.sound.isInput)
 	{
 		switch (panel)
 		{
@@ -142,9 +148,7 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 				}
 
 				if (cpu.A == 0xFF)
-				{
 					while (pos < length && bytes[pos++] != 0xE6);
-				}
 
 				if (pos == length)
 					return 0;
@@ -162,13 +166,11 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 			{
 				panel = 0; if (pos < length)
 				{
-					cpu.A = 0x08;
+					cpu.A = bytes[pos++];
+					return 1;
 				}
-				else
-				{
-					cpu.PC = self.readError;
-				}
-				
+
+				cpu.PC = self.readError;
 				return 0;
 			}
 		}
@@ -189,20 +191,10 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 	NSTimeInterval last;
 }
 
-// -----------------------------------------------------------------------------
+@synthesize enabled;
 
-- (id) init
-{
-	if (self = [super init])
-	{
-		_enabled = [[NSUserDefaults standardUserDefaults]
-					integerForKey:@"Tape Write Hook"];
-
-	}
-
-	return self;
-
-}
+@synthesize extension;
+@synthesize type;
 
 // -----------------------------------------------------------------------------
 
@@ -267,7 +259,7 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 						}
 					}
 
-					else if (ptr[4] == 0x00)
+					else
 					{
 						savePanel.allowedFileTypes = @[@"bss"];
 						break;
@@ -278,15 +270,15 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 				{
 					NSUInteger i = ((ptr[3] << 8) | ptr[4]) - ((ptr[1] << 8) | ptr[2]) + 6;
 
-					if (length - i == (_Micro80 ? 0 : 2))
+					if (length - i == (type ? 2 : 0))
 					{
-						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
 						break;
 					}
 
 					if (length - i == 5 && ptr[i++] == 0x00 && ptr[i++] == 0x00 && ptr[i++] == 0xE6)
 					{
-						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
 						break;
 					}
 				}
@@ -322,11 +314,11 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 
 - (int) execute:(X8080 *)cpu
 {
-	if (_enabled)
+	if (enabled)
 	{
 		@synchronized(self)
 		{
-			uint8_t byte = _Micro80 ? cpu.A : cpu.C;
+			uint8_t byte = type ? cpu.C : cpu.A;
 
 			if (data == nil)
 			{

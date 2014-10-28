@@ -1,4 +1,3 @@
-#import "Retro80.h"
 #import "x8080.h"
 #import "x8255.h"
 
@@ -31,7 +30,7 @@
 
 // Для интерфейса магнитофона
 
-@property Sound *snd;
+@property (weak) NSObject <SoundController> *snd;
 
 @end
 
