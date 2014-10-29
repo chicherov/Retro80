@@ -74,46 +74,63 @@
 	// Внешние настройки
 	// -------------------------------------------------------------------------
 
-	NSData *rom; const uint8_t *font;
+	NSData *rom; const uint8_t *bytes;
+	const uint16_t *fonts;
+	const uint8_t *mcpg;
+	uint16_t font;
 
 	uint8_t attributesMask;
 	const uint32_t *colors;
 
-	const uint16_t *fonts;
-	const uint8_t *mcpg;
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) setColors:(const uint32_t *)ptr attributesMask:(uint8_t)mask
 {
-	colors = ptr; memset(screen, -1, sizeof(screen));
-	attributesMask = mask; fonts = NULL; mcpg = NULL;
-	gigaScreen = ptr != NULL;
+	@synchronized(self)
+	{
+		colors = ptr; memset(screen, -1, sizeof(screen));
+		attributesMask = mask; fonts = NULL; mcpg = NULL;
+		gigaScreen = ptr != NULL;
+
+		bitmap[0] = NULL;
+		bitmap[1] = NULL;
+	}
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) setFonts:(const uint16 *)ptr
 {
-	fonts = ptr; memset(screen, -1, sizeof(screen));
-	font = (const uint8_t *)rom.bytes;
+	@synchronized(self)
+	{
+		fonts = ptr; memset(screen, -1, sizeof(screen));
+
+		bitmap[0] = NULL;
+		bitmap[1] = NULL;
+	}
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) setMcpg:(const uint8_t *)ptr;
 {
-	mcpg = ptr; memset(screen, -1, sizeof(screen));
-	if (mcpg) gigaScreen = FALSE;
+	@synchronized(self)
+	{
+		mcpg = ptr; memset(screen, -1, sizeof(screen));
+		if (mcpg) gigaScreen = FALSE;
+
+		bitmap[0] = NULL;
+		bitmap[1] = NULL;
+	}
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) selectFont:(unsigned int)offset
 {
-	font = (const uint8_t *)rom.bytes + offset;
-	memset(screen, -1, sizeof(screen));
+	font = offset; memset(screen, -1, sizeof(screen));
 }
 
 // -----------------------------------------------------------------------------
@@ -144,6 +161,10 @@ CCCC[][3] =
 
 	{{0, 0, 1, 0}, {0, 0, 1, 0}, {0, 0, 1, 0}}	// 1100
 };
+
+// -----------------------------------------------------------------------------
+// Символы UNICODE
+// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // Чтение/запись регистров ВГ75
@@ -439,10 +460,8 @@ CCCC[][3] =
 								b1 &= 0x7FFFFFFF;
 							}
 
+							const unsigned char *fnt = bytes + (fonts ? fonts[ch.attr & 0x0F]: font) + ((ch.byte & 0x7F) << 3);
 							uint32_t *ptr = bitmap[page] + (row * (config.L + 1) * (config.H + 1) + col) * 6;
-
-							const unsigned char *fnt = font + ((ch.byte & 0x7F) << 3);
-							if (fonts) fnt += fonts[ch.attr & 0x0F];
 
 							for (unsigned L = 0; L <= config.L; L++)
 							{
@@ -675,7 +694,71 @@ CCCC[][3] =
 
 - (unichar) charAtX:(unsigned int)x Y:(unsigned int)y
 {
-	return screen[0][y][x].byte;
+	NSString *unicode = nil; if (fonts)
+	{
+		font = fonts[screen[0][y][x].attr & 0x0F];
+		if (mcpg && font != 0x0C00) return ' ';
+	}
+
+
+	switch (font)
+	{
+		case 0x0000:	// Партнер (английский алфавит)
+		{
+			unicode = @"                                "
+			" !\"#$%&'()*+,-./0123456789:;<=>?"
+			"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+			"`abcdefghijklmnopqrstuvwxyz{|}~ "
+			;
+
+			break;
+		}
+
+		case 0x0400:	// Партнер (русский с графикой)
+		{
+			unicode = @"                                                "
+			@"АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+			@"абвгдежзийклмнопрстуфхцчшщъыьэюя"
+			@"Ёё";
+
+			break;
+		}
+
+		case 0x0C00:	// РК (Микроша, Партнер) основной
+		{
+			unicode =
+			@" ▘▝▀▗▚▐▜ ⌘ ⬆  ➡⬇▖▌▞▛▄▙▟█   ┃━⬅☼ "
+			" !\"#$%&'()*+,-./0123456789:;<=>?"
+			"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+			"ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ▇";
+
+			break;
+		}
+
+		case 0x2000:	// Апогей основной
+		{
+			unicode =
+			@" ▘▝▀▗▚▐▜ ⌘ ⬆  ➡⬇▖▌▞▛▄▙▟█   ┃━⬅☼ "
+			" !\"#$%&'()*+,-./0123456789:;<=>?"
+			"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+			"ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ░";
+
+			break;
+		}
+
+		case 0x2800:	// Микроша дополнительный
+		{
+			unicode =
+			@"                                "
+			" !\"#$%&'()*+,-./0123456789:;<=>?"
+			"юабцдефгхийклмнопярстужвьызшэщч▇"
+			"ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ▇";
+
+			break;
+		}
+	}
+
+	return unicode && screen[0][y][x].byte < unicode.length ? [unicode characterAtIndex:screen[0][y][x].byte] : ' ';
 }
 
 // -----------------------------------------------------------------------------
@@ -688,6 +771,8 @@ CCCC[][3] =
 	{
 		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"SYMGEN" ofType:@"BIN"]]) == nil)
 			return self = nil;
+
+		bytes = rom.bytes;
 	}
 
 	return self;
@@ -699,12 +784,12 @@ CCCC[][3] =
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeInt:(int)(font - (const uint8_t *)rom.bytes) forKey:@"font"];
-
 	[encoder encodeInt:status.byte forKey:@"status"];
 	[encoder encodeInt32:*(uint32_t *)config.byte forKey:@"config"];
 	[encoder encodeInt:*(uint16_t *)cursor.byte forKey:@"cursor"];
 	[encoder encodeInt:mode.byte forKey:@"mode"];
+
+	[encoder encodeInt:font forKey:@"font"];
 
 	[encoder encodeInt64:rowTimer forKey:@"rowTimer"];
 	[encoder encodeInt64:rowClock forKey:@"rowClock"];
@@ -720,17 +805,14 @@ CCCC[][3] =
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [super init])
+	if (self = [self init])
 	{
-		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"SYMGEN" ofType:@"BIN"]]) == nil)
-			return self = nil;
-
-		font = rom.bytes + [decoder decodeIntForKey:@"font"];
-
 		status.byte = [decoder decodeIntForKey:@"status"];
 		*(uint32_t *)config.byte = [decoder decodeInt32ForKey:@"config"];
 		*(uint16_t *)cursor.byte = [decoder decodeIntForKey:@"cursor"];
 		mode.byte = [decoder decodeIntForKey:@"mode"];
+
+		font = [decoder decodeIntForKey:@"font"];
 
 		rowTimer = [decoder decodeInt64ForKey:@"rowTimer"];
 		rowClock = [decoder decodeInt64ForKey:@"rowClock"];
@@ -742,7 +824,6 @@ CCCC[][3] =
 
 		row = [decoder decodeIntForKey:@"row"];
 		pos = [decoder decodeIntForKey:@"pos"];
-
 	}
 
 	return self;

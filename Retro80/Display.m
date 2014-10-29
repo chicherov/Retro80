@@ -187,7 +187,7 @@
 
 - (uint32_t *) setupGraphicsWidth:(NSUInteger)width height:(NSUInteger)height
 {
-	if (data1 == nil || graphics.width != width || graphics.height != height)
+	@synchronized(self)
 	{
 		data1 = [NSMutableData dataWithLength:width * height * 4];
 		graphics.width = width; graphics.height = height;
@@ -196,26 +196,25 @@
 		[self performSelectorOnMainThread:@selector(scale:)
 							   withObject:nil
 							waitUntilDone:FALSE];
-	}
 
-	isSelected = FALSE; isText = FALSE;
-	return data1.mutableBytes;
+		isSelected = FALSE; isText = FALSE;
+		return data1.mutableBytes;
+	}
 }
 
 - (uint32_t *) setupOverlayWidth:(NSUInteger)width height:(NSUInteger)height
 {
-	if (data2 == nil || overlay.width != width || overlay.height != height)
+	@synchronized(self)
 	{
 		data2 = [NSMutableData dataWithLength:width * height * 4];
 		overlay.width = width; overlay.height = height;
+		return data2.mutableBytes;
 	}
-
-	return data2.mutableBytes;
 }
 
 - (uint32_t *) setupTextWidth:(NSUInteger)width height:(NSUInteger)height cx:(NSUInteger)cx cy:(NSUInteger)cy
 {
-	if (data1 == nil || graphics.width != width * cx || graphics.height != height * cy)
+	@synchronized(self)
 	{
 		data1 = [NSMutableData dataWithLength:(width * cx) * (height * cy) * 4];
 		graphics.width = width * cx; graphics.height = height * cy;
@@ -224,11 +223,11 @@
 		[self performSelectorOnMainThread:@selector(scale:)
 							   withObject:nil
 							waitUntilDone:FALSE];
-	}
 
-	text.height = height; text.width = width;
-	isSelected = FALSE; isText = TRUE;
-	return data1.mutableBytes;
+		text.height = height; text.width = width;
+		isSelected = FALSE; isText = TRUE;
+		return data1.mutableBytes;
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -237,33 +236,21 @@
 
 - (void) drawRect:(NSRect)rect
 {
-	NSRect backingBounds = [self convertRectToBacking:[self bounds]];
-	GLsizei backingPixelWidth  = (GLsizei)(backingBounds.size.width),
-	backingPixelHeight = (GLsizei)(backingBounds.size.height);
-	glViewport(0, 0, backingPixelWidth, backingPixelHeight);
-
-	if (data1)
+	@synchronized(self)
 	{
-		glEnable(GL_TEXTURE_2D);
+		NSRect backingBounds = [self convertRectToBacking:[self bounds]];
+		GLsizei backingPixelWidth  = (GLsizei)(backingBounds.size.width),
+		backingPixelHeight = (GLsizei)(backingBounds.size.height);
+		glViewport(0, 0, backingPixelWidth, backingPixelHeight);
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.bytes);
-
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
-		glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
-		glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
-		glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
-		glEnd();
-
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		if (data2)
+		if (data1)
 		{
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)overlay.width, (GLsizei)overlay.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2.bytes);
+			glEnable(GL_TEXTURE_2D);
+
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.bytes);
 
 			glBegin(GL_QUADS);
 			glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
@@ -272,42 +259,57 @@
 			glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
 			glEnd();
 
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			if (data2)
+			{
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)overlay.width, (GLsizei)overlay.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2.bytes);
+
+				glBegin(GL_QUADS);
+				glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+				glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+				glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+				glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+				glEnd();
+
+			}
+
+			glDisable(GL_TEXTURE_2D);
+
+			if (isSelected)
+			{
+				glBegin(GL_QUADS);
+				glColor4f(1.0, 1.0, 1.0, 0.5);
+
+				if (isText)
+				{
+					glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
+					glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
+					glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
+					glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
+				}
+				else
+				{
+					glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
+					glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
+					glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
+					glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
+				}
+
+				glColor4f(1.0, 1.0, 1.0, 1.0);
+				glEnd();
+			}
+
+			glDisable(GL_BLEND);
 		}
-
-		glDisable(GL_TEXTURE_2D);
-
-		if (isSelected)
+		else
 		{
-			glBegin(GL_QUADS);
-			glColor4f(1.0, 1.0, 1.0, 0.5);
-
-			if (isText)
-			{
-				glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
-				glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - selected.origin.y / text.height * 2);
-				glVertex2f((selected.origin.x + selected.size.width) / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
-				glVertex2f(selected.origin.x / text.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / text.height * 2);
-			}
-			else
-			{
-				glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
-				glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - selected.origin.y / graphics.height * 2);
-				glVertex2f((selected.origin.x + selected.size.width) / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
-				glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
-			}
-
-			glColor4f(1.0, 1.0, 1.0, 1.0);
-			glEnd();
+			glClear(GL_COLOR_BUFFER_BIT);
 		}
 		
-		glDisable(GL_BLEND);
+		glFlush();
 	}
-	else
-	{
-		glClear(GL_COLOR_BUFFER_BIT);
-	}
-
-	glFlush();
 }
 
 // -----------------------------------------------------------------------------
@@ -328,11 +330,6 @@
 // Выделение мышкой
 // -----------------------------------------------------------------------------
 
-BOOL isAlphaNumber(uint8_t byte)
-{
-	return (byte >= '0' && byte <= '9') || (byte >= 'A' && byte <= 'Z') || (byte >= 0x60 && byte <= 0x7E);
-}
-
 - (void) mouseDown:(NSEvent *)theEvent
 {
 	@synchronized(self)
@@ -346,7 +343,9 @@ BOOL isAlphaNumber(uint8_t byte)
 		isSelected = FALSE;
 		isMark = TRUE;
 
-		if (isText && theEvent.clickCount == 2 && isAlphaNumber([self.crt charAtX:mark.x Y:mark.y]))
+		NSCharacterSet *isAlphaNumber = [NSCharacterSet alphanumericCharacterSet];
+
+		if (isText && theEvent.clickCount == 2 && [isAlphaNumber characterIsMember:[self.crt charAtX:mark.x Y:mark.y]])
 		{
 			selected.size.height = 1;
 			selected.size.width = 1;
@@ -354,12 +353,12 @@ BOOL isAlphaNumber(uint8_t byte)
 			selected.origin = mark;
 			isSelected = TRUE;
 
-			while (selected.origin.x + selected.size.width < text.width && isAlphaNumber([self.crt charAtX:selected.origin.x + selected.size.width Y:selected.origin.y]))
+			while (selected.origin.x + selected.size.width < text.width && [isAlphaNumber characterIsMember:[self.crt charAtX:selected.origin.x + selected.size.width Y:selected.origin.y]])
 			{
 				selected.size.width += 1;
 			}
 
-			while (selected.origin.x >= 1 && isAlphaNumber([self.crt charAtX:selected.origin.x - 1 Y:selected.origin.y]))
+			while (selected.origin.x >= 1 && [isAlphaNumber characterIsMember:[self.crt charAtX:selected.origin.x - 1 Y:selected.origin.y]])
 			{
 				selected.origin.x -= 1; selected.size.width += 1;
 			}
@@ -426,65 +425,121 @@ BOOL isAlphaNumber(uint8_t byte)
 	{
 		if (isSelected)
 		{
+			isSelected = FALSE;
+
+			NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
+
 			if (isText)
 			{
-				NSMutableData *buffer = [NSMutableData dataWithLength:selected.size.height * (selected.size.width + 1)];
-
-				uint8_t *buf = buffer.mutableBytes;
-				uint8_t *ptr = buf;
+				NSMutableString *string = [[NSMutableString alloc] init];
 
 				for (unsigned y = selected.origin.y; y < selected.origin.y + selected.size.height; y++)
 				{
-					for (unsigned x = selected.origin.x; x < selected.origin.x + selected.size.width; x++)
+					int count = 0; for (unsigned x = selected.origin.x; x < selected.origin.x + selected.size.width; x++)
 					{
-						if ((*ptr = [self.crt charAtX:x Y:y]) < 0x20 || *ptr > 0x80) *ptr = 0x20;
-						else if (*ptr >= 0x60) *ptr |= 0x80;
-						ptr++;
+						unichar ch = [self.crt charAtX:x Y:y]; if (ch == ' ') count++; else count = 0;
+						[string appendString:[NSString stringWithCharacters:&ch length:1]];
 					}
 
 					if (selected.size.height > 1)
 					{
-						while (ptr > buf && ptr[-1] == ' ')
-							ptr--;
+						if (count)
+							[string deleteCharactersInRange:NSMakeRange(string.length - count, count)];
 
-						*ptr++ = '\n';
+						[string appendString:@"\n"];
 					}
 				}
 
-				NSString *string = [[NSString alloc] initWithBytes:buf
-															length:ptr - buf
-														  encoding:(NSStringEncoding) 0x80000A02];
+				[pasteBoard declareTypes:[NSArray arrayWithObjects:NSPasteboardTypeString, NSPasteboardTypeTIFF, nil] owner:nil];
 
-				NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
-				[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeString] owner:nil];
-				[pasteBoard setString:string forType:NSPasteboardTypeString];
+				[pasteBoard setString:string
+							  forType:NSPasteboardTypeString];
 
-				isSelected = FALSE;
+				selected.origin.x = selected.origin.x * graphics.width / text.width;
+				selected.origin.y = selected.origin.y * graphics.height / text.height;
+
+				selected.size.width = selected.size.width * graphics.width / text.width;
+				selected.size.height = selected.size.height * graphics.height / text.height;
 			}
 
 			else
 			{
-				NSPasteboard *pasteBoard = [NSPasteboard generalPasteboard];
 				[pasteBoard declareTypes:[NSArray arrayWithObject:NSPasteboardTypeTIFF] owner:nil];
-
-				uint8_t *bytes = data1.mutableBytes;
-
-				NSBitmapImageRep *image = [[NSBitmapImageRep alloc]
-										   initWithBitmapDataPlanes:&bytes
-										   pixelsWide:graphics.width
-										   pixelsHigh:graphics.height
-										   bitsPerSample:8
-										   samplesPerPixel:4
-										   hasAlpha:YES
-										   isPlanar:NO
-										   colorSpaceName:NSDeviceRGBColorSpace
-										   bitmapFormat:0
-										   bytesPerRow:graphics.width * 4
-										   bitsPerPixel:0];
-
-				[pasteBoard setData:[image TIFFRepresentation]
-							forType:NSPasteboardTypeTIFF];
 			}
+
+			glViewport(0, 0, graphics.width, graphics.height);
+
+			if (data1)
+			{
+				glEnable(GL_TEXTURE_2D);
+
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.bytes);
+
+				glBegin(GL_QUADS);
+				glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+				glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+				glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+				glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+				glEnd();
+
+				if (data2)
+				{
+					glEnable(GL_BLEND);
+					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+					
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)overlay.width, (GLsizei)overlay.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2.bytes);
+
+					glBegin(GL_QUADS);
+					glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+					glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+					glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+					glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+					glEnd();
+
+					glDisable(GL_BLEND);
+
+				}
+				
+				glDisable(GL_TEXTURE_2D);
+			}
+
+			selected.origin.y = graphics.height - selected.origin.y - selected.size.height;
+
+			NSBitmapImageRep *image = [[NSBitmapImageRep alloc]
+									   initWithBitmapDataPlanes:NULL
+									   pixelsWide:selected.size.width
+									   pixelsHigh:selected.size.height
+									   bitsPerSample:8
+									   samplesPerPixel:3
+									   hasAlpha:NO
+									   isPlanar:NO
+									   colorSpaceName:NSDeviceRGBColorSpace
+									   bitmapFormat:0
+									   bytesPerRow:selected.size.width * 3
+									   bitsPerPixel:0];
+
+			glReadPixels(selected.origin.x, selected.origin.y, selected.size.width, selected.size.height, GL_RGB, GL_UNSIGNED_BYTE, image.bitmapData);
+
+			NSInteger bytesPerRow = image.bytesPerRow; unsigned char* buffer = malloc(image.bytesPerRow);
+			unsigned char *ptr1 = image.bitmapData, *ptr2 = ptr1 + (image.pixelsHigh - 1) * bytesPerRow;
+
+			while (ptr1 < ptr2)
+			{
+				memcpy(buffer, ptr1,   bytesPerRow);
+				memcpy(ptr1,   ptr2,   bytesPerRow);
+				memcpy(ptr2,   buffer, bytesPerRow);
+
+				ptr1 += bytesPerRow;
+				ptr2 -= bytesPerRow;
+			}
+
+			free(buffer);
+
+			[pasteBoard setData:[image TIFFRepresentation]
+						forType:NSPasteboardTypeTIFF];
 		}
 	}
 }
@@ -518,7 +573,7 @@ BOOL isAlphaNumber(uint8_t byte)
 	}
 
 	[self.kbd keyDown:theEvent];
-	//	isSelected = FALSE;
+	isSelected = FALSE;
 }
 
 - (void) keyUp:(NSEvent*)theEvent
@@ -538,6 +593,7 @@ BOOL isAlphaNumber(uint8_t byte)
 
 - (void) awakeFromNib
 {
+	[self setWantsBestResolutionOpenGLSurface:YES];
 	scale = 2;
 }
 

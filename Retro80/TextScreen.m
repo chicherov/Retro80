@@ -92,7 +92,14 @@
 
 - (unichar) charAtX:(unsigned int)x Y:(unsigned int)y
 {
-	return screen[y][x] & 0x7F;
+	NSString *unicode = @
+		" ▘▝▀▗▚▐▜ ⌘ ⬆  ➡⬇▖▌▞▛▄▙▟█   ┃━⬅☼ "
+		" !\"#$%&'()*+,-./0123456789:;<=>?"
+		"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+		"ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ▇";
+
+
+	return [unicode characterAtIndex:screen[y][x] & 0x7F];
 }
 
 // -----------------------------------------------------------------------------
