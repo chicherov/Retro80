@@ -265,6 +265,11 @@
                                     <action selector="scale:" target="-1" id="6g8-qx-jhE"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Масштаб 3:1" tag="3" keyEquivalent="3" id="WIU-XF-TCe">
+                                <connections>
+                                    <action selector="scale:" target="-1" id="6CA-WT-6Br"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="fDU-PB-X5w"/>
                             <menuItem title="Полноэкранный режим" id="cKm-q9-U1r">
                                 <string key="keyEquivalent" base64-UTF8="YES">

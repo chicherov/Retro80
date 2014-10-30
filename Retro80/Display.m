@@ -8,6 +8,9 @@
 	BOOL hideStatusLine;
 	NSInteger scale;
 
+	NSInteger vbScale;
+	NSRect vbRect;
+
 	NSTimer *timer;
 
 	NSMutableData *data1;
@@ -51,17 +54,26 @@
 				menuItem.state = YES;
 		}
 
+		if (menuItem.tag)
+		{
+			if (self.window.screen.frame.size.height < graphics.height * menuItem.tag + self.window.frame.size.height - self.frame.size.height)
+				return NO;
+
+			if (self.window.screen.frame.size.width < graphics.width * menuItem.tag)
+				return NO;
+		}
+
 		return YES;
 	}
 
 	if (menuItem.action == @selector(selectAll:))
 	{
-		return TRUE;
+		return data1 != NULL;
 	}
 
 	if (menuItem.action == @selector(copy:))
 	{
-		return isText && isSelected;
+		return isSelected;
 	}
 
 	if (menuItem.action == @selector(paste:))
@@ -139,25 +151,78 @@
 	[timer invalidate];
 }
 
+- (void) windowDidExitFullScreen:(NSNotification *)notification
+{
+	[self performSelectorOnMainThread:@selector(scale:)
+						   withObject:nil
+						waitUntilDone:FALSE];
+}
+
+// -----------------------------------------------------------------------------
+// Version browser
+// -----------------------------------------------------------------------------
+
+- (NSSize)window:(NSWindow *)window willResizeForVersionBrowserWithMaxPreferredSize:(NSSize)maxPreferredFrameSize maxAllowedSize:(NSSize)maxAllowedFrameSize
+{
+	float r1 = maxPreferredFrameSize.height / graphics.height;
+	float r2 = maxPreferredFrameSize.width / graphics.width;
+
+	NSSize size; size.width = graphics.width * (r1 < r2 ? r1 : r2); size.height = graphics.height * (r1 < r2 ? r1 : r2);
+	size.height += self.window.frame.size.height - self.frame.size.height - constraint.constant;
+
+	return size;
+}
+
+- (void)windowWillEnterVersionBrowser:(NSNotification *)notification
+{
+	vbRect = self.window.frame; vbScale = scale;
+	constraint.constant = 0;
+}
+
+- (void)windowDidExitVersionBrowser:(NSNotification *)notification
+{
+	constraint.constant = hideStatusLine ? 0 : 22;
+
+	scale = vbScale; if (data1 != nil && scale >= 0 && scale <= 9)
+	{
+		CGFloat addHeight = self.window.frame.size.height - self.frame.size.height + constraint.constant;
+
+		if (scale)
+		{
+			vbRect.origin.y += vbRect.size.height;
+			vbRect.size.height = graphics.height * scale + addHeight;
+			vbRect.size.width = graphics.width * scale;
+			vbRect.origin.y -= vbRect.size.height;
+		}
+
+		[self.window setMinSize:NSMakeSize(graphics.width, graphics.height + addHeight)];
+	}
+
+	[self.window setFrame:vbRect display:TRUE];
+}
+
 // -----------------------------------------------------------------------------
 // Обработка масштабирования
 // -----------------------------------------------------------------------------
 
 - (IBAction) scale:(NSMenuItem *)sender
 {
+	if (self.document.inViewingMode)
+		return;
+	
 	if (sender != nil && sender.tag >= 1 && sender.tag <= 9)
 		scale = sender.tag;
 
-	if (data1 != nil && scale >= 1 && scale <= 9)
+	if (data1 != nil && scale >= 0 && scale <= 9)
 	{
 		NSRect rect = self.window.frame; rect.origin.y += rect.size.height;
 		CGFloat addHeight = rect.size.height - self.frame.size.height;
-		
+
 		rect.size.height = graphics.height * scale + addHeight;
 		rect.size.width = graphics.width * scale;
 		rect.origin.y -= rect.size.height;
 
-		if (!(self.window.styleMask & NSFullScreenWindowMask))
+		if (scale && !(self.window.styleMask & NSFullScreenWindowMask))
 			[self.window setFrame:rect display:TRUE];
 
 		[self.window setMinSize:NSMakeSize(graphics.width, graphics.height + addHeight)];
@@ -176,6 +241,11 @@
 	[self.kbd keyUp:nil];
 }
 
+- (void) windowDidResignKey:(NSNotification *)notification
+{
+	[self.kbd keyUp:nil];
+}
+
 - (void) windowWillClose:(NSNotification *)notification
 {
 	[[self.document.windowControllers firstObject] windowWillClose:notification];
@@ -189,6 +259,10 @@
 {
 	@synchronized(self)
 	{
+		if (data1 && scale && (self.window.styleMask & NSFullScreenWindowMask) == 0)
+			if (self.frame.size.width != graphics.width * scale || self.frame.size.height != graphics.height * scale)
+				scale = 0;
+
 		data1 = [NSMutableData dataWithLength:width * height * 4];
 		graphics.width = width; graphics.height = height;
 		data2 = nil; overlay = NSZeroSize;
@@ -216,6 +290,10 @@
 {
 	@synchronized(self)
 	{
+		if (data1 && scale && (self.window.styleMask & NSFullScreenWindowMask) == 0)
+			if (self.frame.size.width != graphics.width * scale || self.frame.size.height != graphics.height * scale)
+				scale = 0;
+
 		data1 = [NSMutableData dataWithLength:(width * cx) * (height * cy) * 4];
 		graphics.width = width * cx; graphics.height = height * cy;
 		data2 = nil; overlay = NSZeroSize;
@@ -594,6 +672,10 @@
 - (void) awakeFromNib
 {
 	[self setWantsBestResolutionOpenGLSurface:YES];
+
+	if (self.document.isInViewingMode)
+		constraint.constant = 0;
+
 	scale = 2;
 }
 

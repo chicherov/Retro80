@@ -62,7 +62,7 @@
 						screen[row][col] = ch;
 
 						const uint8_t *fnt = rom.bytes + ((ch & 0x7F) << 3);
-						uint32_t *ptr = bitmap + row * 3072 + col * 6;
+						uint32_t *ptr = bitmap + (row * 64 * 8 + col) * 6;
 
 						for (int line = 0; line < 8; line++)
 						{
@@ -70,7 +70,7 @@
 								byte ^= 0xFF;
 
 							for (int i = 0; i < 6; i++, byte <<= 1)
-								*ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFFFFFFF;
+								*ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFAAAAAA;
 
 							ptr += 63 * 6;
 						}

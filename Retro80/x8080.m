@@ -113,6 +113,8 @@
 @synthesize quartz;
 @synthesize CLK;
 
+@synthesize halt;
+
 - (void) setPC:(uint16_t)value { PC.PC = value; }
 - (uint16_t) PC { return PC.PC; }
 
@@ -557,7 +559,7 @@ static bool test(uint8_t IR, uint8_t F)
 	{
 		uint8_t IR;
 
-		switch (HOOK[PC.PC] ? [HOOK[PC.PC] execute:self] : 2)
+		switch (halt ? 0 : HOOK[PC.PC] ? [HOOK[PC.PC] execute:self] : 2)
 		{
 			default:
 			{

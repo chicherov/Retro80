@@ -4,11 +4,10 @@
 
 @implementation Sound
 {
-	IBOutlet NSTextField *textField;
-
 	AudioStreamBasicDescription streamFormat;
 	AudioQueueRef audioQueue;
 	BOOL pause;
+	BOOL mute;
 
 	AudioFileID inAudioFile;
 	SInt64 inAudioFilePos;
@@ -56,12 +55,12 @@ NSRunLoop *runLoop;
 
 				if ((unsigned) (inAudioFilePos / streamFormat.mSampleRate) != (unsigned) ((inAudioFilePos - ioNumPackets) / streamFormat.mSampleRate))
 				{
-					textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
-											 (unsigned) (inAudioFilePos / streamFormat.mSampleRate) / 60,
-											 (unsigned) (inAudioFilePos / streamFormat.mSampleRate) % 60,
-											 (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
-											 (unsigned) (packetCount / streamFormat.mSampleRate) % 60
-											 ];
+					self.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
+												  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) / 60,
+												  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) % 60,
+												  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+												  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+												  ];
 				}
 
 				uint8_t add = streamFormat.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger ? 0x80 : 0x00;
@@ -94,7 +93,7 @@ NSRunLoop *runLoop;
 		{
 			execute(cpu, @selector(execute:), CLK += clk);
 
-			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(snd, @selector(sample:), CLK);
+			*ptr = mute ? 0 : (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(snd, @selector(sample:), CLK);
 
 			if (streamFormat.mBitsPerChannel == 16)
 			{
@@ -201,12 +200,12 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 										 userInfo:nil];
 		}
 
-		textField.stringValue = [NSString stringWithFormat:@"00:00/%02d:%02d",
-								 (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
-								 (unsigned) (packetCount / streamFormat.mSampleRate) % 60
-								 ];
+		self.textField.stringValue = [NSString stringWithFormat:@"00:00/%02d:%02d",
+									  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+									  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+									  ];
 
-		[textField setHidden:FALSE];
+		[self.textField setHidden:FALSE];
 
 		inAudioFilePos = 0;
 		pause = FALSE;
@@ -234,8 +233,8 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	OSStatus err; if ((err = AudioFileClose(inAudioFile)) != noErr)
 		NSLog(@"AudioFileClose error: %d", err);
 
-	textField.stringValue = @"";
-	[textField setHidden:TRUE];
+	self.textField.stringValue = @"";
+	[self.textField setHidden:TRUE];
 
 	inAudioFile = 0;
 }
@@ -256,17 +255,18 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		streamFormat.mFramesPerPacket = 1;
 		streamFormat.mReserved = 0;
 
-		textField.stringValue = @"--:--";
-		[textField setHidden:TRUE];
+		self.textField.stringValue = @"--:--";
+		[self.textField setHidden:TRUE];
 	}
 
 	OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, [runLoop getCFRunLoop], NULL, 0, &audioQueue)) == noErr)
 	{
-		CLK = [self.cpu CLK];
-		clk = [self.cpu quartz] / streamFormat.mSampleRate;
-
 		execute = (void (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
 		sample = (SInt8 (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
+
+		CLK = [self.cpu CLK]; clk = [self.cpu quartz] / streamFormat.mSampleRate;
+
+		mute = self.cpu.halt = self.document.inViewingMode;
 
 		for (int i = 0; i < 3; i++)
 		{

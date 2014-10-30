@@ -12,7 +12,6 @@
 	self.document.computer.crt.display = self.document.display;
 	self.document.computer.snd.sound = self.document.sound;
 
-	self.document.display.document = self.document;
 	self.document.display.crt = self.document.computer.crt;
 	self.document.display.kbd = self.document.computer.kbd;
 
@@ -23,19 +22,19 @@
 	self.nextResponder = self.document.computer;
 
 	eventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSKeyDownMask handler:^(NSEvent *theEvent)
-	{
-		NSWindow *targetWindow = theEvent.window;
-		if (targetWindow != self.window)
-			return theEvent;
+					{
+						NSWindow *targetWindow = theEvent.window;
+						if (targetWindow != self.window)
+							return theEvent;
 
-		if (theEvent.keyCode == 53 || theEvent.keyCode == 48)
-		{
-			[self keyDown:theEvent];
-			return (NSEvent*) nil;
-		}
+						if (theEvent.keyCode == 53 || theEvent.keyCode == 48)
+						{
+							[self keyDown:theEvent];
+							return (NSEvent*) nil;
+						}
 
-		return theEvent;
-	}];
+						return theEvent;
+					}];
 
 	[self.document.computer start];
 }

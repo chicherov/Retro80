@@ -148,6 +148,11 @@
 		return [super defaultDraftName];
 }
 
++ (BOOL) preservesVersions
+{
+	return YES;
+}
+
 + (BOOL) autosavesInPlace
 {
     return YES;

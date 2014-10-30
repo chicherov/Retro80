@@ -21,6 +21,7 @@
 
 @property uint32_t quartz;
 @property uint64_t CLK;
+@property BOOL halt;
 
 @end
 
@@ -68,7 +69,7 @@
 
 @interface Computer : NSResponder
 
-@property Document *document;
+@property (weak) Document *document;
 
 @property NSObject <Processor> *cpu;
 

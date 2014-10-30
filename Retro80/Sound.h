@@ -1,11 +1,15 @@
 @protocol SoundController;
 @protocol Processor;
+@class Document;
 
 // -----------------------------------------------------------------------------
 // Sound - Поддеркжа звукового ввода/вывода
 // -----------------------------------------------------------------------------
 
 @interface Sound : NSResponder
+
+@property (assign) IBOutlet NSTextField *textField;
+@property (assign) IBOutlet Document* document;
 
 @property (weak) NSObject <SoundController> *snd;
 @property (weak) NSObject <Processor> *cpu;

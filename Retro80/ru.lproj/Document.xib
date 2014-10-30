@@ -16,6 +16,7 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customObject id="43H-H2-5a3" customClass="Sound">
             <connections>
+                <outlet property="document" destination="-2" id="fOa-tp-zfq"/>
                 <outlet property="textField" destination="ggy-Fu-duH" id="h4r-9z-4l3"/>
             </connections>
         </customObject>
@@ -34,6 +35,7 @@
                         <rect key="frame" x="0.0" y="22" width="468" height="300"/>
                         <connections>
                             <outlet property="constraint" destination="2e6-Zo-PUb" id="vcN-eU-Dt2"/>
+                            <outlet property="document" destination="-2" id="hsX-IB-F4h"/>
                             <outlet property="nextResponder" destination="43H-H2-5a3" id="Lok-Ks-Gfu"/>
                         </connections>
                     </customView>
