@@ -23,6 +23,21 @@
 
 	} mode;
 
+	union i8257_status
+	{
+		uint8_t byte; struct
+		{
+			unsigned TC0:1;		// TC CHANNEL 0
+			unsigned TC1:1;		// TC CHANNEL 0
+			unsigned TC2:1;		// TC CHANNEL 0
+			unsigned TC3:1;		// TC CHANNEL 0
+
+			unsigned U:1;		// UPDATE
+
+		};
+
+	} status;
+
 	union i8257_channel
 	{
 		uint8_t byte[2][2]; struct

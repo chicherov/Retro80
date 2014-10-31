@@ -6,14 +6,25 @@
 
 @implementation X8257
 {
-	uint8_t latch;
+	BOOL latch;
 }
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)data
 {
-	return status;
+	if ((addr & 0x08) == 0)
+	{
+		data = dma[(addr & 0x06) >> 1].byte[addr & 1][latch];
+		latch = !latch;
+	}
+	else if ((addr & 0x0F) == 0x08)
+	{
+		data = status.byte;
+		status.byte &= 0xF0;
+	}
+
+	return data;
 }
 
 // -----------------------------------------------------------------------------
@@ -24,20 +35,22 @@
 	{
 		unsigned channel = (addr & 0x06) >> 1;
 
-		dma[channel].byte[addr & 1][(latch >> channel) & 1] = data;
-		latch ^= 0x01 << channel;
+		dma[channel].byte[addr & 1][latch] = data;
 
 		if (channel == 2 && mode.a)
-		{
-			dma[3].byte[addr & 1][(latch >> 3) & 1] = data;
-			latch ^= 0x08;
-		}
+			dma[3].byte[addr & 1][latch] = data;
+
+		latch = !latch;
 	}
 
 	else if ((addr & 0x0F) == 0x08)
 	{
 		mode.byte = data;
-		latch = 0;
+
+		if (mode.a  == FALSE)
+			status.U = FALSE;
+
+		latch = FALSE;
 	}
 }
 
@@ -47,12 +60,24 @@ BOOL i8257DMA2(X8257* dma, uint8_t *data)
 {
 	if (dma->mode.dma2 && dma->dma[2].type == 1)
 	{
-		*data = MEMR(dma->_cpu, dma->dma[2].address, 0x00);
-
-		dma->dma[2].address++; if (dma->dma[2].count-- == 0 && dma->mode.a)
+		if (dma->status.U)
 		{
 			dma->dma[2].address = dma->dma[3].address;
 			dma->dma[2].count = dma->dma[3].count;
+			dma->status.U = FALSE;
+		}
+
+		*data = MEMR(dma->_cpu, dma->dma[2].address++, 0x00);
+
+		if (dma->dma[2].count-- == 0)
+		{
+			dma->status.TC2 = TRUE;
+
+			if (dma->mode.a)
+				dma->status.U = TRUE;
+
+			else if (dma->mode.t)
+				dma->mode.dma2 = FALSE;
 		}
 
 		return TRUE;
@@ -66,10 +91,24 @@ BOOL i8257DMA2(X8257* dma, uint8_t *data)
 // encodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------
 
+- (id) init
+{
+	if (self = [super init])
+	{
+		*(uint32_t*)dma[0].byte = 0xFFFF0000;
+		*(uint32_t*)dma[1].byte = 0xFFFF0000;
+		*(uint32_t*)dma[2].byte = 0xFFFF0000;
+		*(uint32_t*)dma[3].byte = 0xFFFF0000;
+	}
+
+	return self;
+}
+
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:mode.byte forKey:@"mode"];
-	[encoder encodeInt:latch forKey:@"latch"];
+	[encoder encodeInt:status.byte forKey:@"status"];
+	[encoder encodeBool:latch forKey:@"latch"];
 
 	[encoder encodeInt32:*(uint32_t*)dma[0].byte forKey:@"dma0"];
 	[encoder encodeInt32:*(uint32_t*)dma[1].byte forKey:@"dma1"];
@@ -83,7 +122,8 @@ BOOL i8257DMA2(X8257* dma, uint8_t *data)
 	if (self = [super init])
 	{
 		mode.byte = [decoder decodeIntForKey:@"mode"];
-		latch = [decoder decodeIntForKey:@"latch"];
+		status.byte = [decoder decodeIntForKey:@"status"];
+		latch = [decoder decodeBoolForKey:@"latch"];
 
 		*(uint32_t*)dma[0].byte = [decoder decodeInt32ForKey:@"dma0"];
 		*(uint32_t*)dma[1].byte = [decoder decodeInt32ForKey:@"dma1"];
