@@ -586,6 +586,11 @@
 
 			selected.origin.y = graphics.height - selected.origin.y - selected.size.height;
 
+			NSInteger bytesPerRow = selected.size.width * 3;
+
+			if (bytesPerRow % 4)
+				bytesPerRow += 4 - bytesPerRow % 4;
+
 			NSBitmapImageRep *image = [[NSBitmapImageRep alloc]
 									   initWithBitmapDataPlanes:NULL
 									   pixelsWide:selected.size.width
@@ -596,13 +601,14 @@
 									   isPlanar:NO
 									   colorSpaceName:NSDeviceRGBColorSpace
 									   bitmapFormat:0
-									   bytesPerRow:selected.size.width * 3
+									   bytesPerRow:bytesPerRow
 									   bitsPerPixel:0];
+
 
 			glReadPixels(selected.origin.x, selected.origin.y, selected.size.width, selected.size.height, GL_RGB, GL_UNSIGNED_BYTE, image.bitmapData);
 
-			NSInteger bytesPerRow = image.bytesPerRow; unsigned char* buffer = malloc(image.bytesPerRow);
-			unsigned char *ptr1 = image.bitmapData, *ptr2 = ptr1 + (image.pixelsHigh - 1) * bytesPerRow;
+			uint8_t *ptr1 = image.bitmapData, *ptr2 = ptr1 + ((GLint)selected.size.height - 1) * bytesPerRow;
+			unsigned char* buffer = malloc(bytesPerRow);
 
 			while (ptr1 < ptr2)
 			{
