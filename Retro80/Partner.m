@@ -63,6 +63,21 @@
 }
 
 // -----------------------------------------------------------------------------
+// Прерывания
+// -----------------------------------------------------------------------------
+
+- (void) IRQ8275:(BOOL)IRQ
+{
+	self.cpu.INTR = IRQ;
+}
+
+- (uint8_t) INTA
+{
+	self.cpu.INTR = FALSE;
+	return 0xF7;
+}
+
+// -----------------------------------------------------------------------------
 // createObjects
 // -----------------------------------------------------------------------------
 
@@ -207,7 +222,10 @@
 	self.sys2.partner = self;
 	self.sys2.slot = self.sys2.slot;
 	self.sys2.mcpg = self.sys2.mcpg;
-	
+
+	self.cpu.INTA = self;
+	self.crt.IRQ = self;
+
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
 	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];

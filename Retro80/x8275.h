@@ -6,7 +6,15 @@
 #import "x8080.h"
 #import "x8257.h"
 
-// -------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+@protocol IRQ8275 <NSObject>
+
+- (void) IRQ8275:(BOOL)IRQ;
+
+@end
+
+// -----------------------------------------------------------------------------
 
 @interface X8275 : NSObject <DisplayController, ReadWrite, HLDA, NSCoding>
 {
@@ -84,6 +92,7 @@
 
 - (void) selectFont:(unsigned)offset;
 
-@property X8257* dma;
+@property (weak) NSObject<IRQ8275>* IRQ;
+@property (weak) X8257* dma;
 
 @end

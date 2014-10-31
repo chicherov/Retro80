@@ -162,6 +162,8 @@
 // -----------------------------------------------------------------------------
 
 @synthesize INTE;
+@synthesize INTR;
+@synthesize INTA;
 
 // -----------------------------------------------------------------------------
 // Доступ к адресному пространству
@@ -358,7 +360,7 @@ static unsigned HOLD(X8080* cpu, unsigned clk, BOOL wr)
 
 - (void) setIF:(BOOL)enable
 {
-	[self->INTE INTE:IF = enable];
+	[INTE INTE:IF = enable];
 }
 
 - (BOOL) IF
@@ -557,9 +559,17 @@ static bool test(uint8_t IR, uint8_t F)
 {
 	while (CLK < CLKI)
 	{
-		uint8_t IR;
+		uint8_t IR; if (halt)
+		{
+			IR = 0x00;
+		}
 
-		switch (halt ? 0 : HOOK[PC.PC] ? [HOOK[PC.PC] execute:self] : 2)
+		else if (INTR && IF && INTA)
+		{
+			IR = [INTA INTA];
+		}
+
+		else switch (HOOK[PC.PC] == NULL ? 2 : [HOOK[PC.PC] execute:self])
 		{
 			default:
 			{

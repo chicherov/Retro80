@@ -51,7 +51,7 @@
 // ПЭВМ «Партнер 01.01»
 // -----------------------------------------------------------------------------
 
-@interface Partner : RK86Base
+@interface Partner : RK86Base <IRQ8275, INTA>
 
 @property PartnerKeyboard *kbd;
 

@@ -32,6 +32,10 @@
 - (void) INTE:(BOOL)IF;
 @end
 
+@protocol INTA <NSObject>
+- (uint8_t) INTA;
+@end
+
 // -----------------------------------------------------------------------------
 // X8080 - Базовый класс компьютера с процесором i8080
 // -----------------------------------------------------------------------------
@@ -40,6 +44,8 @@
 
 @property (weak) NSObject<HLDA> *HLDA;
 @property (weak) NSObject<INTE> *INTE;
+@property (weak) NSObject<INTA> *INTA;
+@property BOOL INTR;
 
 @property uint32_t quartz;
 @property uint64_t CLK;

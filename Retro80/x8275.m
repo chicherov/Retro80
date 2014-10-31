@@ -69,7 +69,7 @@
 
 	union i8275_cursor lightPen;
 	BOOL rightMouse;
-	
+
 	// -------------------------------------------------------------------------
 	// Внешние настройки
 	// -------------------------------------------------------------------------
@@ -81,7 +81,6 @@
 
 	uint8_t attributesMask;
 	const uint32_t *colors;
-
 }
 
 // -----------------------------------------------------------------------------
@@ -178,7 +177,9 @@ CCCC[][3] =
 		{
 			uint8_t ret = status.byte;
 
-			status.IR = 0;
+			if (status.IR)
+				[self.IRQ IRQ8275:status.IR = FALSE];
+
 			status.IC = 0;
 			status.DU = 0;
 			status.FO = 0;
@@ -227,6 +228,9 @@ CCCC[][3] =
 			{
 				case 0x00:					// Команда Reset
 				{
+					if (status.IR)
+						[self.IRQ IRQ8275:status.IR = FALSE];
+
 					status.VE = 0;
 					status.IE = 0;
 					break;
@@ -339,7 +343,7 @@ CCCC[][3] =
 					}
 
 					if (row == config.R && status.IE)
-						status.IR = TRUE;
+						[self.IRQ IRQ8275:status.IR = TRUE];
 
 					EoR = FALSE; for (uint8_t col = 0, f = 0; col <= config.H; col++)
 					{
