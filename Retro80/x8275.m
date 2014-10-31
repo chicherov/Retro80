@@ -7,7 +7,6 @@
 @implementation X8275
 {
 	uint32_t *bitmap[2];
-	BOOL gigaScreen;
 	unsigned frame;
 
 	union i8275_config cfg;	// Новая конфигурация
@@ -91,7 +90,6 @@
 	{
 		colors = ptr; memset(screen, -1, sizeof(screen));
 		attributesMask = mask; fonts = NULL; mcpg = NULL;
-		gigaScreen = ptr != NULL;
 
 		bitmap[0] = NULL;
 		bitmap[1] = NULL;
@@ -118,7 +116,6 @@
 	@synchronized(self)
 	{
 		mcpg = ptr; memset(screen, -1, sizeof(screen));
-		if (mcpg) gigaScreen = FALSE;
 
 		bitmap[0] = NULL;
 		bitmap[1] = NULL;
@@ -327,13 +324,13 @@ CCCC[][3] =
 				{
 					row = 0; attr = 0x80; EoS = FALSE;
 
-					if (frame++ & 1 || gigaScreen == FALSE)
+					if (frame++ & 1 || colors == NULL)
 						self.display.needsDisplay = TRUE;
 				}
 
 				if (row <= config.R)
 				{
-					BOOL page = gigaScreen && frame & 1;
+					BOOL page = colors && frame & 1;
 					
 					if (pos != config.H + 1)
 					{
