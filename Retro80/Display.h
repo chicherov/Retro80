@@ -10,8 +10,8 @@
 
 @interface Display : NSOpenGLView <NSWindowDelegate>
 
-@property (assign) IBOutlet NSResponder *nextResponder;
-@property (assign) IBOutlet Document* document;
+@property (weak) IBOutlet NSResponder *nextResponder;
+@property (weak) IBOutlet Document* document;
 
 @property (weak) NSObject <DisplayController> *crt;
 @property (weak) NSObject <Keyboard> *kbd;

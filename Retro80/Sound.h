@@ -8,8 +8,8 @@
 
 @interface Sound : NSResponder
 
-@property (assign) IBOutlet NSTextField *textField;
-@property (assign) IBOutlet Document* document;
+@property (weak) IBOutlet NSTextField *textField;
+@property (weak) IBOutlet Document* document;
 
 @property (weak) NSObject <SoundController> *snd;
 @property (weak) NSObject <Processor> *cpu;
