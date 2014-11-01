@@ -104,7 +104,18 @@
 {
 	@try
 	{
-		id object = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+		DocumentController *documentController = [DocumentController sharedDocumentController];
+
+		id object; if ([typeName isEqualToString:documentController.defaultType])
+		{
+			object = [NSKeyedUnarchiver unarchiveObjectWithData:data];
+		}
+		else
+		{
+			object = [documentController computerByFileExtension:[[self.fileURL pathExtension]lowercaseString] data:data];
+			self.fileURL = nil;
+		}
+
 		if ([object isKindOfClass:[Computer class]])
 		{
 			if (self.computer)

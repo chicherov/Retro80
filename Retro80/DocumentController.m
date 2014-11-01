@@ -49,6 +49,22 @@
 
 // -----------------------------------------------------------------------------
 
+- (Computer *) computerByFileExtension:(NSString *)fileExtension data:(NSData *)data
+{
+	for (NSString *className in computers)
+	{
+		Class class; if ([(class = NSClassFromString(className)) isSubclassOfClass:[Computer class]])
+		{
+			if ([[class ext] isEqualTo:fileExtension])
+				return [[class alloc] initWithData:data];
+		}
+	}
+
+	return [[NSClassFromString([computers objectAtIndex:index]) alloc] initWithData:data];
+}
+
+// -----------------------------------------------------------------------------
+
 - (void) awakeFromNib
 {
 	computers = [NSArray arrayWithObjects: @"Partner", @"Apogeo", @"Radio86RK", @"Microsha", @"~", @"Micro80", @"UT88", nil];

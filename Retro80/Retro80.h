@@ -78,6 +78,7 @@
 @property NSObject <Keyboard> *kbd;
 
 + (NSString *) title;
++ (NSString *) ext;
 
 - (void) start;
 - (void) stop;
@@ -119,6 +120,9 @@
 // -----------------------------------------------------------------------------
 
 @interface DocumentController : NSDocumentController
+
+- (Computer *) computerByFileExtension:(NSString *)fileExtension
+								  data:(NSData *)data;
 
 @end
 

@@ -88,6 +88,18 @@
 	return self;
 }
 
+- (id) initWithData:(NSData *)data
+{
+	if (self = [self init])
+	{
+		[self.inpHook setData:data];
+		[self.kbd paste:@"I\n"];
+	}
+
+	return self;
+
+}
+
 // -----------------------------------------------------------------------------
 // encodeWithCoder/decodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------

@@ -7,6 +7,11 @@
 	return nil;
 }
 
++ (NSString *) ext
+{
+	return nil;
+}
+
 - (void) start
 {
 	[self.snd.sound start];

@@ -60,6 +60,13 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 	return self;
 }
+
+- (void) setData:(NSData *)initData
+{
+	data = initData; bytes = data.bytes;
+	length = data.length; pos = 0;
+}
+
 // -----------------------------------------------------------------------------
 
 - (void) open
@@ -147,7 +154,7 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 					return 0;
 				}
 
-				if (cpu.A == 0xFF)
+				if (cpu.A == 0xFF && pos != 0)
 					while (pos < length && bytes[pos++] != 0xE6);
 
 				if (pos == length)
@@ -277,6 +284,12 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 					}
 
 					if (length - i == 5 && ptr[i++] == 0x00 && ptr[i++] == 0x00 && ptr[i++] == 0xE6)
+					{
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
+						break;
+					}
+
+					if (length - i == 4 && ptr[i++] == 0x00 && ptr[i++] == 0xE6)
 					{
 						savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
 						break;

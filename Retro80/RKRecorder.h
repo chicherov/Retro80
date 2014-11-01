@@ -9,6 +9,7 @@
 @property BOOL enabled;
 
 - (id) initWithSound:(NSObject<SoundController> *)snd;
+- (void) setData:(NSData *)data;
 
 @property NSString *extension;
 @property uint16_t readError;
