@@ -14,6 +14,7 @@
 		D929488219B5850C009BC312 /* RKKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D929487F19B5850C009BC312 /* RKKeyboard.m */; };
 		D929488319B5850C009BC312 /* RKRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = D929488119B5850C009BC312 /* RKRecorder.m */; };
 		D967B3E019B457E000C3ED9A /* Micro80.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3DF19B457E000C3ED9A /* Micro80.m */; };
+		D971486B1A0ED612006348B1 /* QLRetro80.qlgenerator in Copy Files */ = {isa = PBXBuildFile; fileRef = D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */; };
 		D974FCA019ADE9450041DF91 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FC9F19ADE9450041DF91 /* main.m */; };
 		D974FCA719ADE9450041DF91 /* Document.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCA619ADE9450041DF91 /* Document.m */; };
 		D974FCAA19ADE9450041DF91 /* Document.xib in Resources */ = {isa = PBXBuildFile; fileRef = D974FCA819ADE9450041DF91 /* Document.xib */; };
@@ -27,6 +28,9 @@
 		D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E319BCACFE005350CC /* Radio86RK.m */; };
 		D982B4E719BCB62C005350CC /* Floppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E619BCB62C005350CC /* Floppy.m */; };
 		D982B4E919BCB7FF005350CC /* dos29.bin in Resources */ = {isa = PBXBuildFile; fileRef = D982B4E819BCB7FF005350CC /* dos29.bin */; };
+		D988F7BE1A091D5A00079E0A /* GenerateThumbnailForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */; };
+		D988F7C01A091D5A00079E0A /* GeneratePreviewForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BF1A091D5A00079E0A /* GeneratePreviewForURL.m */; };
+		D988F7C21A091D5A00079E0A /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D988F7C11A091D5A00079E0A /* main.c */; };
 		D98BEB4A19F2A2DC008E4EC4 /* Partner.m in Sources */ = {isa = PBXBuildFile; fileRef = D98BEB4919F2A2DC008E4EC4 /* Partner.m */; };
 		D99555061A051B2300BC4868 /* Retro80.icns in Resources */ = {isa = PBXBuildFile; fileRef = D99555051A051B2300BC4868 /* Retro80.icns */; };
 		D9A4245319B8310B00DAA3E0 /* x8253.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4244E19B8310B00DAA3E0 /* x8253.m */; };
@@ -46,6 +50,30 @@
 		D9F4EBA519F3F66000480886 /* Basic.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9F4EBA419F3F66000480886 /* Basic.bin */; };
 		D9FE179D19B9F874008EBD32 /* Computer.m in Sources */ = {isa = PBXBuildFile; fileRef = D9FE179C19B9F874008EBD32 /* Computer.m */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D9D330BA1A10A71800CB2F8A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D974FC8819ADE9450041DF91 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D988F7B81A091D5A00079E0A;
+			remoteInfo = QLRetro80;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D971486A1A0ED5ED006348B1 /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/QuickLook;
+			dstSubfolderSpec = 1;
+			files = (
+				D971486B1A0ED612006348B1 /* QLRetro80.qlgenerator in Copy Files */,
+			);
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		D91FBD7C19AE60A70002128E /* Sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sound.h; sourceTree = "<group>"; };
@@ -81,6 +109,11 @@
 		D982B4E519BCB62C005350CC /* Floppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Floppy.h; sourceTree = "<group>"; };
 		D982B4E619BCB62C005350CC /* Floppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Floppy.m; sourceTree = "<group>"; };
 		D982B4E819BCB7FF005350CC /* dos29.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = dos29.bin; path = Retro80/dos29.bin; sourceTree = "<group>"; };
+		D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QLRetro80.qlgenerator; sourceTree = BUILT_PRODUCTS_DIR; };
+		D988F7BC1A091D5A00079E0A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GenerateThumbnailForURL.m; sourceTree = "<group>"; };
+		D988F7BF1A091D5A00079E0A /* GeneratePreviewForURL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GeneratePreviewForURL.m; sourceTree = "<group>"; };
+		D988F7C11A091D5A00079E0A /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		D98BEB4819F2A2DC008E4EC4 /* Partner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Partner.h; sourceTree = "<group>"; };
 		D98BEB4919F2A2DC008E4EC4 /* Partner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Partner.m; sourceTree = "<group>"; };
 		D99555051A051B2300BC4868 /* Retro80.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Retro80.icns; sourceTree = "<group>"; };
@@ -121,6 +154,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D988F7B51A091D5A00079E0A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -128,12 +168,12 @@
 			isa = PBXGroup;
 			children = (
 				D9A4245619B8418600DAA3E0 /* SYMGEN.BIN */,
+				D9EBB62B19B4808A00C833CA /* Micro80.fnt */,
+				D9EBB62C19B4808A00C833CA /* Micro80.bin */,
 				D9A4245A19B8421900DAA3E0 /* Radio86RK.bin */,
 				D9A4245919B8421900DAA3E0 /* Microsha.bin */,
-				D9A4245819B8421900DAA3E0 /* Apogeo.bin */,
 				D982B4E819BCB7FF005350CC /* dos29.bin */,
-				D9EBB62C19B4808A00C833CA /* Micro80.bin */,
-				D9EBB62B19B4808A00C833CA /* Micro80.fnt */,
+				D9A4245819B8421900DAA3E0 /* Apogeo.bin */,
 				D9F4EBA219F3F65000480886 /* Partner.bin */,
 				D9F4EBA419F3F66000480886 /* Basic.bin */,
 				D9B10F9B19F409D300705ABB /* mcpg.bin */,
@@ -160,6 +200,7 @@
 			children = (
 				D99555051A051B2300BC4868 /* Retro80.icns */,
 				D974FC9919ADE9450041DF91 /* Retro80 */,
+				D988F7BA1A091D5A00079E0A /* QLRetro80 */,
 				D974FC9119ADE9450041DF91 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -168,6 +209,7 @@
 			isa = PBXGroup;
 			children = (
 				D974FC9019ADE9450041DF91 /* Retro80.app */,
+				D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -231,6 +273,25 @@
 			name = Radio86RK;
 			sourceTree = "<group>";
 		};
+		D988F7BA1A091D5A00079E0A /* QLRetro80 */ = {
+			isa = PBXGroup;
+			children = (
+				D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */,
+				D988F7BF1A091D5A00079E0A /* GeneratePreviewForURL.m */,
+				D988F7C11A091D5A00079E0A /* main.c */,
+				D988F7BB1A091D5A00079E0A /* Supporting Files */,
+			);
+			path = QLRetro80;
+			sourceTree = "<group>";
+		};
+		D988F7BB1A091D5A00079E0A /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				D988F7BC1A091D5A00079E0A /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		D9EBB62119B47E1A00C833CA /* X8080 */ = {
 			isa = PBXGroup;
 			children = (
@@ -252,6 +313,16 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		D988F7B61A091D5A00079E0A /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
 		D974FC8F19ADE9450041DF91 /* Retro80 */ = {
 			isa = PBXNativeTarget;
@@ -260,15 +331,36 @@
 				D974FC8C19ADE9450041DF91 /* Sources */,
 				D974FC8D19ADE9450041DF91 /* Frameworks */,
 				D974FC8E19ADE9450041DF91 /* Resources */,
+				D971486A1A0ED5ED006348B1 /* Copy Files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D9D330BB1A10A71800CB2F8A /* PBXTargetDependency */,
 			);
 			name = Retro80;
 			productName = Retro80;
 			productReference = D974FC9019ADE9450041DF91 /* Retro80.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D988F7B81A091D5A00079E0A /* QLRetro80 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D988F7C51A091D5A00079E0A /* Build configuration list for PBXNativeTarget "QLRetro80" */;
+			buildPhases = (
+				D988F7B41A091D5A00079E0A /* Sources */,
+				D988F7B51A091D5A00079E0A /* Frameworks */,
+				D988F7B61A091D5A00079E0A /* Headers */,
+				D988F7B71A091D5A00079E0A /* Resources */,
+				D95DFCCF1A0933E80046CCDD /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QLRetro80;
+			productName = QLRetro80;
+			productReference = D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */;
+			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
 
@@ -278,13 +370,24 @@
 			attributes = {
 				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Andrey Chicherov";
+				TargetAttributes = {
+					D974FC8F19ADE9450041DF91 = {
+						SystemCapabilities = {
+							com.apple.Sandbox = {
+								enabled = 0;
+							};
+						};
+					};
+					D988F7B81A091D5A00079E0A = {
+						CreatedOnToolsVersion = 6.1;
+					};
+				};
 			};
 			buildConfigurationList = D974FC8B19ADE9450041DF91 /* Build configuration list for PBXProject "Retro80" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				Base,
 				ru,
 			);
 			mainGroup = D974FC8719ADE9450041DF91;
@@ -293,6 +396,7 @@
 			projectRoot = "";
 			targets = (
 				D974FC8F19ADE9450041DF91 /* Retro80 */,
+				D988F7B81A091D5A00079E0A /* QLRetro80 */,
 			);
 		};
 /* End PBXProject section */
@@ -302,24 +406,48 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D974FCAA19ADE9450041DF91 /* Document.xib in Resources */,
-				D929487A19B48341009BC312 /* Micro80.fnt in Resources */,
-				D9F4EBA519F3F66000480886 /* Basic.bin in Resources */,
-				D929487919B4832B009BC312 /* Micro80.bin in Resources */,
-				D9A4245719B8418600DAA3E0 /* SYMGEN.BIN in Resources */,
-				D9B10F9C19F409D300705ABB /* mcpg.bin in Resources */,
-				D974FCAD19ADE9450041DF91 /* MainMenu.xib in Resources */,
-				D982B4E919BCB7FF005350CC /* dos29.bin in Resources */,
-				D9A4245C19B8421900DAA3E0 /* Microsha.bin in Resources */,
-				D99555061A051B2300BC4868 /* Retro80.icns in Resources */,
-				D9A4245B19B8421900DAA3E0 /* Apogeo.bin in Resources */,
-				D9A4245D19B8421900DAA3E0 /* Radio86RK.bin in Resources */,
-				D9F4EBA319F3F65000480886 /* Partner.bin in Resources */,
 				D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */,
+				D974FCAA19ADE9450041DF91 /* Document.xib in Resources */,
+				D974FCAD19ADE9450041DF91 /* MainMenu.xib in Resources */,
+				D99555061A051B2300BC4868 /* Retro80.icns in Resources */,
+				D9A4245719B8418600DAA3E0 /* SYMGEN.BIN in Resources */,
+				D929487A19B48341009BC312 /* Micro80.fnt in Resources */,
+				D929487919B4832B009BC312 /* Micro80.bin in Resources */,
+				D9A4245D19B8421900DAA3E0 /* Radio86RK.bin in Resources */,
+				D9A4245C19B8421900DAA3E0 /* Microsha.bin in Resources */,
+				D982B4E919BCB7FF005350CC /* dos29.bin in Resources */,
+				D9A4245B19B8421900DAA3E0 /* Apogeo.bin in Resources */,
+				D9F4EBA319F3F65000480886 /* Partner.bin in Resources */,
+				D9F4EBA519F3F66000480886 /* Basic.bin in Resources */,
+				D9B10F9C19F409D300705ABB /* mcpg.bin in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D988F7B71A091D5A00079E0A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D95DFCCF1A0933E80046CCDD /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "PRODUCT=\"${PRODUCT_NAME}.qlgenerator\"\nQL_PATH=~/Library/QuickLook/\nrm -rf \"$QL_PATH/$PRODUCT\"\n\n#test -d \"$QL_PATH\" || mkdir -p \"$QL_PATH\" && cp -R \"$BUILT_PRODUCTS_DIR/$PRODUCT\" \"$QL_PATH\"\n#qlmanage -r";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		D974FC8C19ADE9450041DF91 /* Sources */ = {
@@ -353,7 +481,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D988F7B41A091D5A00079E0A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D988F7BE1A091D5A00079E0A /* GenerateThumbnailForURL.m in Sources */,
+				D988F7C01A091D5A00079E0A /* GeneratePreviewForURL.m in Sources */,
+				D988F7C21A091D5A00079E0A /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D9D330BB1A10A71800CB2F8A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D988F7B81A091D5A00079E0A /* QLRetro80 */;
+			targetProxy = D9D330BA1A10A71800CB2F8A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		D974FCA819ADE9450041DF91 /* Document.xib */ = {
@@ -416,7 +562,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
 			};
@@ -449,7 +595,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -457,6 +603,7 @@
 		D974FCC519ADE9450041DF91 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
@@ -470,6 +617,7 @@
 		D974FCC619ADE9450041DF91 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
@@ -477,6 +625,40 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		D988F7C31A091D5A00079E0A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = QLRetro80/Info.plist;
+				INSTALL_PATH = /Library/QuickLook;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = qlgenerator;
+			};
+			name = Debug;
+		};
+		D988F7C41A091D5A00079E0A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				INFOPLIST_FILE = QLRetro80/Info.plist;
+				INSTALL_PATH = /Library/QuickLook;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = qlgenerator;
 			};
 			name = Release;
 		};
@@ -497,6 +679,15 @@
 			buildConfigurations = (
 				D974FCC519ADE9450041DF91 /* Debug */,
 				D974FCC619ADE9450041DF91 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D988F7C51A091D5A00079E0A /* Build configuration list for PBXNativeTarget "QLRetro80" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D988F7C31A091D5A00079E0A /* Debug */,
+				D988F7C41A091D5A00079E0A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -23,7 +23,7 @@
 			<string>Viewer</string>
 			<key>LSItemContentTypes</key>
 			<array>
-				<string>public.rk</string>
+				<string>ru.uart.rk.binary</string>
 			</array>
 			<key>NSDocumentClass</key>
 			<string>Document</string>
@@ -85,10 +85,8 @@ All rights reserved.</string>
 			</array>
 			<key>UTTypeDescription</key>
 			<string>Программа для ретрокомпьютера</string>
-			<key>UTTypeIconFile</key>
-			<string>Retro80</string>
 			<key>UTTypeIdentifier</key>
-			<string>public.rk</string>
+			<string>ru.uart.rk.binary</string>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
@@ -99,6 +97,41 @@ All rights reserved.</string>
 					<string>rkm</string>
 					<string>rka</string>
 					<string>rkp</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Программа на Бейсике для ретрокомпьютера</string>
+			<key>UTTypeIdentifier</key>
+			<string>ru.uart.rk.basic</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>bss</string>
+					<string>bsm</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Текст для ретрокомпьютера</string>
+			<key>UTTypeIdentifier</key>
+			<string>ru.uart.rk.text</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>edm</string>
 				</array>
 			</dict>
 		</dict>
