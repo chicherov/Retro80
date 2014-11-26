@@ -5,11 +5,13 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 {
 	@autoreleasepool
 	{
+		NSString *ext = [[(__bridge NSURL *)url pathExtension] lowercaseString];
+
 		NSData *data = [NSData dataWithContentsOfURL:(__bridge NSURL *)url];
 		const uint8_t *ptr = data.bytes;
 		NSUInteger length = data.length;
 
-		if (QLPreviewRequestIsCancelled(preview) || length < 4)
+		if (QLPreviewRequestIsCancelled(preview) || length < 5)
 			return noErr;
 		
 		NSString *unicode = @" ▘▝▀▗▚▐▜ ⌘ ⬆ \n➡⬇▖▌▞▛▄▙▟█   ┃━⬅☼  !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ▇";
@@ -19,6 +21,11 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 
 		NSMutableString *out = [NSMutableString string];
 		NSMutableString *chr = [NSMutableString string];
+
+		if (([ext isEqualToString:@"gam"] || [ext isEqualToString:@"pki"]) && *ptr == 0xE6)
+		{
+			ptr++; length--;
+		}
 
 		uint16_t addr = (ptr[0] << 8) | ptr[1];
 		uint16_t last = (ptr[2] << 8) | ptr[3];
@@ -221,8 +228,6 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 				if (chr.length)
 					[out appendFormat:@"  %*c%@", (0x10 - (addr & 0x0F)) * 3, ' ', chr];
 
-				NSString *ext = [[(__bridge NSURL *)url pathExtension] lowercaseString];
-				
 				if (![ext isEqualToString:@"rk8"])
 				{
 					if ([ext isEqualToString:@"rkm"])
@@ -237,7 +242,7 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 								[out appendFormat:@"\n\nКонрольная сумма: %04X", csum];
 						}
 					}
-					else if (length > 3)
+					else if (length >= 3)
 					{
 						NSUInteger i = 0; while (i < length && ptr[i] == 0x00) i++;
 

@@ -60,7 +60,10 @@
 		}
 	}
 
-	return [[NSClassFromString([computers objectAtIndex:index]) alloc] initWithData:data];
+	if (([fileExtension isEqualToString:@"gam"] || [fileExtension isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6)
+		return [[NSClassFromString(@"Radio86RK") alloc] initWithData:[NSData dataWithBytes:(uint8_t *)data.bytes + 1 length:data.length - 1]];
+
+	return [[NSClassFromString(@"Radio86RK") alloc] initWithData:data];
 }
 
 // -----------------------------------------------------------------------------
