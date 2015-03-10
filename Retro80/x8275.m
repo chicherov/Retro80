@@ -78,18 +78,20 @@
 	const uint8_t *mcpg;
 	uint16_t font;
 
-	uint8_t attributesMask;
 	const uint32_t *colors;
+	uint8_t attributesMask;
+	uint8_t shiftMask;
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) setColors:(const uint32_t *)ptr attributesMask:(uint8_t)mask
+- (void) setColors:(const uint32_t *)ptr attributesMask:(uint8_t)mask shiftMask:(uint8_t)shift
 {
 	@synchronized(self)
 	{
 		colors = ptr; memset(screen, -1, sizeof(screen));
-		attributesMask = mask; fonts = NULL; mcpg = NULL;
+		attributesMask = mask; shiftMask = shift;
+		fonts = NULL; mcpg = NULL;
 
 		bitmap[0] = NULL;
 		bitmap[1] = NULL;
@@ -349,20 +351,6 @@ CCCC[][3] =
 							if (((ch.byte = buffer[col]) & 0x80) == 0x00)	// 0xxxxxxx
 							{
 								ch.attr = attr;
-
-								if (col < config.H && (buffer[col+1] & 0xC0) == 0x80 && config.F && colors == NULL && mcpg == NULL)
-								{
-									if (fonts == NULL)
-									{
-										ch.attr &= buffer[col+1] | ~0x1D;
-										ch.attr |= buffer[col+1] & 0x0D;
-									}
-									else
-									{
-										ch.attr &= buffer[col+1] | ~0x1D;
-										ch.attr |= buffer[col+1] & 0x2D;
-									}
-								}
 							}
 
 							else if ((ch.byte & 0xC0) == 0x80)			// 10xxxxxx
@@ -373,6 +361,7 @@ CCCC[][3] =
 								}
 								else
 								{
+									ch.attr &= shiftMask;
 									ch.byte = 0xF0;
 								}
 							}
@@ -400,7 +389,7 @@ CCCC[][3] =
 							ch.attr = 0x00;
 						}
 
-						if (status.VE && row == cursor.ROW && col + (fonts != NULL) == cursor.COL)
+						if (status.VE && row == cursor.ROW && col + ((shiftMask & (config.C & 1 ? 0x20 : 0x10)) != 0) == cursor.COL)
 						{
 							if (hideCursor)
 								hideCursor = FALSE;

@@ -84,7 +84,8 @@
 @property Display *display;
 
 - (void) setColors:(const uint32_t *)colors
-	attributesMask:(uint8_t)attributesMask;
+	attributesMask:(uint8_t)attributesMask
+		 shiftMask:(uint8_t)shiftMask;
 
 - (void) setFonts:(const uint16 *)fonts;
 

@@ -143,7 +143,7 @@
 		0x0C00, 0x1C00, 0x0C00, 0x1C00
 	};
 
-	[self.crt setColors:NULL attributesMask:0x3F];
+	[self.crt setColors:NULL attributesMask:0x3F shiftMask:0x3D];
 	[self.crt setFonts:fonts];
 
 	// Окошки для внешних устройств

@@ -54,9 +54,9 @@ static uint32_t colors[] =
 	[self.document registerUndoWithMenuItem:menuItem];
 
 	if ((self.isColor = !self.isColor))
-		[self.crt setColors:colors attributesMask:0x3F];
+		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x00];
 	else
-		[self.crt setColors:NULL attributesMask:0x33];
+		[self.crt setColors:NULL attributesMask:0x33 shiftMask:0x11];
 }
 
 // -----------------------------------------------------------------------------
@@ -127,9 +127,9 @@ static uint32_t colors[] =
 - (BOOL) mapObjects
 {
 	if (self.isColor)
-		[self.crt setColors:colors attributesMask:0x3F];
+		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x00];
 	else
-		[self.crt setColors:NULL attributesMask:0x33];
+		[self.crt setColors:NULL attributesMask:0x33 shiftMask:0x11];
 
 	self.cpu.INTE = self;
 
