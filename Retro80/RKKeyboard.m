@@ -8,8 +8,6 @@
 {
 	NSDictionary *kbdCode;
 
-	NSUInteger modifierFlags;
-	BOOL keyboard[64];
 	uint8_t key;
 
 	NSData *clipboard;
@@ -42,7 +40,7 @@
 
 		NSUInteger index = [kbdmap indexOfObject:keyCode];
 
-		if (index != NSNotFound && index < 64)
+		if (index != NSNotFound && index < 72)
 			keyboard[index] = TRUE;
 
 		NSNumber* fkey = [kbdCode objectForKey:keyCode];
@@ -78,12 +76,12 @@
 	{
 		NSUInteger index = [kbdmap indexOfObject:[NSNumber numberWithShort:[theEvent keyCode]]];
 
-		if (index != NSNotFound && index < 64)
+		if (index != NSNotFound && index < 72)
 			keyboard[index] = FALSE;
 	}
 	else
 	{
-		for (int i = 0; i < 64; i++)
+		for (int i = 0; i < 72; i++)
 			keyboard[i] = FALSE;
 	}
 
@@ -209,7 +207,7 @@
 
 - (void) RESET
 {
-	for (int i = 0; i < 64; i++)
+	for (int i = 0; i < 72; i++)
 		keyboard[i] = FALSE;
 
 	modifierFlags = 0;

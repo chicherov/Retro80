@@ -7,9 +7,14 @@
 
 @interface RKKeyboard : X8255 <Keyboard>
 {
-	// Раскладка клавиатуры (64 кода)
+	// Раскладка клавиатуры (64/72 кода)
 
 	NSArray* kbdmap;
+
+	// Нажатые кнопки
+
+	NSUInteger modifierFlags;
+	BOOL keyboard[72];
 
 	// Маски служебных клавиш
 

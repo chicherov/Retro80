@@ -273,9 +273,28 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 					}
 				}
 
+				if (type == 3 && ptr[1] == 0xD9 && ptr[2] == 0xD9 && ptr[3] == 0xD9)
+				{
+					int i = 4; while (i < length && ptr[i] >= 0x20 && ptr[i] < 0x7F) i++; if (i < length && (ptr[i] == 0x00 || ptr[i] == 0x0D) && i <= 20)
+					{
+						int j = i; if (ptr[j] == 0x0D) j++; while (j < length && ptr[j] == 0x00) j++; if (j < length && ptr[j] == 0xE6)
+						{
+							if (j + ((ptr[j + 4] << 8) | ptr[j + 3]) - ((ptr[j + 2] << 8) | ptr[j + 1]) + 8 == length)
+							{
+								savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
+								savePanel.nameFieldStringValue = stringFromRK(ptr + 4, i - 4);
+								break;
+							}
+						}
+					}
+				}
+
 				else
 				{
-					NSUInteger i = ((ptr[3] << 8) | ptr[4]) - ((ptr[1] << 8) | ptr[2]) + 6;
+					int i = ((ptr[3] << 8) | ptr[4]) - ((ptr[1] << 8) | ptr[2]) + 6;
+
+					if (type == 3)
+						i = ((ptr[4] << 8) | ptr[3]) - ((ptr[2] << 8) | ptr[1]) + 6;
 
 					if (length - i == (type ? 2 : 0))
 					{
@@ -331,7 +350,7 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 	{
 		@synchronized(self)
 		{
-			uint8_t byte = type ? cpu.C : cpu.A;
+			uint8_t byte = type && type != 3 ? cpu.C : cpu.A;
 
 			if (data == nil)
 			{

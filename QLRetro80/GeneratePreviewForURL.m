@@ -27,9 +27,48 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 			ptr++; length--;
 		}
 
-		uint16_t addr = (ptr[0] << 8) | ptr[1];
-		uint16_t last = (ptr[2] << 8) | ptr[3];
-		ptr += 4; length -= 4;
+		uint addr, last; if (![ext isEqualToString:@"rks"])
+		{
+			addr = (ptr[0] << 8) | ptr[1];
+			last = (ptr[2] << 8) | ptr[3];
+			ptr += 4; length -= 4;
+		}
+
+		else
+		{
+			addr = (ptr[1] << 8) | ptr[0];
+			last = (ptr[3] << 8) | ptr[2];
+			ptr += 4; length -= 4;
+
+			if (addr == 0xD9D9 && (last & 0xFF) == 0xD9)
+			{
+				if (last >> 8 && (last >> 8) <= 0x7F)
+					[name appendFormat:@"%C", [unicode characterAtIndex:last >> 8]];
+
+				while (length && *ptr && *ptr <= 0x7F)
+				{
+					[name appendFormat:@"%C", [unicode characterAtIndex:*ptr]];
+					ptr++; length--;
+				}
+
+				while (length && *ptr == 0x00)
+				{
+					ptr++; length--;
+				}
+
+				if (length >= 5 && *ptr == 0xE6)
+				{
+					addr = (ptr[2] << 8) | ptr[1];
+					last = (ptr[4] << 8) | ptr[3];
+					ptr += 5; length -= 5;
+				}
+				else
+				{
+					[out appendString:@"\n"];
+				}
+			}
+
+		}
 
 		uint16_t csum1 = 0;
 		uint16_t csum2 = 0;
@@ -76,7 +115,7 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 			}
 		}
 
-		else if (addr == 0xD3D3 && (last & 0xFF00) == 0xD300)	// Basic
+		else if (addr == 0xD3D3 && ((last & 0xFF00) == 0xD300 || (addr & 0xFF) == 0xD3))	// Basic
 		{
 			NSMutableArray *basic = [NSMutableArray arrayWithObjects:@"CLS", @"FOR", @"NEXT", @"DATA", @"INPUT", @"DIM", @"READ", @"CUR", @"GOTO", @"RUN", @"IF", @"RESTORE", @"GOSUB", @"RETURN", @"REM", @"STOP", @"OUT", @"ON", @"PLOT", @"LINE", @"POKE", @"PRINT", @"DEF", @"CONT", @"LIST", @"CLEAR", @"MLOAD", @"MSAVE", @"NEW", @"TAB(", @"TO", @"SPC(", @"FN", @"THEN", @"NOT", @"STEP", @"+", @"-", @"*", @"/", @"^", @"AND", @"OR", @">", @"=", @"<", @"SGN", @"INT", @"ABS", @"USR", @"FRE", @"INP", @"POS", @"SQR", @"RND", @"LOG", @"EXP", @"COS", @"SIN", @"TAN", @"ATN", @"PEEK", @"LEN", @"STR$", @"VAL", @"ASC", @"CHR$", @"LEFT$", @"RIGHT$", @"MID$", nil];
 
@@ -238,6 +277,18 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 
 							if (csum != csum1)
 								[out appendFormat:@"\n\nОшибка контрольной суммы: %04X/%04X", csum, csum1];
+							else
+								[out appendFormat:@"\n\nКонрольная сумма: %04X", csum];
+						}
+					}
+					else if ([ext isEqualToString:@"rks"])
+					{
+						if (length >= 2)
+						{
+							uint16_t csum = (ptr[1] << 8) | ptr[0]; ptr += 2; length -= 2;
+
+							if (csum != csum2)
+								[out appendFormat:@"\n\nОшибка контрольной суммы: %04X/%04X", csum, csum2];
 							else
 								[out appendFormat:@"\n\nКонрольная сумма: %04X", csum];
 						}

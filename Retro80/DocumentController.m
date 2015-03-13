@@ -70,7 +70,13 @@
 
 - (void) awakeFromNib
 {
-	computers = [NSArray arrayWithObjects: @"Partner", @"Apogeo", @"Radio86RK", @"Microsha", @"~", @"Micro80", @"UT88", nil];
+	computers = [NSArray arrayWithObjects:
+				 @"Partner", @"Apogeo", @"Radio86RK", @"Microsha",
+				 @"~", @"Specialist", @"SpecialistSP580",
+				 @"~", @"Orion128",
+				 @"~", @"Micro80", @"UT88",
+				 nil];
+
 	index = [[NSUserDefaults standardUserDefaults] integerForKey:@"computer"];
 
 	BOOL done = FALSE; for (NSInteger tag = 0; tag < computers.count; tag++)

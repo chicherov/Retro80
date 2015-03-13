@@ -42,13 +42,13 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.4</string>
+	<string>0.5</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2014 Andrey Chicherov.
+	<string>Copyright © 2014-2015 Andrey Chicherov.
 All rights reserved.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
@@ -99,6 +99,8 @@ All rights reserved.</string>
 					<string>rkm</string>
 					<string>rka</string>
 					<string>rkp</string>
+					<string>rks</string>
+					<string>rko</string>
 				</array>
 			</dict>
 		</dict>
