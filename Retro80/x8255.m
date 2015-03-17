@@ -83,7 +83,7 @@
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
-	switch (addr & 3)
+	current = clock; switch (addr & 3)
 	{
 		case 0:
 
@@ -118,7 +118,7 @@
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-	switch (addr & 3)
+	current = clock; switch (addr & 3)
 	{
 		case 0:
 

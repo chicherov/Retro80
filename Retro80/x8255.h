@@ -6,6 +6,8 @@
 
 @interface X8255 : NSObject<ReadWrite, Reset, NSCoding>
 {
+	uint64_t current;
+
 	union i8255_mode
 	{
 		uint8_t byte; struct

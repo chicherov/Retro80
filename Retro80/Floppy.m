@@ -9,7 +9,6 @@
 	unsigned track;
 	unsigned head;
 
-	uint64_t current;
 	uint64_t started;
 
 	unsigned long long offset;

@@ -245,7 +245,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 {
 	if (inAudioFile == 0)
 	{
-		streamFormat.mSampleRate = 48000;
+		streamFormat.mSampleRate = 44100;
 		streamFormat.mFormatID = kAudioFormatLinearPCM;
 		streamFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
 		streamFormat.mBitsPerChannel = 8;

@@ -298,8 +298,8 @@ static uint32_t colors[] =
 
 - (void) setC:(uint8_t)data
 {
-	self.snd.sound.beeper = data & 0x02 ? TRUE : FALSE;
-	self.snd.channel2 = (data & 0x06) == 0x06;
+	self.snd.channel2 = self.snd.sound.beeper = data & 0x02;
+	[self.snd setGate2:data & 0x04 clock:current];
 
 	[super setC:data];
 }

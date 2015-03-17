@@ -31,7 +31,6 @@
 
 @property SpecialistScreen *crt;
 @property (weak) X8253* snd;
-@property BOOL isSound;
 
 @end
 

@@ -97,6 +97,8 @@ static uint32_t colors[] =
 		[self.document registerUndoWithMenuItem:menuItem];
 		self.ext.url = nil;
 	}
+
+	[self.cpu selectPage:self.ext.url != nil from:0xA000 to:0xBFFF];
 }
 
 // -----------------------------------------------------------------------------
@@ -180,6 +182,8 @@ static uint32_t colors[] =
 
 	[self.crt selectFont:0x0C00];
 
+	self.snd.channel0 = TRUE;
+	self.snd.rkmode = TRUE;
 	return TRUE;
 }
 
@@ -228,10 +232,15 @@ static uint32_t colors[] =
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];
 	[self.cpu mapObject:self.kbd from:0x8000 to:0x9FFF];
-	[self.cpu mapObject:self.ext from:0xA000 to:0xBFFF];
+	[self.cpu mapObject:self.snd from:0xA000 to:0xBFFF];
 	[self.cpu mapObject:self.crt from:0xC000 to:0xDFFF];
 	[self.cpu mapObject:self.dma from:0xE000 to:0xFFFF WO:YES];
 	[self.cpu mapObject:self.rom from:0xF000 to:0xFFFF RO:YES];
+
+	[self.cpu mapObject:self.ext atPage:1 from:0xA000 to:0xBFFF];
+
+	if (self.ext.url != nil)
+		[self.cpu selectPage:1 from:0xA000 to:0xBFFF];
 
 	[self.cpu mapObject:self.dos29 atPage:1 from:0xE000 to:0xEFFF RO:YES];
 	[self.cpu mapObject:self.floppy atPage:1 from:0xF000 to:0xF7FF];

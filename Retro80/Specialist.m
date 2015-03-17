@@ -10,8 +10,7 @@
 
 @implementation SpecialistScreen
 {
-	uint8_t screen[0x3000];
-	uint8_t colors[0x3000];
+	uint8_t screen[2][0x3000];
 
 	uint32_t* bitmap;
 	uint64_t CLK;
@@ -25,14 +24,14 @@
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
-	return addr & 0x3000 ? screen [(addr & 0x3FFF) - 0x1000] : status;
+	return addr & 0x3000 ? screen [0][(addr & 0x3FFF) - 0x1000] : status;
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
 	if (addr & 0x3000)
 	{
-		addr = (addr & 0x3FFF) - 0x1000; screen[addr] = data; colors[addr] = color; if (bitmap)
+		addr = (addr & 0x3FFF) - 0x1000; screen[0][addr] = data; screen[1][addr] = color; if (bitmap)
 		{
 			uint32_t* ptr = bitmap + ((addr & 0x3F00) >> 5) + (addr & 0xFF) * 384;	for (int i = 0; i < 8; i++)
 				*ptr++ = data & (0x80 >> i) ? (color & 0x80 ? 0xFF000000 : 0xFF0000FF ) | (color & 0x40 ? 0 : 0xFF00)  | (color & 0x10 ? 0 : 0xFF0000) : 0xFF000000;
@@ -47,7 +46,7 @@
 
 - (const uint8_t*) bytesAtAddress:(uint16_t)addr
 {
-	return addr & 0x3000 ? screen + (addr & 0x3FFF) - 0x1000 : NULL;
+	return addr & 0x3000 ? screen[0] + (addr & 0x3FFF) - 0x1000 : NULL;
 }
 
 - (uint8_t*) mutableBytesAtAddress:(uint16_t)addr
@@ -70,7 +69,7 @@
 			for (uint16_t addr = 0x0000; addr < 0x3000; addr++)
 			{
 				uint32_t* ptr = bitmap + ((addr & 0x3F00) >> 5) + (addr & 0xFF) * 384;	for (int i = 0; i < 8; i++)
-					*ptr++ = screen[addr] & (0x80 >> i) ? (colors[addr] & 0x80 ? 0xFF000000 : 0xFF0000FF ) | (colors[addr] & 0x40 ? 0 : 0xFF00)  | (colors[addr] & 0x10 ? 0 : 0xFF0000) : 0xFF000000;
+					*ptr++ = screen[0][addr] & (0x80 >> i) ? (screen[1][addr] & 0x80 ? 0xFF000000 : 0xFF0000FF ) | (screen[1][addr] & 0x40 ? 0 : 0xFF00)  | (screen[1][addr] & 0x10 ? 0 : 0xFF0000) : 0xFF000000;
 			}
 		}
 
@@ -89,7 +88,7 @@
 {
 	if (!isColor)
 	{
-		memset(colors, color = 0x20, sizeof(colors)); bitmap = NULL;
+		memset(screen[1], color = 0x20, sizeof(screen[1])); bitmap = NULL;
 	}
 	else
 	{
@@ -117,8 +116,7 @@
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeValueOfObjCType:"[12288c]" at:screen];
-	[encoder encodeValueOfObjCType:"[12288c]" at:colors];
+	[encoder encodeBytes:screen[0] length:sizeof(screen) forKey:@"screen"];
 	[encoder encodeInt:color forKey:@"color"];
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 }
@@ -127,10 +125,19 @@
 {
 	if (self = [self init])
 	{
-		[decoder decodeValueOfObjCType:"[12288c]" at:screen];
-		[decoder decodeValueOfObjCType:"[12288c]" at:colors];
-		color = [decoder decodeIntForKey:@"color"];
-		CLK = [decoder decodeInt64ForKey:@"CLK"];
+		NSUInteger length; const void *ptr;
+
+		if ((ptr = [decoder decodeBytesForKey:@"screen" returnedLength:&length]) && length == sizeof(screen))
+		{
+			memcpy(screen[0], ptr, sizeof(screen));
+
+			color = [decoder decodeIntForKey:@"color"];
+			CLK = [decoder decodeInt64ForKey:@"CLK"];
+		}
+		else
+		{
+			return self = nil;
+		}
 	}
 
 	return self;
@@ -192,12 +199,10 @@
 - (void) setC:(uint8_t)data
 {
 	self.snd.sound.output = data & 0x80;
+	self.snd.sound.beeper = data & 0x20;
 
-	/*if (self.isSound)
-		self.snd.channel0 = (data & 0x20) == 0x00;
-	else*/
-		self.snd.sound.beeper = data & 0x20;
-
+	if (self.crt.isColor)
+		self.crt.color = data & 0xD0;
 }
 
 - (uint8_t) C
@@ -449,7 +454,12 @@
 	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"SpecialistSP580" mask:0x0FFF]) == nil)
 		return FALSE;
 
-	return [super createObjects];
+	if ([super createObjects] == FALSE)
+		return FALSE;
+
+	self.snd.channel0 = TRUE;
+	self.snd.rkmode = TRUE;
+	return TRUE;
 }
 
 - (BOOL) mapObjects
@@ -467,7 +477,6 @@
 	self.cpu.HLDA = self.crt;
 	self.kbd.crt = self.crt;
 	self.kbd.snd = self.snd;
-	self.kbd.isSound = TRUE;
 	return TRUE;
 }
 
