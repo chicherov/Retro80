@@ -19,7 +19,6 @@
 @synthesize enabled;
 
 @synthesize extension;
-@synthesize readError;
 @synthesize type;
 
 // -----------------------------------------------------------------------------
@@ -55,7 +54,7 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 {
 	if (self = [super init])
 	{
-		snd = object; readError = 0xF800;
+		snd = object;
 	}
 
 	return self;
@@ -144,21 +143,20 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 				{
 					if (cpu.A == 0xFF)
 					{
-						panel = 1; [self performSelectorOnMainThread:@selector(open) withObject:nil waitUntilDone:FALSE];
+						panel = 1; [self performSelectorOnMainThread:@selector(open) withObject:nil waitUntilDone:FALSE]; return 0;
 					}
 					else
 					{
-						cpu.PC = self.readError;
+						return 2;
 					}
 
-					return 0;
 				}
 
 				if (cpu.A == 0xFF && pos != 0)
 					while (pos < length && bytes[pos++] != 0xE6);
 
 				if (pos == length)
-					return 0;
+					return 2;
 
 				cpu.A = bytes[pos++];
 				return 1;
@@ -177,8 +175,7 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 					return 1;
 				}
 
-				cpu.PC = self.readError;
-				return 0;
+				return 2;
 			}
 		}
 	}

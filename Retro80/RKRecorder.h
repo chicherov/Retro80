@@ -12,7 +12,6 @@
 - (void) setData:(NSData *)data;
 
 @property NSString *extension;
-@property uint16_t readError;
 @property unsigned type;
 
 @end

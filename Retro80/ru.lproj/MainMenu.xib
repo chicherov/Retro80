@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="14A389" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6751" systemVersion="14C1510" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6250"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6751"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
@@ -64,7 +64,101 @@
                     <menu key="submenu" title="Файл" id="bib-Uj-vzu">
                         <items>
                             <menuItem title="Новый" tag="-1" id="Was-JA-tGl">
-                                <menu key="submenu" title="Новый" id="nth-Ep-RR1"/>
+                                <menu key="submenu" title="Новый" id="nth-Ep-RR1">
+                                    <items>
+                                        <menuItem title="Радио-86РК" tag="100" id="rt9-UG-Sp7">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="2Fc-03-Hjg"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Микроша" tag="200" id="2cJ-rk-mDg">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="gI9-cb-r1d"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="pYs-TD-3oO"/>
+                                        <menuItem title="Партнер 01.01" tag="300" id="rEJ-vM-cVZ">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="RV9-zl-Yxi"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Апогей БК-01" tag="400" id="8Nv-Re-Yvi">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="079-Ul-r87"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="Vjz-mJ-sxq"/>
+                                        <menuItem title="Микро-80" tag="500" id="w0W-To-G4c">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="9VT-gG-e0j"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="ЮТ-88" tag="600" enabled="NO" id="fMK-1j-gIa">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="KcG-aJ-gK0"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="fnW-PB-uZi"/>
+                                        <menuItem title="Специалист" tag="702" id="WWR-0m-SAz">
+                                            <menu key="submenu" title="Специалист" id="fF1-uw-Lev">
+                                                <items>
+                                                    <menuItem title="Монитор-1 (Оригинальный)" tag="701" id="SbK-oG-lvm">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="G1g-Yn-Eqh"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Монитор-2 (Расширенный)" tag="702" id="U44-Wz-dtl">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="zJ5-A0-TZq"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Оконный монитор" tag="703" id="Voe-0z-NGZ">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="n8a-VL-Apa"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="ПЭВМ «ЛИК»" tag="704" id="EcL-ki-MZR">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="aPJ-WB-Cc8"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem isSeparatorItem="YES" id="cvM-HV-Bqh"/>
+                                                    <menuItem title="Монитор SP580" tag="705" id="35P-XU-DCq">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="iqF-5a-x7M"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Специалист MX" tag="706" enabled="NO" id="zSe-XL-URC">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="94k-Bk-zxG"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                </items>
+                                            </menu>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="maO-WM-l8u"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Орион-128" tag="800" enabled="NO" id="Ccq-IT-d59">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="newDocument:" target="-1" id="zgs-iA-dj4"/>
+                                            </connections>
+                                        </menuItem>
+                                    </items>
+                                </menu>
                                 <connections>
                                     <action selector="newDocument:" target="-1" id="4Si-XN-c54"/>
                                 </connections>

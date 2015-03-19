@@ -333,8 +333,10 @@
 	[self.cpu mapObject:self.ext from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.kbd from:0xF800 to:0xFFFF];
 
+	self.kbdHook = [[F812 alloc] initWithRKKeyboard:self.kbd];
+	[self.cpu mapHook:[[F803 alloc] initWithF812:(F812 *)self.kbdHook] atAddress:0xC337];
+
 	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xC377];
-	self.inpHook.readError = 0xC800;
 	self.inpHook.extension = @"rks";
 	self.inpHook.type = 3;
 
@@ -346,6 +348,37 @@
 	self.kbd.crt = self.crt;
 	self.kbd.snd = self.snd;
 	return TRUE;
+}
+
+- (id) init:(NSInteger)variant
+{
+	switch (variant)
+	{
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+
+			if ((self.rom = [[Memory alloc] initWithContentsOfResource:@[@"Specialist1", @"Specialist2", @"SpecialistW", @"SpecialistL"][variant - 1] mask:0x3FFF]) == nil)
+				return self = nil;
+
+			if (self = [self init])
+			{
+				if (variant == 4)
+					self.crt.isColor = FALSE;
+			}
+
+			return self;
+
+		case 5:
+
+			return self = [[SpecialistSP580 alloc] init];
+
+		default:
+
+			return self = nil;
+
+	}
 }
 
 - (id) init
@@ -360,6 +393,7 @@
 
 		self.cpu.PC = 0xC000;
 
+		self.kbdHook.enabled = FALSE;
 		self.inpHook.enabled = TRUE;
 		self.outHook.enabled = TRUE;
 	}
@@ -369,9 +403,44 @@
 
 - (id) initWithData:(NSData *)data
 {
-	if (self = [self init])
+	const uint8_t* ptr = data.bytes;
+	NSUInteger length = data.length;
+
+	if (length > 23 && memcmp(ptr, "\x70\x8F\x82\x8F", 4) == 0)
 	{
-		[self.inpHook setData:data];
+		ptr += 23; length -= 23; while (length && *ptr == 0x00)
+		{
+			length--; ptr++;
+		}
+
+		if (length-- && *ptr++ == 0xE6 && (self = [self init:4]))
+			[self.inpHook setData:[NSData dataWithBytes:ptr length:length]];
+		else
+			return self = nil;
+	}
+	else if (length > 4 && memcmp(ptr, "\xD9\xD9\xD9", 3) == 0)
+	{
+		ptr += 3; length -= 3; while (length && *ptr != 0x00)
+		{
+			length--; ptr++;
+		}
+
+		while (length && *ptr == 0x00)
+		{
+			length--; ptr++;
+		}
+
+		if (length-- && *ptr++ == 0xE6 && (self = [self init:2]))
+			[self.inpHook setData:[NSData dataWithBytes:ptr length:length]];
+		else
+			return self = nil;
+	}
+	else
+	{
+		if (self = [self init])
+		{
+			[self.inpHook setData:data];
+		}
 	}
 
 	return self;
@@ -393,6 +462,7 @@
 	[encoder encodeObject:self.ext forKey:@"ext"];
 	[encoder encodeObject:self.snd forKey:@"snd"];
 
+	[encoder encodeBool:self.kbdHook.enabled forKey:@"kbdHook"];
 	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
 	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
@@ -425,6 +495,7 @@
 		if (![self mapObjects])
 			return self = nil;
 
+		self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
 		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
 		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
 	}
@@ -437,10 +508,6 @@
 // =============================================================================
 // ПЭВМ "Специалист SP580"
 // =============================================================================
-
-@interface SpecialistSP580 : Specialist
-
-@end
 
 @implementation SpecialistSP580
 
@@ -473,6 +540,8 @@
 	[self.cpu mapObject:self.ext from:0xE800 to:0xEFFF];
 	[self.cpu mapObject:self.kbd from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF RO:YES];
+
+	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
 	self.cpu.HLDA = self.crt;
 	self.kbd.crt = self.crt;

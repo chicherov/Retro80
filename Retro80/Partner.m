@@ -236,7 +236,6 @@
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
 	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	self.inpHook.readError = 0xFA18;
 	self.inpHook.extension = @"rkp";
 	self.inpHook.type = 1;
 

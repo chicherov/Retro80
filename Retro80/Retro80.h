@@ -77,6 +77,8 @@
 @property NSObject <SoundController> *snd;
 @property NSObject <Keyboard> *kbd;
 
+- (id) init:(NSInteger)variant;
+
 + (NSString *) title;
 + (NSString *) ext;
 

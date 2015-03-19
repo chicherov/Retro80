@@ -2,6 +2,14 @@
 
 @implementation Computer
 
+- (id) init:(NSInteger)variant
+{
+	if (variant == 0)
+		return [self init];
+	else
+		return self = nil;
+}
+
 + (NSString *) title
 {
 	return nil;

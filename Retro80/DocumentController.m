@@ -12,10 +12,13 @@
 
 - (id) makeUntitledDocumentOfType:(NSString *)typeName error:(NSError **)outError
 {
-	Computer *computer = [[NSClassFromString([computers objectAtIndex:index]) alloc] init];
+	if (index >= 100 && index / 100 <= computers.count)
+	{
+		Computer *computer = [[NSClassFromString([computers objectAtIndex:index / 100 - 1]) alloc] init:index % 100];
 
-	if (computer)
-		return [[Document alloc] initWithComputer:computer type:typeName error:outError];
+		if (computer)
+			return [[Document alloc] initWithComputer:computer type:typeName error:outError];
+	}
 
 	*outError = nil;
 	return nil;
@@ -23,28 +26,31 @@
 
 // -----------------------------------------------------------------------------
 
+- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
+{
+	if (menuItem.action == @selector(newDocument:))
+		return menuItem.enabled;
+
+	NSLog(@"validateMenuItem: %@", menuItem);
+	return [super validateMenuItem:menuNew];
+}
+
+// -----------------------------------------------------------------------------
+
 - (IBAction) newDocument:(NSMenuItem *)sender
 {
-	NSInteger tag = sender.tag; if (tag >= 0 && tag < computers.count)
+	if (sender.tag >= 100 && [self parseMenu:menuNew tag:sender.tag])
 	{
-		for (NSMenuItem *item in [menuNew.submenu itemArray])
-		{
-			item.state = item.tag == tag ? NSOnState : NSOffState;
-			item.keyEquivalent = item.tag == tag ? @"n" : @"";
-		}
+		[[NSUserDefaults standardUserDefaults] setInteger:index = sender.tag
+												   forKey:@"computer"];
+
+		[super newDocument:sender];
 	}
 
-	else
+	else if (sender.tag == -1)
 	{
-		tag = 0; for (NSMenuItem *item in [menuNew.submenu itemArray])
-			if (item.state == NSOnState)
-				tag = item.tag;
+		[super newDocument:sender];
 	}
-
-	if ([NSClassFromString([computers objectAtIndex:tag]) isSubclassOfClass:[Computer class]])
-		[[NSUserDefaults standardUserDefaults] setInteger:index = tag forKey:@"computer"];
-
-	[super newDocument:sender];
 }
 
 // -----------------------------------------------------------------------------
@@ -68,48 +74,55 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) awakeFromNib
+- (BOOL) parseMenu:(NSMenuItem *)menu tag:(NSInteger)tag
 {
-	computers = [NSArray arrayWithObjects:
-				 @"Partner", @"Apogeo", @"Radio86RK", @"Microsha",
-				 @"~", @"Specialist", @"SpecialistSP580",
-				 @"~", @"Orion128",
-				 @"~", @"Micro80", @"UT88",
-				 nil];
-
-	index = [[NSUserDefaults standardUserDefaults] integerForKey:@"computer"];
-
-	BOOL done = FALSE; for (NSInteger tag = 0; tag < computers.count; tag++)
+	BOOL done = FALSE; for (NSMenuItem *item in [menu.submenu itemArray])
 	{
-		if ([[computers objectAtIndex:tag] isEqual:@"~"])
+		if (item.hasSubmenu)
 		{
-			[menuNew.submenu addItem:[NSMenuItem separatorItem]];
+			if ([self parseMenu:item tag:tag])
+			{
+				item.state = NSOnState;
+				done = TRUE;
+			}
+			else
+			{
+				item.state = NSOffState;
+			}
 		}
+
+		else if (item.tag == tag)
+		{
+			item.keyEquivalentModifierMask = NSCommandKeyMask;
+			item.keyEquivalent = @"n";
+			item.state = NSOnState;
+			done = TRUE;
+		}
+
 		else
 		{
-			Class class; if ([(class = NSClassFromString([computers objectAtIndex:tag])) isSubclassOfClass:[Computer class]])
-			{
-				NSMenuItem* menuItem = [[NSMenuItem alloc] initWithTitle:[class title] action:@selector(newDocument:) keyEquivalent:@""];
-
-				if ((menuItem.tag = tag) == index)
-				{
-					menuItem.keyEquivalent = @"n";
-					menuItem.state = NSOnState;
-					done = TRUE;
-				}
-
-				[menuNew.submenu addItem:menuItem];
-			}
+			item.keyEquivalent = @"";
+			item.state = NSOffState;
 		}
 	}
 
-	if (!done)
-	{
-		NSMenuItem *menuItem = [menuNew.submenu itemAtIndex:0];
+	return done;
+}
 
-		menuItem.keyEquivalent = @"n";
-		menuItem.state = NSOnState;
-		index = menuItem.tag;
+// -----------------------------------------------------------------------------
+
+- (void) awakeFromNib
+{
+	computers = @[@"Radio86RK",  @"Microsha", @"Partner", @"Apogeo", @"Micro80", @"UT88", @"Specialist", @"Orion128"];
+	index = [[NSUserDefaults standardUserDefaults] integerForKey:@"computer"];
+
+	if (index == 0 || ![self parseMenu:menuNew tag:index])
+	{
+		NSMenuItem *menu = [menuNew.submenu itemAtIndex:0];
+		menu.keyEquivalentModifierMask = NSCommandKeyMask;
+		menu.keyEquivalent = @"n";
+		menu.state = NSOnState;
+		index = menu.tag;
 	}
 }
 
