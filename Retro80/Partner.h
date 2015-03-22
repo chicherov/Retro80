@@ -10,11 +10,9 @@
 // Системнный регистр 1 - выбор станицы адресного простарнства
 // -----------------------------------------------------------------------------
 
-@interface PartnerSystem1 : NSObject <ReadWrite, NSCoding>
+@interface PartnerSystem1 : NSObject <ReadWrite>
 
-@property uint8_t page;
-
-@property (weak) Partner *partner;
+@property (weak) X8080 *cpu;
 
 @end
 

@@ -47,7 +47,4 @@
 @property Floppy *floppy;
 @property Memory *dos29;
 
-@property BOOL isExtRAM;
-@property BOOL isFloppy;
-
 @end

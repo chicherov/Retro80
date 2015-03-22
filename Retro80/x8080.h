@@ -50,6 +50,8 @@
 @property uint32_t quartz;
 @property uint64_t CLK;
 
+@property uint8_t PAGE;
+
 @property uint16_t PC;
 @property uint16_t SP;
 @property uint16_t AF;
@@ -111,12 +113,6 @@
 
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status);
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data);
-
-// -----------------------------------------------------------------------------
-
-- (void) selectPage:(uint8_t)page
-			   from:(uint16_t)from
-				 to:(uint16_t)to;
 
 // -----------------------------------------------------------------------------
 

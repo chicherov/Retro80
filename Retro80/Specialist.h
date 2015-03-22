@@ -17,6 +17,7 @@
 @interface SpecialistScreen : NSObject <DisplayController, ReadWrite, Bytes, HLDA, NSCoding>
 
 @property Display *display;
+@property uint8_t* screen;
 
 @property uint8_t color;
 @property BOOL isColor;
@@ -65,3 +66,46 @@
 
 @end
 
+// -----------------------------------------------------------------------------
+// Интерфейс клавиатуры ПЭВМ "Специалист MX"
+// -----------------------------------------------------------------------------
+
+@interface SpecialistMXKeyboard : SpecialistKeyboard
+
+@end
+
+// -----------------------------------------------------------------------------
+// Системный регистр ПЭВМ "Специалист MX"
+// -----------------------------------------------------------------------------
+
+@interface SpecialistMXSystem : NSObject <ReadWrite>
+
+@property (weak) X8080 *cpu;
+
+@end
+
+// -----------------------------------------------------------------------------
+// Регистр цвета ПЭВМ "Специалист MX"
+// -----------------------------------------------------------------------------
+
+@interface SpecialistMXColor : NSObject <ReadWrite>
+
+@property SpecialistScreen *crt;
+
+@end
+
+
+// -----------------------------------------------------------------------------
+// ПЭВМ "Специалист MX"
+// -----------------------------------------------------------------------------
+
+
+@interface SpecialistMX : Specialist
+
+@property SpecialistMXKeyboard *kbd;
+@property SpecialistMXSystem *sys1;
+@property SpecialistMXColor *sys2;
+
+@property NSMutableArray *quasi;
+
+@end

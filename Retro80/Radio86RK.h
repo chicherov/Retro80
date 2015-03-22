@@ -13,6 +13,4 @@
 @property Floppy *floppy;
 @property Memory *dos29;
 
-@property BOOL isFloppy;
-
 @end

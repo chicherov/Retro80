@@ -31,7 +31,6 @@
 	if (menuItem.action == @selector(newDocument:))
 		return menuItem.enabled;
 
-	NSLog(@"validateMenuItem: %@", menuItem);
 	return [super validateMenuItem:menuNew];
 }
 

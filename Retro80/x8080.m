@@ -90,7 +90,6 @@
 
 	NSObject<ReadWrite> *RD[16][0x10000];
 	NSObject<ReadWrite> *WR[16][0x10000];
-	uint8_t PAGE[0x10000];
 
 	const uint8* RDMEM[16][0x10000];
 	uint8* WRMEM[16][0x10000];
@@ -113,6 +112,7 @@
 @synthesize quartz;
 @synthesize CLK;
 
+@synthesize PAGE;
 @synthesize halt;
 
 - (void) setPC:(uint16_t)value { PC.PC = value; }
@@ -261,10 +261,10 @@
 
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status)
 {
-	const uint8_t *ptr = cpu->RDMEM[cpu->PAGE[addr]][addr]; if (ptr) return *ptr;
+	const uint8_t *ptr = cpu->RDMEM[cpu->PAGE][addr]; if (ptr) return *ptr;
 
-	else if (cpu->RD[cpu->PAGE[addr]][addr])
-		return [cpu->RD[cpu->PAGE[addr]][addr] RD:addr CLK:cpu->CLK status:status];
+	else if (cpu->RD[cpu->PAGE][addr])
+		return [cpu->RD[cpu->PAGE][addr] RD:addr CLK:cpu->CLK status:status];
 	else
 		return status;
 }
@@ -273,17 +273,10 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status)
 
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data)
 {
-	uint8_t *ptr = cpu->WRMEM[cpu->PAGE[addr]][addr]; if (ptr) *ptr = data;
+	uint8_t *ptr = cpu->WRMEM[cpu->PAGE][addr]; if (ptr) *ptr = data;
 
-	else if (cpu->WR[cpu->PAGE[addr]][addr])
-		[cpu->WR[cpu->PAGE[addr]][addr] WR:addr byte:data CLK:cpu->CLK];
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) selectPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to
-{
-	memset(PAGE + from, page, to - from + 1);
+	else if (cpu->WR[cpu->PAGE][addr])
+		[cpu->WR[cpu->PAGE][addr] WR:addr byte:data CLK:cpu->CLK];
 }
 
 // -----------------------------------------------------------------------------
@@ -2128,13 +2121,14 @@ static bool test(uint8_t IR, uint8_t F)
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 	[encoder encodeBool:IF forKey:@"IF"];
 
+	[encoder encodeInt:PAGE forKey:@"PAGE"];
+
 	[encoder encodeInt:PC.PC forKey:@"PC"];
 	[encoder encodeInt:SP.SP forKey:@"SP"];
 	[encoder encodeInt:AF.AF forKey:@"AF"];
 	[encoder encodeInt:BC.BC forKey:@"BC"];
 	[encoder encodeInt:DE.DE forKey:@"DE"];
 	[encoder encodeInt:HL.HL forKey:@"HL"];
-
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
@@ -2144,6 +2138,8 @@ static bool test(uint8_t IR, uint8_t F)
 		quartz = [decoder decodeInt32ForKey:@"quartz"];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 		IF = [decoder decodeBoolForKey:@"IF"];
+
+		PAGE = [decoder decodeIntForKey:@"PAGE"];
 
 		PC.PC = [decoder decodeIntForKey:@"PC"];
 		SP.SP = [decoder decodeIntForKey:@"SP"];

@@ -62,10 +62,9 @@
 	[super reset];
 
 	self.cpu.PC = 0x0000;
+	self.cpu.PAGE = 0;
 
-	self.sys1.page = 0;
 	self.sys2.slot = 0;
-
 	self.sys2.mcpg = FALSE;
 }
 
@@ -223,8 +222,7 @@
 
 	// Системные регистры
 
-	self.sys1.partner = self;
-	self.sys1.page = self.sys1.page;
+	self.sys1.cpu = self.cpu;
 
 	self.sys2.partner = self;
 	self.sys2.slot = self.sys2.slot;
@@ -256,7 +254,6 @@
 
 	[encoder encodeObject:self.basic forKey:@"basic"];
 	[encoder encodeObject:self.ram2 forKey:@"ram2"];
-	[encoder encodeObject:self.sys1 forKey:@"sys1"];
 	[encoder encodeObject:self.sys2 forKey:@"sys2"];
 
 	[encoder encodeObject:self.mcpgbios forKey:@"mcpgbios"];
@@ -272,9 +269,6 @@
 		return FALSE;
 
 	if ((self.ram2 = [decoder decodeObjectForKey:@"ram2"]) == nil)
-		return FALSE;
-
-	if ((self.sys1 = [decoder decodeObjectForKey:@"sys1"]) == nil)
 		return FALSE;
 
 	if ((self.sys2 = [decoder decodeObjectForKey:@"sys2"]) == nil)
@@ -296,45 +290,17 @@
 // -----------------------------------------------------------------------------
 
 @implementation PartnerSystem1
-{
-	uint8_t page;
-}
 
-@synthesize partner;
-
-- (void) setPage:(uint8_t)data
-{
-	[partner.cpu selectPage:page = data & 0x0F from:0x0000 to:0xFFFF];
-}
-
-- (uint8_t) page
-{
-	return page;
-}
+@synthesize cpu;
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
-	return self.page << 4;
+	return cpu.PAGE << 4;
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-	self.page = data >> 4;
-}
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[encoder encodeInteger:page forKey:@"page"];
-}
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super init])
-	{
-		page = [decoder decodeIntForKey:@"page"];
-	}
-
-	return self;
+	cpu.PAGE = data >> 4;
 }
 
 @end

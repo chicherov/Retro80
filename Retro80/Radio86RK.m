@@ -30,13 +30,13 @@
 
 	if (menuItem.action == @selector(ROMDisk:))
 	{
-		menuItem.state = self.ext.url != nil;
+		menuItem.state = self.cpu.PAGE & 1;
 		return YES;
 	}
 
 	if (menuItem.action == @selector(floppy:))
 	{
-		if (self.isFloppy)
+		if (self.cpu.PAGE & 2)
 		{
 			menuItem.state = menuItem.tag == 0 || [self.floppy getDisk:menuItem.tag] != nil;
 			return menuItem.tag == 0 || menuItem.tag != [self.floppy selected];
@@ -98,7 +98,7 @@ static uint32_t colors[] =
 		self.ext.url = nil;
 	}
 
-	[self.cpu selectPage:self.ext.url != nil from:0xA000 to:0xBFFF];
+	self.cpu.PAGE = (self.cpu.PAGE & ~1) | (self.ext.url ? 2 : 1);
 }
 
 // -----------------------------------------------------------------------------
@@ -110,14 +110,7 @@ static uint32_t colors[] =
 	if (menuItem.tag == 0)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
-
-		@synchronized(self.snd.sound)
-		{
-			if ((self.isFloppy = !self.isFloppy))
-				[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
-			else
-				[self.cpu selectPage:0 from:0xE000 to:0xF7FF];
-		}
+		self.cpu.PAGE ^= 2;
 	}
 	else
 	{
@@ -195,8 +188,6 @@ static uint32_t colors[] =
 
 	[encoder encodeObject:self.floppy forKey:@"floppy"];
 	[encoder encodeObject:self.dos29 forKey:@"dos29"];
-
-	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
 }
 
 // -----------------------------------------------------------------------------
@@ -211,8 +202,6 @@ static uint32_t colors[] =
 
 	if ((self.dos29 = [decoder decodeObjectForKey:@"dos29"]) == nil)
 		return FALSE;
-
-	self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"];
 
 	return TRUE;
 }
@@ -238,15 +227,12 @@ static uint32_t colors[] =
 	[self.cpu mapObject:self.rom from:0xF000 to:0xFFFF RO:YES];
 
 	[self.cpu mapObject:self.ext atPage:1 from:0xA000 to:0xBFFF];
+	[self.cpu mapObject:self.ext atPage:3 from:0xA000 to:0xBFFF];
 
-	if (self.ext.url != nil)
-		[self.cpu selectPage:1 from:0xA000 to:0xBFFF];
-
-	[self.cpu mapObject:self.dos29 atPage:1 from:0xE000 to:0xEFFF RO:YES];
-	[self.cpu mapObject:self.floppy atPage:1 from:0xF000 to:0xF7FF];
-
-	if (self.isFloppy)
-		[self.cpu selectPage:1 from:0xE000 to:0xF7FF];
+	[self.cpu mapObject:self.dos29 atPage:2 from:0xE000 to:0xEFFF RO:YES];
+	[self.cpu mapObject:self.dos29 atPage:3 from:0xE000 to:0xEFFF RO:YES];
+	[self.cpu mapObject:self.floppy atPage:2 from:0xF000 to:0xF7FF];
+	[self.cpu mapObject:self.floppy atPage:3 from:0xF000 to:0xF7FF];
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 

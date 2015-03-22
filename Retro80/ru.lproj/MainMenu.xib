@@ -139,7 +139,7 @@
                                                             <action selector="newDocument:" target="-1" id="iqF-5a-x7M"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Специалист MX" tag="706" enabled="NO" id="zSe-XL-URC">
+                                                    <menuItem title="Специалист MX" tag="706" id="zSe-XL-URC">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="94k-Bk-zxG"/>
