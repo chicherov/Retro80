@@ -473,6 +473,8 @@
 		self.cpu.PC = 0xC000;
 
 		self.kbdHook.enabled = FALSE;
+		self.kbd.qwerty = TRUE;
+
 		self.inpHook.enabled = TRUE;
 		self.outHook.enabled = TRUE;
 	}
@@ -752,7 +754,7 @@
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	while (self.quasi.count < 8)
+	while (self.quasi.count < 3)
 	{
 		[self.quasi addObject:[[Memory alloc] initWithLength:0x10000 mask:0xFFFF]];
 

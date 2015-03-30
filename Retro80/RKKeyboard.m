@@ -15,8 +15,12 @@
 	NSUInteger length;
 
 	unsigned count;
+
+	NSDictionary *qwertyAlpha;
+	NSDictionary *qwertyShift;
 }
 
+@synthesize qwerty;
 @synthesize snd;
 
 // -----------------------------------------------------------------------------
@@ -37,6 +41,20 @@
 	if (((modifierFlags = theEvent.modifierFlags) & NSCommandKeyMask) == 0)
 	{
 		NSNumber *keyCode = [NSNumber numberWithShort:theEvent.keyCode];
+
+		if (qwerty)
+		{
+			NSNumber* object; if (theEvent.modifierFlags & NSShiftKeyMask)
+			{
+				if ((object = qwertyShift[keyCode]))
+					keyCode = object;
+			}
+			else
+			{
+				if ((object = qwertyAlpha[keyCode]))
+					keyCode = object;
+			}
+		}
 
 		NSUInteger index = [kbdmap indexOfObject:keyCode];
 
@@ -74,8 +92,24 @@
 {
 	if (theEvent)
 	{
-		NSUInteger index = [kbdmap indexOfObject:[NSNumber numberWithShort:[theEvent keyCode]]];
+		NSNumber *keyCode = [NSNumber numberWithShort:theEvent.keyCode];
 
+		if (qwerty)
+		{
+			NSNumber* object; if (theEvent.modifierFlags & NSShiftKeyMask)
+			{
+				if ((object = qwertyShift[keyCode]))
+					keyCode = object;
+			}
+			else
+			{
+				if ((object = qwertyAlpha[keyCode]))
+					keyCode = object;
+			}
+		}
+
+		NSUInteger index = [kbdmap indexOfObject:keyCode];
+		
 		if (index != NSNotFound && index < 72)
 			keyboard[index] = FALSE;
 	}
@@ -250,6 +284,16 @@
 				   @115, @117, @53,  @122, @120, @99,  @118, @96
 				   ];
 
+		qwertyAlpha = @{
+						@10:@47, @12:@6, @13:@2, @14:@17, @15:@4, @17:@45, @16:@1, @32:@14, @34:@11, @31:@38, @35:@5, @33:@34, @30:@31,
+						@0:@3, @1:@8, @2:@37, @3:@0, @5:@32, @4:@33, @38:@12, @40:@15, @37:@40, @41:@30, @39:@10, @42:@39,
+						@50:@999, @6:@35, @7:@46, @8:@13, @9:@41, @11:@43, @45:@16, @46:@9, @43:@44, @47:@42, @44:@50
+						};
+
+		qwertyShift = @{
+						@10:@44, @22:@999, @26:@22,  @28:@30, @25:@28, @29:@25, @24:@10, @30:@26, @44:@50, @50:@999
+						};
+
 		RUSLAT = 0x80;
 		SHIFT = 0x20;
 		CTRL = 0x40;
@@ -258,6 +302,22 @@
 		TAPEO = 0x01;
 	}
 	
+	return self;
+}
+
+- (void) encodeWithCoder:(NSCoder *)encoder
+{
+	[super encodeWithCoder:encoder];
+	[encoder encodeBool:qwerty forKey:@"qwerty"];
+}
+
+- (id) initWithCoder:(NSCoder *)decoder
+{
+	if (self = [super initWithCoder:decoder])
+	{
+		qwerty = [decoder decodeBoolForKey:@"qwerty"];
+	}
+
 	return self;
 }
 

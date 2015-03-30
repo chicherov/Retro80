@@ -65,6 +65,12 @@
 		return self.inpHook != nil;
 	}
 
+	if (menuItem.action == @selector(qwerty:))
+	{
+		menuItem.state = self.kbd.qwerty;
+		return self.kbd != nil;
+	}
+
 	menuItem.state = FALSE;
 	return NO;
 }
@@ -85,6 +91,15 @@
 
 - (IBAction) floppy:(id)sender
 {
+}
+
+// -----------------------------------------------------------------------------
+// qwerty
+// -----------------------------------------------------------------------------
+
+- (IBAction)qwerty:(id)sender
+{
+	self.kbd.qwerty = !self.kbd.qwerty;
 }
 
 // -----------------------------------------------------------------------------
