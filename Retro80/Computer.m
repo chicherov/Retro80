@@ -38,7 +38,7 @@
 {
 	if (menuItem.action == @selector(reset:))
 	{
-		return [self respondsToSelector:@selector(reset)];
+		return YES;
 	}
 
 	if (menuItem.action == @selector(kbdHook:))
@@ -72,6 +72,7 @@
 	}
 
 	menuItem.state = FALSE;
+	menuItem.submenu = nil;
 	return NO;
 }
 
@@ -114,16 +115,14 @@
 	{
 		if (!self.snd.sound.isInput)
 		{
-			[self performSelector:@selector(reset)];
+			self.cpu.RESET = TRUE;
 			return;
 		}
 	}
 
 	[self stop];
 	[self.snd.sound close];
-
-	[self performSelector:@selector(reset)];
-
+	self.cpu.RESET = TRUE;
 	[self start];
 }
 

@@ -22,16 +22,12 @@
 	BOOL isColor;
 }
 
+@synthesize display;
 @synthesize screen;
 
 // -----------------------------------------------------------------------------
-// @protocol ReadWrite
+// @protocol WR
 // -----------------------------------------------------------------------------
-
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
-{
-	return screen && addr & 0x3000 ? screen[(addr & 0x3FFF) - 0x1000] : status;
-}
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
@@ -46,20 +42,6 @@
 		}
 
 	}
-}
-
-// -----------------------------------------------------------------------------
-// @protocol Bytes
-// -----------------------------------------------------------------------------
-
-- (const uint8_t*) bytesAtAddress:(uint16_t)addr
-{
-	return screen && addr & 0x3000 ? screen + (addr & 0x3FFF) - 0x1000 : NULL;
-}
-
-- (uint8_t*) mutableBytesAtAddress:(uint16_t)addr
-{
-	return NULL;
 }
 
 // -----------------------------------------------------------------------------
@@ -153,15 +135,6 @@
 }
 
 // -----------------------------------------------------------------------------
-// @protocol DisplayController
-// -----------------------------------------------------------------------------
-
-- (unichar) charAtX:(unsigned int)x Y:(unsigned int)y
-{
-	return 0;
-}
-
-// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
@@ -183,8 +156,8 @@
 {
 	[encoder encodeBytes:colors length:sizeof(colors) forKey:@"colors"];
 
-	[encoder encodeInt:color forKey:@"color"];
 	[encoder encodeBool:isColor forKey:@"isColor"];
+	[encoder encodeInt:color forKey:@"color"];
 
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 }
@@ -199,8 +172,8 @@
 		{
 			memcpy(colors, ptr, sizeof(colors));
 
-			color = [decoder decodeIntForKey:@"color"];
 			self.isColor = [decoder decodeBoolForKey:@"isColor"];
+			color = [decoder decodeIntForKey:@"color"];
 
 			CLK = [decoder decodeInt64ForKey:@"CLK"];
 		}
@@ -353,19 +326,6 @@
 }
 
 // -----------------------------------------------------------------------------
-// Управление компьютером
-// -----------------------------------------------------------------------------
-
-- (void) reset
-{
-	[self.kbd RESET];
-	[self.ext RESET];
-
-	self.cpu.PC = 0xC000;
-	self.cpu.IF = FALSE;
-}
-
-// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
@@ -374,10 +334,12 @@
 	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
 		return FALSE;
 
-	if (self.rom == nil && (self.rom = [[Memory alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) == nil)
+	self.cpu.START = 0xC000;
+
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) == nil)
 		return FALSE;
 
-	if (self.ram == nil && (self.ram = [[Memory alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ((self.crt = [[SpecialistScreen alloc] init]) == nil)
@@ -399,13 +361,19 @@
 
 - (BOOL) mapObjects
 {
-	self.crt.screen = [self.ram mutableBytesAtAddress:0x9000];
+	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0x8FFF];
-	[self.cpu mapObject:self.crt from:0x9000 to:0xBFFF];
-	[self.cpu mapObject:self.rom from:0xC000 to:0xEFFF RO:YES];
+	[self.cpu mapObject:self.crt from:0x9000 to:0xBFFF RD:self.ram];
+	[self.cpu mapObject:self.rom from:0xC000 to:0xEFFF WR:nil];
 	[self.cpu mapObject:self.ext from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.kbd from:0xF800 to:0xFFFF];
+
+	[self.cpu addObjectToRESET:self.kbd];
+	[self.cpu addObjectToRESET:self.ext];
+
+	self.cpu.HLDA = self.crt;
+	self.cpu.FF = TRUE;
 
 	self.kbdHook = [[F812 alloc] initWithRKKeyboard:self.kbd];
 	[self.cpu mapHook:[[F803 alloc] initWithF812:(F812 *)self.kbdHook] atAddress:0xC337];
@@ -418,7 +386,6 @@
 	self.outHook.extension = @"rks";
 	self.outHook.type = 3;
 
-	self.cpu.HLDA = self.crt;
 	self.kbd.crt = self.crt;
 	self.kbd.snd = self.snd;
 	return TRUE;
@@ -435,7 +402,7 @@
 		case 3:
 		case 4:
 
-			if ((self.rom = [[Memory alloc] initWithContentsOfResource:@[@"Specialist1", @"Specialist2", @"SpecialistW", @"SpecialistL"][variant - 1] mask:0x3FFF]) == nil)
+			if ((self.rom = [[ROM alloc] initWithContentsOfResource:@[@"Specialist1", @"Specialist2", @"SpecialistW", @"SpecialistL"][variant - 1] mask:0x3FFF]) == nil)
 				return self = nil;
 
 			if (self = [self init])
@@ -469,8 +436,6 @@
 
 		if (![self mapObjects])
 			return self = nil;
-
-		self.cpu.PC = 0xC000;
 
 		self.kbdHook.enabled = FALSE;
 		self.kbd.qwerty = TRUE;
@@ -604,10 +569,10 @@
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"SpecialistSP580" mask:0x0FFF]) == nil)
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistSP580" mask:0x0FFF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[Memory alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
+	if ((self.ram = [[RAM alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ([super createObjects] == FALSE)
@@ -620,20 +585,26 @@
 
 - (BOOL) mapObjects
 {
-	self.crt.screen = [self.ram mutableBytesAtAddress:0x9000];
+	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0x8FFF];
-	[self.cpu mapObject:self.crt from:0x9000 to:0xBFFF];
-	[self.cpu mapObject:self.rom from:0xC000 to:0xC7FF RO:YES];
+	[self.cpu mapObject:self.crt from:0x9000 to:0xBFFF RD:self.ram];
+	[self.cpu mapObject:self.rom from:0xC000 to:0xC7FF WR:nil];
 	[self.cpu mapObject:self.ram from:0xC800 to:0xDFFF];
 	[self.cpu mapObject:self.snd from:0xE000 to:0xE7FF];
 	[self.cpu mapObject:self.ext from:0xE800 to:0xEFFF];
 	[self.cpu mapObject:self.kbd from:0xF000 to:0xF7FF];
-	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF RO:YES];
+	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
-	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
+	[self.cpu addObjectToRESET:self.kbd];
+	[self.cpu addObjectToRESET:self.ext];
 
 	self.cpu.HLDA = self.crt;
+	self.cpu.FF = TRUE;
+
+	self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd];
+	[self.cpu mapHook:(F81B *)self.kbdHook atAddress:0xF81B];
+
 	self.kbd.crt = self.crt;
 	self.kbd.snd = self.snd;
 	return TRUE;
@@ -673,51 +644,48 @@
 @implementation SpecialistMXSystem
 
 @synthesize cpu;
+@synthesize crt;
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
-	return status;
+	switch (addr)
+	{
+		case 0xFFF8:
+			return crt.color;
+
+		default:
+			return status;
+	}
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
 	switch (addr)
 	{
+		case 0xFFF8:
+		case 0xFFF9:
+		case 0xFFFA:
+		case 0xFFFB:
+
+			crt.color = data;
+			break;
+
 		case 0xFFFC:
-			cpu.PAGE = 0;
+
+			cpu.PAGE = 1;
 			break;
 
 		case 0xFFFD:
+
 			cpu.PAGE = 2 + (data & 7);
 			break;
 
 		case 0xFFFE:
-			cpu.PAGE = 1;
+
+			cpu.PAGE = 0;
 			break;
 
-		case 0xFFFF:
-			break;
 	}
-}
-
-@end
-
-// =============================================================================
-// Регистр цвета ПЭВМ "Специалист MX"
-// =============================================================================
-
-@implementation SpecialistMXColor
-
-@synthesize crt;
-
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
-{
-	return status;
-}
-
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
-{
-	crt.color = data;
 }
 
 @end
@@ -742,7 +710,35 @@
 {
 	if (menuItem.action == @selector(extraMemory:))
 	{
-		return !(menuItem.state = self.quasi.count > 1);
+		switch (menuItem.tag)
+		{
+			case 0:
+
+				if (menuItem.submenu == nil)
+				{
+					menuItem.submenu = [[NSMenu alloc] init];
+					[menuItem.submenu addItemWithTitle:@"128K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 1;
+					[menuItem.submenu addItemWithTitle:@"256K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 2;
+					[menuItem.submenu addItemWithTitle:@"512K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 3;
+				}
+
+				menuItem.state = self.ram.length != 0x20000;
+				break;
+
+			case 1:
+				menuItem.state = self.ram.length == 0x30000;
+				break;
+
+			case 2:
+				menuItem.state = self.ram.length == 0x50000;
+				break;
+
+			case 3:
+				menuItem.state = self.ram.length == 0x90000;
+				break;
+		}
+
+		return YES;
 	}
 
 	return [super validateMenuItem:menuItem];
@@ -754,45 +750,25 @@
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	while (self.quasi.count < 3)
+	unsigned size = menuItem.tag == 0 && self.ram.length == 0x20000 ? 0x30000 : 0x10000 + (1 << (menuItem.tag + 16));
+
+	if (self.ram.length != size) @synchronized(self.snd.sound)
 	{
-		[self.quasi addObject:[[Memory alloc] initWithLength:0x10000 mask:0xFFFF]];
+		[self.document registerUndoWithMenuItem:menuItem];
 
-		[self.cpu mapObject:self.quasi.lastObject
-					 atPage:self.quasi.count + 1
-					   from:0x0000
-						 to:0xFFBF];
-	}
-}
-
-
-- (void) reset
-{
-	[self.kbd RESET];
-	[self.ext RESET];
-
-	self.cpu.PC = 0x0000;
-	self.cpu.IF = FALSE;
-	self.cpu.PAGE = 1;
-}
-
-- (id) init
-{
-	if (self = [super init])
-	{
-		self.cpu.PC = 0x0000;
-		self.cpu.PAGE = 1;
+		RAM *ram = [[RAM alloc] initWithLength:size mask:0xFFFF];
+		memcpy(ram.mutableBytes, self.ram.mutableBytes, size < self.ram.length ? size : self.ram.length);
+		self.ram = ram; [self mapObjects]; self.cpu.RESET = TRUE;
 	}
 
-	return self;
 }
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"SpecialistMX" mask:0xFFFF]) == nil)
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX" mask:0xFFFF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[Memory alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
+	if ((self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ((self.kbd = [[SpecialistMXKeyboard alloc] init]) == nil)
@@ -801,11 +777,7 @@
 	if ([super createObjects] == FALSE)
 		return FALSE;
 
-	Memory *mem; if ((mem = [[Memory alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
-		return FALSE;
-
-	if ((self.quasi = [NSMutableArray arrayWithObject:mem]) == nil)
-		return FALSE;
+	self.cpu.START = 0x0000;
 
 	self.crt.isColor = TRUE;
 
@@ -816,39 +788,45 @@
 
 - (BOOL) mapObjects
 {
-	self.crt.screen = [self.ram mutableBytesAtAddress:0x9000];
+	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
-	[self.cpu mapObject:self.ram atPage:0 from:0x0000 to:0x8FFF];
-	[self.cpu mapObject:self.crt atPage:0 from:0x9000 to:0xBFFF];
+	[self.cpu mapObject:self.rom atPage:0 from:0x0000 to:0xBFFF WR:nil];
 	[self.cpu mapObject:self.ram atPage:0 from:0xC000 to:0xFFBF];
 
-	[self.cpu mapObject:self.rom atPage:1 from:0x0000 to:0xBFFF];
+	[self.cpu mapObject:self.ram atPage:1 from:0x0000 to:0x8FFF];
+	[self.cpu mapObject:self.crt atPage:1 from:0x9000 to:0xBFFF RD:self.ram];
 	[self.cpu mapObject:self.ram atPage:1 from:0xC000 to:0xFFBF];
 
-	unsigned page = 2; for (Memory* dsk in self.quasi)
-		[self.cpu mapObject:dsk atPage:page++ from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF] atPage:2 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x20000 length:0x10000 mask:0xFFFF] atPage:3 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x30000 length:0x10000 mask:0xFFFF] atPage:4 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x40000 length:0x10000 mask:0xFFFF] atPage:5 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x50000 length:0x10000 mask:0xFFFF] atPage:6 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x60000 length:0x10000 mask:0xFFFF] atPage:7 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x70000 length:0x10000 mask:0xFFFF] atPage:8 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x80000 length:0x10000 mask:0xFFFF] atPage:9 from:0x0000 to:0xFFBF];
 
-	if ((self.sys1 = [[SpecialistMXSystem alloc] init]) == nil)
+	if ((self.sys = [[SpecialistMXSystem alloc] init]) == nil)
 		return FALSE;
 
-	self.sys1.cpu = self.cpu;
+	self.sys.cpu = self.cpu;
+	self.sys.crt = self.crt;
 
-	if ((self.sys2 = [[SpecialistMXColor alloc] init]) == nil)
-		return FALSE;
-
-	self.sys2.crt = self.crt;
-
-	[self.cpu mapObject:self.sys1 from:0xFFFC to:0xFFFF];
-	[self.cpu mapObject:self.sys2 from:0xFFF8 to:0xFFFB];
+	[self.cpu mapObject:self.sys  from:0xFFF8 to:0xFFFF RD:nil];
 //	[self.cpu mapObject:nil       from:0xFFF4 to:0xFFF7];
-//	[self.cpu mapObject:nil       from:0xFFF0 to:0xFFF3];
+//	[self.cpu mapObject:nil       from:0xFFF0 to:0xFFF3];	// Дисковод 2
 	[self.cpu mapObject:self.snd  from:0xFFEC to:0xFFEF];
-//	[self.cpu mapObject:nil       from:0xFFE8 to:0xFFEB];
+//	[self.cpu mapObject:nil       from:0xFFE8 to:0xFFEB];	// Дисковод 1
 	[self.cpu mapObject:self.ext  from:0xFFE4 to:0xFFE7];
 	[self.cpu mapObject:self.kbd  from:0xFFE0 to:0xFFE3];
 	[self.cpu mapObject:self.ram  from:0xFFC0 to:0xFFDF];
 
+	[self.cpu addObjectToRESET:self.kbd];
+	[self.cpu addObjectToRESET:self.ext];
+
 	self.cpu.HLDA = self.crt;
+	self.cpu.FF = TRUE;
+
 	self.kbd.snd = self.snd;
 	return TRUE;
 }
@@ -856,16 +834,11 @@
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[super encodeWithCoder:encoder];
-
-	[encoder encodeObject:self.quasi forKey:@"quasi"];
 }
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
 {
 	if (![super decodeWithCoder:decoder])
-		return FALSE;
-
-	if ((self.quasi = [decoder decodeObjectForKey:@"quasi"]) == nil)
 		return FALSE;
 
 	return TRUE;

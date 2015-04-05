@@ -266,7 +266,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 		CLK = [self.cpu CLK]; clk = [self.cpu quartz] / streamFormat.mSampleRate;
 
-		mute = self.cpu.halt = self.document.inViewingMode;
+		mute = self.cpu.HALT = self.document.inViewingMode;
 
 		for (int i = 0; i < 3; i++)
 		{

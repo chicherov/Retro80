@@ -12,11 +12,6 @@
 
 }
 
-- (void) reset
-{
-
-}
-
 - (void) stop
 {
 

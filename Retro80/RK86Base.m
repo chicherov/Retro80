@@ -7,29 +7,21 @@
 @implementation RK86Base
 
 // -----------------------------------------------------------------------------
-// Управление компьютером
-// -----------------------------------------------------------------------------
-
-- (void) reset
-{
-	[self.kbd RESET];
-	[self.ext RESET];
-
-	self.cpu.PC = 0xF800;
-	self.cpu.IF = FALSE;
-}
-
-// -----------------------------------------------------------------------------
 // createObjects - стандартные устройства РК86
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
 {
-	if (self.ram == nil && (self.ram = [[Memory alloc] initWithLength:0x8000 mask:0x7FFF]) == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0x7FFF]) == nil)
 		return FALSE;
 
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000]) == nil)
-		return FALSE;
+	if (self.cpu == nil)
+	{
+		if ((self.cpu = [[X8080 alloc] initWithQuartz:16000000]) == nil)
+			return FALSE;
+
+		self.cpu.START = 0xF800;
+	}
 
 	if (self.crt == nil && (self.crt = [[X8275 alloc] init]) == nil)
 		return FALSE;
@@ -55,6 +47,9 @@
 
 - (BOOL) mapObjects
 {
+	[self.cpu addObjectToRESET:self.kbd];
+	[self.cpu addObjectToRESET:self.ext];
+
 	self.cpu.HLDA = self.crt;
 	self.crt.dma  = self.dma;
 	self.dma.cpu  = self.cpu;
@@ -77,8 +72,6 @@
 
 		if (![self mapObjects])
 			return self = nil;
-
-		self.cpu.PC = 0xF800;
 
 		self.kbdHook.enabled = TRUE;
 		self.inpHook.enabled = TRUE;

@@ -44,7 +44,9 @@
 @property MicroshaKeyboard *kbd;
 @property MicroshaExt *ext;
 
+@property BOOL isFloppy;
+
 @property Floppy *floppy;
-@property Memory *dos29;
+@property ROM *dos29;
 
 @end

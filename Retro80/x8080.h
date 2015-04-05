@@ -4,35 +4,37 @@
 
 #import "Retro80.h"
 
-@protocol ReadWrite <NSObject>
+@protocol RD
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status;
+@end
+
+@protocol WR
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock;
 @end
 
-@protocol Reset <NSObject>
-- (void) RESET;
+@protocol BYTE
+- (uint8_t *) BYTE:(uint16_t)addr;
 @end
 
-@protocol Bytes <NSObject>
-- (uint8_t *) mutableBytesAtAddress:(uint16_t)addr;
-- (const uint8_t *) bytesAtAddress:(uint16_t)addr;
+@protocol RESET
+- (void) RESET;
 @end
 
 @class X8080;
 
-@protocol Hook <NSObject>
+@protocol Hook
 - (int) execute:(X8080*)cpu;
 @end
 
-@protocol HLDA <NSObject>
+@protocol HLDA
 - (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr;
 @end
 
-@protocol INTE <NSObject>
+@protocol INTE
 - (void) INTE:(BOOL)IF;
 @end
 
-@protocol INTA <NSObject>
+@protocol INTA
 - (uint8_t) INTA;
 @end
 
@@ -76,38 +78,48 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<RD, WR>*)object
 			atPage:(uint8_t)page
 			  from:(uint16_t)from
 				to:(uint16_t)to;
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<RD>*)rd
 			atPage:(uint8_t)page
 			  from:(uint16_t)from
 				to:(uint16_t)to
-				RO:(BOOL)ro;
+				WR:(NSObject<WR>*)wr;
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<WR>*)wr
 			atPage:(uint8_t)page
 			  from:(uint16_t)from
 				to:(uint16_t)to
-				WO:(BOOL)wo;
+				RD:(NSObject<RD>*)rd;
 
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<RD, WR>*)object
 				from:(uint16_t)from
 				to:(uint16_t)to;
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<RD>*)rd
 			  from:(uint16_t)from
 				to:(uint16_t)to
-				RO:(BOOL)ro;
+				WR:(NSObject<WR>*)wr;
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<WR>*)wr
 			  from:(uint16_t)from
 				to:(uint16_t)to
-				WO:(BOOL)ro;
+				RD:(NSObject<RD>*)rd;
+
+// -----------------------------------------------------------------------------
+
+- (void) addObjectToRESET:(NSObject<RESET>*)object;
+
+@property uint16_t START;
+@property BOOL RESET;
+
+@property BOOL MEMIO;
+@property BOOL FF;
 
 // -----------------------------------------------------------------------------
 
@@ -116,11 +128,11 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data);
 
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<RD, WR>*)object
 			atPort:(uint8_t)port
 			 count:(unsigned)count;
 
-- (void) mapObject:(NSObject<ReadWrite>*)object
+- (void) mapObject:(NSObject<RD, WR>*)object
 			atPort:(uint8_t)port;
 
 // -----------------------------------------------------------------------------

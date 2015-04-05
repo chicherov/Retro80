@@ -13,7 +13,7 @@
 // Интерфейс сопряжения "Микро-80"
 // -----------------------------------------------------------------------------
 
-@interface Micro80Recorder : NSObject <SoundController, ReadWrite>
+@interface Micro80Recorder : NSObject <SoundController, RD, WR>
 
 @end
 
@@ -32,8 +32,8 @@
 @interface Micro80 : Computer
 
 @property X8080 *cpu;
-@property Memory *rom;
-@property Memory *ram;
+@property ROM *rom;
+@property RAM *ram;
 
 @property TextScreen *crt;
 

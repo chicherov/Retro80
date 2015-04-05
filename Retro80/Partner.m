@@ -37,7 +37,7 @@
 
 - (IBAction) colorModule:(NSMenuItem *)menuItem
 {
-	@synchronized(self.snd)
+	@synchronized(self.snd.sound)
 	{
 		if ((self.sys2.slot & 0x04) == 0)
 		{
@@ -51,21 +51,6 @@
 			self.sys2.mcpg = self.isColor;
 		}
 	}
-}
-
-// -----------------------------------------------------------------------------
-// RESET
-// -----------------------------------------------------------------------------
-
-- (void) reset
-{
-	[super reset];
-
-	self.cpu.PC = 0x0000;
-	self.cpu.PAGE = 0;
-
-	self.sys2.slot = 0;
-	self.sys2.mcpg = FALSE;
 }
 
 // -----------------------------------------------------------------------------
@@ -92,28 +77,25 @@
 	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
 		return FALSE;
 
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Partner" mask:0x1FFF]) == nil)
+		return FALSE;
+
+	if ((self.basic = [[ROM alloc] initWithContentsOfResource:@"Basic" mask:0x1FFF]) == nil)
+		return FALSE;
+
+	if ((self.ram = [[RAM alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
+		return FALSE;
+
 	if ((self.kbd = [[PartnerKeyboard alloc] init]) == nil)
-		return FALSE;
-
-	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Partner" mask:0x1FFF]) == nil)
-		return FALSE;
-
-	if ((self.basic = [[Memory alloc] initWithContentsOfResource:@"Basic" mask:0x1FFF]) == nil)
-		return FALSE;
-
-	if ((self.ram2 = [[Memory alloc] initWithLength:0x8000 mask:0x7FFF]) == nil)
-		return FALSE;
-
-	if ((self.sys1 = [[PartnerSystem1 alloc] init]) == nil)
 		return FALSE;
 
 	if ((self.sys2 = [[PartnerSystem2 alloc] init]) == nil)
 		return FALSE;
 
-	if ((self.mcpgbios = [[Memory alloc] initWithContentsOfResource:@"mcpg" mask:0x07FF]) == nil)
+	if ((self.mcpgbios = [[ROM alloc] initWithContentsOfResource:@"mcpg" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if ((self.mcpgfont = [[Memory alloc] initWithLength:0x1000 mask:0x0FFF]) == nil)
+	if ((self.mcpgfont = [[RAM alloc] initWithLength:0x1000 mask:0x0FFF]) == nil)
 		return FALSE;
 
 	if (![super createObjects])
@@ -145,36 +127,48 @@
 	[self.crt setColors:NULL attributesMask:0x3F shiftMask:0x3D];
 	[self.crt setFonts:fonts];
 
+	// Системный регистр 1
+
+	if ((self.sys1 = [[PartnerSystem1 alloc] init]) == nil)
+		return FALSE;
+
+	self.sys1.cpu = self.cpu;
+
 	// Окошки для внешних устройств
 
 	self.win1 = [[PartnerExternal alloc] init];
 	self.win2 = [[PartnerExternal alloc] init];
+	
+	// Системный регистр 2
+
+	self.sys2.partner = self;
+	self.sys2.slot = self.sys2.slot;
+	self.sys2.mcpg = self.sys2.mcpg;
 
 	// Область D800-DFFF всегда принадлежит системным контролерам
 
 	[self.cpu mapObject:self.crt	from:0xD800 to:0xD8FF];
 	[self.cpu mapObject:self.kbd	from:0xD900 to:0xD9FF];
-	[self.cpu mapObject:self.sys1	from:0xDA00 to:0xDAFF];
+	[self.cpu mapObject:self.sys1	from:0xDA00 to:0xDAFF RD:nil];
 	[self.cpu mapObject:self.dma	from:0xDB00 to:0xDBFF];
 	[self.cpu mapObject:self.sys2	from:0xDC00 to:0xDFFF];
 
 	// Страница 2 идет в виде базовой страницы
 
-	[self.cpu mapObject:self.ram	from:0x0000 to:0x7FFF];
-	[self.cpu mapObject:self.ram2	from:0x8000 to:0xD7FF];
+	[self.cpu mapObject:self.ram	from:0x0000 to:0xD7FF];
 
 	[self.cpu mapObject:self.win1	from:0xE000 to:0xE7FF];
-	[self.cpu mapObject:self.rom	from:0xE800 to:0xFFFF];
+	[self.cpu mapObject:self.rom	from:0xE800 to:0xFFFF WR:nil];
 
 	// Страница 0, с адреса 0000 идут первые 2К монитора
 	// Предназначена для старта по Reset
 
-	[self.cpu mapObject:self.rom	atPage:0 from:0x0000 to:0x07FF];
+	[self.cpu mapObject:self.rom	atPage:0 from:0x0000 to:0x07FF WR:nil];
 
 	// Страница 1, верхние 8К полностью занимает монитор
 	// Предназначена для копирования ассемблера в память
 
-	[self.cpu mapObject:self.rom	atPage:1 from:0xE000 to:0xE7FF];
+	[self.cpu mapObject:self.rom	atPage:1 from:0xE000 to:0xE7FF WR:nil];
 
 	// Страница 3, верхние 8К полностью занимает внешнее окошко 1
 
@@ -194,19 +188,19 @@
 
 	// Страница 6, ПЗУ Бейсика подключается по адресам A000-BFFF
 
-	[self.cpu mapObject:self.basic	atPage:6 from:0xA000 to:0xBFFF];
+	[self.cpu mapObject:self.basic	atPage:6 from:0xA000 to:0xBFFF WR:nil];
 
 	// Страница 7, ОЗУ1 и ОЗУ2 меняются местами
 
-	[self.cpu mapObject:self.ram2	atPage:7 from:0x0000 to:0x7FFF];
-	[self.cpu mapObject:self.ram	atPage:7 from:0x8000 to:0xD7FF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x8000 length:0x8000 mask:0x7FFF]	atPage:7 from:0x0000 to:0x7FFF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x0000 length:0x8000 mask:0x7FFF]	atPage:7 from:0x8000 to:0xD7FF];
 
 	// Страница 8, ПЗУ Бейсика подключается по адресам A000-9FFF
 	// Кроме того, внешние окошко 1 подключается 8000-BFFF
 
 	[self.cpu mapObject:self.win2	atPage:8 from:0xC800 to:0xD7FF];
-	[self.cpu mapObject:self.rom	atPage:8 from:0xC000 to:0xC7FF];
-	[self.cpu mapObject:self.basic	atPage:8 from:0xA000 to:0xBFFF];
+	[self.cpu mapObject:self.rom	atPage:8 from:0xC000 to:0xC7FF WR:nil];
+	[self.cpu mapObject:self.basic	atPage:8 from:0xA000 to:0xBFFF WR:nil];
 	[self.cpu mapObject:self.win1	atPage:8 from:0x8000 to:0x9FFF];
 
 	// Страница 9
@@ -218,17 +212,11 @@
 
 	[self.cpu mapObject:self.win1	atPage:10 from:0x4000 to:0x5FFF];
 	[self.cpu mapObject:self.win2	atPage:10 from:0x8000 to:0xBFFF];
-	[self.cpu mapObject:self.rom	atPage:10 from:0xC000 to:0xCFFF];
-
-	// Системные регистры
-
-	self.sys1.cpu = self.cpu;
-
-	self.sys2.partner = self;
-	self.sys2.slot = self.sys2.slot;
-	self.sys2.mcpg = self.sys2.mcpg;
+	[self.cpu mapObject:self.rom	atPage:10 from:0xC000 to:0xCFFF WR:nil];
 
 	self.cpu.INTA = self;
+	self.cpu.FF = TRUE;
+
 	self.crt.IRQ = self;
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
@@ -253,7 +241,6 @@
 	[super encodeWithCoder:encoder];
 
 	[encoder encodeObject:self.basic forKey:@"basic"];
-	[encoder encodeObject:self.ram2 forKey:@"ram2"];
 	[encoder encodeObject:self.sys2 forKey:@"sys2"];
 
 	[encoder encodeObject:self.mcpgbios forKey:@"mcpgbios"];
@@ -266,9 +253,6 @@
 		return FALSE;
 
 	if ((self.basic = [decoder decodeObjectForKey:@"basic"]) == nil)
-		return FALSE;
-
-	if ((self.ram2 = [decoder decodeObjectForKey:@"ram2"]) == nil)
 		return FALSE;
 
 	if ((self.sys2 = [decoder decodeObjectForKey:@"sys2"]) == nil)
@@ -292,11 +276,6 @@
 @implementation PartnerSystem1
 
 @synthesize cpu;
-
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
-{
-	return cpu.PAGE << 4;
-}
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
@@ -341,7 +320,7 @@
 
 - (void) setMcpg:(BOOL)data
 {
-	mcpg = data; [partner.crt setMcpg:(mcpg ? [partner.mcpgfont bytesAtAddress:0] : NULL)];
+	mcpg = data; [partner.crt setMcpg:(mcpg ? partner.mcpgfont.mutableBytes : NULL)];
 }
 
 - (BOOL) mcpg
@@ -448,7 +427,8 @@
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-	[object WR:addr byte:data CLK:clock];
+	if ([object conformsToProtocol:@protocol(WR)])
+		[(NSObject<WR> *)object WR:addr byte:data CLK:clock];
 }
 
 @end

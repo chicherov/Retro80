@@ -88,14 +88,15 @@
 
 	NSObject<Hook> *HOOK[0x10000];
 
-	NSObject<ReadWrite> *RD[16][0x10000];
-	NSObject<ReadWrite> *WR[16][0x10000];
+	NSObject<RD> *RD[16][0x10000];
+	NSObject<WR> *WR[16][0x10000];
 
 	const uint8* RDMEM[16][0x10000];
 	uint8* WRMEM[16][0x10000];
 
-	NSObject<ReadWrite> *IO[256];
-	BOOL PMIO;
+	NSObject<RD, WR> *IO[256];
+
+	NSMutableArray *RESETLIST;
 
 	// -------------------------------------------------------------------------
 	// Сигнал HLDA
@@ -113,7 +114,10 @@
 @synthesize CLK;
 
 @synthesize PAGE;
-@synthesize halt;
+@synthesize HALT;
+
+@synthesize MEMIO;
+@synthesize FF;
 
 - (void) setPC:(uint16_t)value { PC.PC = value; }
 - (uint16_t) PC { return PC.PC; }
@@ -169,39 +173,14 @@
 // Доступ к адресному пространству
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to
+- (void) mapObject:(NSObject<RD> *)rd atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to WR:(NSObject<WR> *)wr
 {
-	if ([object conformsToProtocol:@protocol(Bytes)])
+	if ([rd conformsToProtocol:@protocol(BYTE)])
 	{
 		for (unsigned address = from; address <= to; address++)
 		{
-			WRMEM[page][address] = [(NSObject<Bytes>*)object mutableBytesAtAddress:address];
-			RDMEM[page][address] = [(NSObject<Bytes>*)object bytesAtAddress:address];
-			RD[page][address] = object;
-			WR[page][address] = object;
-		}
-	}
-	else
-	{
-		for (unsigned address = from; address <= to; address++)
-		{
-			WRMEM[page][address] = NULL;
-			RDMEM[page][address] = NULL;
-			RD[page][address] = object;
-			WR[page][address] = object;
-		}
-		
-	}
-}
-
-- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to RO:(BOOL)ro
-{
-	if ([object conformsToProtocol:@protocol(Bytes)])
-	{
-		for (unsigned address = from; address <= to; address++)
-		{
-			RDMEM[page][address] = [(NSObject<Bytes>*)object bytesAtAddress:address];
-			RD[page][address] = object;
+			RDMEM[page][address] = [(NSObject<BYTE>*)rd BYTE:address];
+			RD[page][address] = rd;
 		}
 	}
 	else
@@ -209,20 +188,17 @@
 		for (unsigned address = from; address <= to; address++)
 		{
 			RDMEM[page][address] = NULL;
-			RD[page][address] = object;
+			RD[page][address] = rd;
 		}
-		
-	}
-}
 
-- (void) mapObject:(NSObject<ReadWrite> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to WO:(BOOL)wo
-{
-	if ([object conformsToProtocol:@protocol(Bytes)])
+	}
+
+	if ([wr conformsToProtocol:@protocol(BYTE)])
 	{
 		for (unsigned address = from; address <= to; address++)
 		{
-			WRMEM[page][address] = [(NSObject<Bytes>*)object mutableBytesAtAddress:address];
-			WR[page][address] = object;
+			WRMEM[page][address] = [(NSObject<BYTE>*)wr BYTE:address];
+			WR[page][address] = wr;
 		}
 	}
 	else
@@ -230,31 +206,40 @@
 		for (unsigned address = from; address <= to; address++)
 		{
 			WRMEM[page][address] = NULL;
-			WR[page][address] = object;
+			WR[page][address] = wr;
 		}
-		
-	}
 
+	}
+}
+
+- (void) mapObject:(NSObject<WR> *)wr atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to RD:(NSObject<RD> *)rd
+{
+	[self mapObject:rd atPage:page from:from to:to WR:wr];
+}
+
+- (void) mapObject:(NSObject<RD, WR> *)object atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to
+{
+	[self mapObject:object atPage:page from:from to:to WR:object];
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<ReadWrite>*)object from:(uint16_t)from to:(uint16_t)to
+- (void) mapObject:(NSObject<RD>*)rd from:(uint16_t)from to:(uint16_t)to WR:(NSObject<WR> *)wr
+{
+	for (uint8_t page = 0; page < 16; page++)
+		[self mapObject:rd atPage:page from:from to:to WR:wr];
+}
+
+- (void) mapObject:(NSObject<WR>*)wr from:(uint16_t)from to:(uint16_t)to RD:(NSObject<RD> *)rd
+{
+	for (uint8_t page = 0; page < 16; page++)
+		[self mapObject:wr atPage:page from:from to:to RD:rd];
+}
+
+- (void) mapObject:(NSObject<RD, WR>*)object from:(uint16_t)from to:(uint16_t)to
 {
 	for (uint8_t page = 0; page < 16; page++)
 		[self mapObject:object atPage:page from:from to:to];
-}
-
-- (void) mapObject:(NSObject<ReadWrite>*)object from:(uint16_t)from to:(uint16_t)to RO:(BOOL)ro
-{
-	for (uint8_t page = 0; page < 16; page++)
-		[self mapObject:object atPage:page from:from to:to RO:ro];
-}
-
-- (void) mapObject:(NSObject<ReadWrite>*)object from:(uint16_t)from to:(uint16_t)to WO:(BOOL)wo
-{
-	for (uint8_t page = 0; page < 16; page++)
-		[self mapObject:object atPage:page from:from to:to WO:wo];
 }
 
 // -----------------------------------------------------------------------------
@@ -264,9 +249,9 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status)
 	const uint8_t *ptr = cpu->RDMEM[cpu->PAGE][addr]; if (ptr) return *ptr;
 
 	else if (cpu->RD[cpu->PAGE][addr])
-		return [cpu->RD[cpu->PAGE][addr] RD:addr CLK:cpu->CLK status:status];
+		return [cpu->RD[cpu->PAGE][addr] RD:addr CLK:cpu->CLK status:cpu->FF ? 0xFF : status];
 	else
-		return status;
+		return cpu->FF ? 0xFF : status;
 }
 
 // -----------------------------------------------------------------------------
@@ -283,14 +268,14 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data)
 // Доступ к порта ввода/вывода
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<ReadWrite> *)object atPort:(uint8_t)port count:(unsigned int)count
+- (void) mapObject:(NSObject<RD, WR> *)object atPort:(uint8_t)port count:(unsigned int)count
 {
 	while (count--) [self mapObject:object atPort:port++];
 }
 
-- (void) mapObject:(NSObject<ReadWrite> *)object atPort:(uint8_t)port
+- (void) mapObject:(NSObject<RD, WR> *)object atPort:(uint8_t)port
 {
-	IO[port] = object; PMIO = TRUE;
+	IO[port] = object; MEMIO = FALSE;
 }
 
 // -----------------------------------------------------------------------------
@@ -298,11 +283,11 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data)
 uint8_t IOR(X8080 *cpu, uint16_t addr, uint8_t status)
 {
 	uint8_t page = addr >> 8; if (cpu->IO[page])
-		return [cpu->IO[page] RD:addr CLK:cpu->CLK status:status];
-	else if (!cpu->PMIO)
-		return MEMR(cpu, addr, status);
+		return [cpu->IO[page] RD:addr CLK:cpu->CLK status:cpu->FF ? 0xFF : status];
+	else if (cpu->MEMIO)
+		return MEMR(cpu, addr, cpu->FF ? 0xFF : status);
 	else
-		return status;
+		return cpu->FF ? 0xFF : status;
 }
 
 // -----------------------------------------------------------------------------
@@ -311,8 +296,20 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
 {
 	uint8_t page = addr >> 8; if (cpu->IO[page])
 		[cpu->IO[page] WR:addr byte:data CLK:cpu->CLK];
-	else if (!cpu->PMIO)
+	else if (cpu->MEMIO)
 		MEMW(cpu, addr, data);
+}
+
+// -----------------------------------------------------------------------------
+// RESET
+// -----------------------------------------------------------------------------
+
+@synthesize RESET;
+@synthesize START;
+
+- (void) addObjectToRESET:(NSObject<RESET> *)object
+{
+	[RESETLIST addObject:object];
 }
 
 // -----------------------------------------------------------------------------
@@ -552,7 +549,18 @@ static bool test(uint8_t IR, uint8_t F)
 {
 	while (CLK < CLKI)
 	{
-		uint8_t IR; if (halt)
+		if (RESET)
+		{
+			for (NSObject<RESET> *object in RESETLIST)
+				[object RESET];
+
+			self.IF = FALSE;
+
+			PAGE = 0; PC.PC = START;
+			RESET = FALSE;
+		}
+
+		uint8_t IR; if (HALT)
 		{
 			IR = 0x00;
 		}
@@ -2103,9 +2111,22 @@ static bool test(uint8_t IR, uint8_t F)
 // Инициализация
 // -----------------------------------------------------------------------------
 
-- (id) initWithQuartz:(uint32_t)freq
+- (id) init
 {
 	if (self = [super init])
+	{
+		RESETLIST = [[NSMutableArray alloc] init];
+		RESET = TRUE;
+
+		MEMIO = TRUE;
+	}
+
+	return self;
+}
+
+- (id) initWithQuartz:(uint32_t)freq
+{
+	if (self = [self init])
 		quartz = freq;
 
 	return self;
@@ -2121,6 +2142,8 @@ static bool test(uint8_t IR, uint8_t F)
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 	[encoder encodeBool:IF forKey:@"IF"];
 
+	[encoder encodeBool:RESET forKey:@"RESET"];
+	[encoder encodeInt:START forKey:@"START"];
 	[encoder encodeInt:PAGE forKey:@"PAGE"];
 
 	[encoder encodeInt:PC.PC forKey:@"PC"];
@@ -2133,12 +2156,14 @@ static bool test(uint8_t IR, uint8_t F)
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [super init])
+	if (self = [self init])
 	{
 		quartz = [decoder decodeInt32ForKey:@"quartz"];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 		IF = [decoder decodeBoolForKey:@"IF"];
 
+		RESET = [decoder decodeBoolForKey:@"RESET"];
+		START = [decoder decodeIntForKey:@"START"];
 		PAGE = [decoder decodeIntForKey:@"PAGE"];
 
 		PC.PC = [decoder decodeIntForKey:@"PC"];

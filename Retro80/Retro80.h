@@ -7,7 +7,7 @@
 // Протокол объекта со свойством enabled (для хуков)
 // -----------------------------------------------------------------------------
 
-@protocol Adjustment <NSObject>
+@protocol Adjustment
 @property BOOL enabled;
 @end
 
@@ -15,13 +15,14 @@
 // Протокол центрального процессора
 // -----------------------------------------------------------------------------
 
-@protocol Processor <NSObject>
+@protocol Processor
 
 - (void) execute:(uint64_t)clock;
 
 @property uint32_t quartz;
 @property uint64_t CLK;
-@property BOOL halt;
+@property BOOL RESET;
+@property BOOL HALT;
 
 @end
 
@@ -29,9 +30,11 @@
 // Протокол контролера дисплея
 // -----------------------------------------------------------------------------
 
-@protocol DisplayController <NSObject>
+@protocol DisplayController
 
 @property Display* display;
+
+@optional
 
 - (unichar) charAtX:(unsigned)x Y:(unsigned)y;
 
@@ -41,7 +44,7 @@
 // Протокол контролера дисплея
 // -----------------------------------------------------------------------------
 
-@protocol SoundController <NSObject>
+@protocol SoundController
 
 @property Sound* sound;
 
@@ -53,7 +56,7 @@
 // Протокол клавиатуры
 // -----------------------------------------------------------------------------
 
-@protocol Keyboard <NSObject>
+@protocol Keyboard
 
 - (void) flagsChanged:(NSEvent *)theEvent;
 - (void) keyDown:(NSEvent *)theEvent;

@@ -14,9 +14,8 @@
 // Интерфейс графического экрана ПЭВМ "Специалист"
 // -----------------------------------------------------------------------------
 
-@interface SpecialistScreen : NSObject <DisplayController, ReadWrite, Bytes, HLDA, NSCoding>
+@interface SpecialistScreen : NSObject <DisplayController, WR, HLDA, NSCoding>
 
-@property Display *display;
 @property uint8_t* screen;
 
 @property uint8_t color;
@@ -31,7 +30,6 @@
 @interface SpecialistKeyboard : RKKeyboard
 
 @property SpecialistScreen *crt;
-@property (weak) X8253* snd;
 
 @end
 
@@ -42,8 +40,8 @@
 @interface Specialist : Computer
 
 @property X8080 *cpu;
-@property Memory *rom;
-@property Memory *ram;
+@property ROM *rom;
+@property RAM *ram;
 
 @property SpecialistScreen *crt;
 
@@ -62,8 +60,6 @@
 
 @interface SpecialistSP580 : Specialist
 
-@property F81B *kbdHook;
-
 @end
 
 // -----------------------------------------------------------------------------
@@ -75,37 +71,23 @@
 @end
 
 // -----------------------------------------------------------------------------
-// Системный регистр ПЭВМ "Специалист MX"
+// Системные регистры ПЭВМ "Специалист MX"
 // -----------------------------------------------------------------------------
 
-@interface SpecialistMXSystem : NSObject <ReadWrite>
+@interface SpecialistMXSystem : NSObject <WR>
 
+@property SpecialistScreen *crt;
 @property (weak) X8080 *cpu;
 
 @end
 
 // -----------------------------------------------------------------------------
-// Регистр цвета ПЭВМ "Специалист MX"
-// -----------------------------------------------------------------------------
-
-@interface SpecialistMXColor : NSObject <ReadWrite>
-
-@property SpecialistScreen *crt;
-
-@end
-
-
-// -----------------------------------------------------------------------------
 // ПЭВМ "Специалист MX"
 // -----------------------------------------------------------------------------
-
 
 @interface SpecialistMX : Specialist
 
 @property SpecialistMXKeyboard *kbd;
-@property SpecialistMXSystem *sys1;
-@property SpecialistMXColor *sys2;
-
-@property NSMutableArray *quasi;
+@property SpecialistMXSystem *sys;
 
 @end

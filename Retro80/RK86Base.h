@@ -24,8 +24,8 @@
 @property RKKeyboard *kbd;
 @property X8255 *ext;
 
-@property Memory *rom;
-@property Memory *ram;
+@property ROM *rom;
+@property RAM *ram;
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder;
 - (BOOL) createObjects;
@@ -36,8 +36,6 @@
 @property F80C *outHook;
 
 @property BOOL isColor;
-
-- (void) reset;
 
 @end
 

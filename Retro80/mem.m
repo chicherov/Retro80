@@ -1,41 +1,133 @@
 #import "mem.h"
 
-@implementation Memory
-{
-	NSMutableData *memory;
-	uint8_t *mutableBytes;
-	NSUInteger length;
+// =============================================================================
+// MEM
+// =============================================================================
 
-	uint16_t mask;
-	BOOL readOnly;
+@implementation MEM
+
+@synthesize mutableBytes;
+@synthesize length;
+@synthesize mask;
+
+// -----------------------------------------------------------------------------
+
+- (MEM *) memoryAtOffest:(NSUInteger)offset length:(NSUInteger)len mask:(uint16_t)msk
+{
+	if (offset + len <= length)
+		return [[MEM alloc] initWithMemory:mutableBytes + offset length:len mask:msk];
+	else
+		return nil;
 }
 
-- (uint8_t *) mutableBytesAtAddress:(uint16_t)addr
-{
-	return readOnly ? NULL : mutableBytes + (addr & mask);
-}
+// -----------------------------------------------------------------------------
 
-- (const uint8_t *) bytesAtAddress:(uint16_t)addr
+- (uint8_t *) BYTE:(uint16_t)addr
 {
-	return mutableBytes + (addr & mask);
+	return (addr & mask) >= length ? NULL : mutableBytes + (addr & mask);
 }
 
 - (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
 {
-	return mutableBytes[addr & mask];
+	return (addr & mask) >= length ? status : mutableBytes[addr & mask];
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-	if (!readOnly)
+	if ((addr & mask) < length)
 		mutableBytes[addr & mask] = data;
 }
 
 // -----------------------------------------------------------------------------
-// Инициализация
+
+- (id) initWithMemory:(uint8_t *)ptr length:(NSUInteger)len mask:(uint16_t)msk
+{
+	if (self = [super init])
+	{
+		mutableBytes = ptr; length = len; mask = msk;
+	}
+
+	return self;
+}
+
+// -----------------------------------------------------------------------------
+// DEBUG: dealloc
 // -----------------------------------------------------------------------------
 
-- (id) initWithContentsOfResource:(NSString*)name mask:(uint16_t)m
+#ifdef DEBUG
+- (void) dealloc
+{
+	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
+}
+#endif
+
+@end
+
+// =============================================================================
+// RAM
+// =============================================================================
+
+@implementation RAM
+{
+	NSMutableData *memory;
+}
+
+// -----------------------------------------------------------------------------
+
+- (id) initWithLength:(unsigned)len mask:(uint16_t)msk
+{
+	if ((memory = [[NSMutableData alloc] initWithLength:len]) == nil || memory.length != len)
+		return self = nil;
+
+	return self = [super initWithMemory:memory.mutableBytes length:len mask:msk];
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) encodeWithCoder:(NSCoder *)encoder
+{
+	[encoder encodeObject:memory forKey:@"dump"];
+	[encoder encodeInt:self.mask forKey:@"mask"];
+}
+
+- (id) initWithCoder:(NSCoder *)decoder
+{
+	if ((memory = [decoder decodeObjectForKey:@"dump"]) == nil)
+		return self = nil;
+
+	return self = [super initWithMemory:memory.mutableBytes length:memory.length mask:[decoder decodeIntForKey:@"mask"]];
+}
+
+@end
+
+// =============================================================================
+// ROM
+// =============================================================================
+
+@implementation ROM
+{
+	NSMutableData *memory;
+}
+
+@synthesize mutableBytes;
+@synthesize length;
+@synthesize mask;
+
+// -----------------------------------------------------------------------------
+
+- (uint8_t *) BYTE:(uint16_t)addr
+{
+	return (addr & mask) >= length ? NULL : mutableBytes + (addr & mask);
+}
+
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+{
+	return (addr & mask) >= length ? 0xFF : mutableBytes[addr & mask];
+}
+
+// -----------------------------------------------------------------------------
+
+- (id) initWithContentsOfResource:(NSString*)name mask:(uint16_t)msk
 {
 	if (self = [super init])
 	{
@@ -46,40 +138,17 @@
 			return self = nil;
 
 		mutableBytes = memory.mutableBytes;
-		readOnly = TRUE;
-		mask = m;
+		mask = msk;
 	}
 
 	return self;
 }
 
-
-- (id) initWithLength:(unsigned)l mask:(uint16_t)m
-{
-	if (self = [super init])
-	{
-		if ((memory = [[NSMutableData alloc] initWithLength:l]) == nil)
-			return self = nil;
-
-		if ((length = memory.length) == 0)
-			return self = nil;
-
-		mutableBytes = memory.mutableBytes;
-		readOnly = FALSE;
-		mask = m;
-	}
-
-	return self;
-}
-
-// -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeObject:memory forKey:@"dump"];
-	[encoder encodeBool:readOnly forKey:@"ro"];
 	[encoder encodeInt:mask forKey:@"mask"];
 }
 
@@ -90,7 +159,6 @@
 		if ((memory = [decoder decodeObjectForKey:@"dump"]) == nil)
 			return self = nil;
 
-		readOnly = [decoder decodeBoolForKey:@"ro"];
 		mask = [decoder decodeIntForKey:@"mask"];
 
 		if ((length = memory.length) == 0)

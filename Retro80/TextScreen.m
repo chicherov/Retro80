@@ -15,11 +15,6 @@
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
-{
-	return status;
-}
-
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
 	[WR WR:addr byte:data CLK:clock];

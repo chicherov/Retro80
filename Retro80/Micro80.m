@@ -17,16 +17,6 @@
 }
 
 // -----------------------------------------------------------------------------
-// Управление компьютером
-// -----------------------------------------------------------------------------
-
-- (void) reset
-{
-	self.cpu.PC = 0xF800;
-	self.cpu.IF = FALSE;
-}
-
-// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
@@ -35,10 +25,12 @@
 	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
 		return FALSE;
 
-	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
+	self.cpu.START = 0xF800;
+
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[Memory alloc] initWithLength:0xF800 mask:0xFFFF]) == nil)
+	if ((self.ram = [[RAM alloc] initWithLength:0xF800 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ((self.crt = [[TextScreen alloc] init]) == nil)
@@ -56,12 +48,12 @@
 		return FALSE;
 
 	self.cpu.HLDA = self.crt;
-
-	[self.cpu mapObject:self.ram from:0x0000 to:0xF7FF];
-	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF RO:YES];
-
-	[self.cpu mapObject:self.crt from:0xE000 to:0xEFFF WO:YES];
 	self.crt.WR = self.ram;
+
+	[self.cpu mapObject:self.ram from:0x0000 to:0xDFFF];
+	[self.cpu mapObject:self.crt from:0xE000 to:0xEFFF RD:self.ram];
+	[self.cpu mapObject:self.ram from:0xF000 to:0xF7FF];
+	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
 	[self.cpu mapObject:self.snd atPort:0x00 count:0x02];
 	[self.cpu mapObject:self.kbd atPort:0x04 count:0x04];

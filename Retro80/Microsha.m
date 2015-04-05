@@ -30,13 +30,17 @@
 
 	if (menuItem.action == @selector(extraMemory:))
 	{
-		menuItem.state = self.cpu.PAGE & 1;
-		return YES;
+		if (menuItem.tag == 0)
+		{
+			menuItem.state = self.ram.length == 0xC000;
+			menuItem.submenu = nil;
+			return YES;
+		}
 	}
 
 	if (menuItem.action == @selector(floppy:))
 	{
-		if (self.cpu.PAGE & 2)
+		if (self.isFloppy)
 		{
 			menuItem.state = menuItem.tag == 0 || [self.floppy getDisk:menuItem.tag];
 			return menuItem.tag == 0 || menuItem.tag != [self.floppy selected];
@@ -68,12 +72,16 @@ static uint32_t colors[] =
 
 	if ((self.isColor = !self.isColor))
 	{
-		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0xD3;
+		if (self.rom.length > 0x42 && self.rom.mutableBytes[0x42] == 0x93)
+			self.rom.mutableBytes[0x42] = 0xD3;
+
 		[self.crt setColors:colors attributesMask:0x2F shiftMask:0x0D];
 	}
 	else
 	{
-		*(uint8_t *)[self.rom bytesAtAddress:0xF842] = 0x93;
+		if (self.rom.length > 0x42 && self.rom.mutableBytes[0x42] == 0xD3)
+			self.rom.mutableBytes[0x42] = 0x93;
+
 		[self.crt setColors:NULL attributesMask:0x22 shiftMask:0x00];
 	}
 }
@@ -84,8 +92,14 @@ static uint32_t colors[] =
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoWithMenuItem:menuItem];
-	self.cpu.PAGE ^= 1;
+	if (menuItem.tag == 0) @synchronized(self.snd.sound)
+	{
+		[self.document registerUndoWithMenuItem:menuItem];
+
+		RAM *ram = [[RAM alloc] initWithLength:self.ram.length == 0x8000 ? 0xC000 : 0x8000 mask:0xFFFF];
+		memcpy(ram.mutableBytes, self.ram.mutableBytes, 0x8000);
+		[self.cpu mapObject:self.ram = ram from:0x0000 to:0xBFFF];
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -94,19 +108,36 @@ static uint32_t colors[] =
 
 - (IBAction) floppy:(NSMenuItem *)menuItem;
 {
-	[self.document registerUndoWithMenuItem:menuItem];
-
-	if (menuItem.tag == 0)
+	if (menuItem.tag == 0) @synchronized(self.snd.sound)
 	{
-		self.cpu.PAGE ^= 2;
+		[self.document registerUndoWithMenuItem:menuItem];
+
+		if ((self.isFloppy = !self.isFloppy))
+		{
+			if (self.dos29 == nil && (self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
+				if (self.dos29.length > 0xDBF && self.dos29.mutableBytes[0xDBF] == 0xC1)
+					self.dos29.mutableBytes[0xDBF] = 0xD1;
+
+			if (self.floppy == nil && (self.floppy = [[Floppy alloc] init]) != nil)
+				[self.cpu addObjectToRESET:self.floppy];
+
+			if (self.dos29 && self.floppy)
+			{
+				[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
+				[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+			}
+		}
+		else
+		{
+			[self.cpu mapObject:nil from:0xE000 to:0xF7FF];
+		}
 	}
-	else
+	else if (menuItem.tag && self.isFloppy)
 	{
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
-		panel.title = menuItem.title;
-
-		panel.allowedFileTypes = @[@"rkdisk", @"rkd"];
+		panel.allowedFileTypes = @[@"rkdisk"];
 		panel.canChooseDirectories = FALSE;
+		panel.title = menuItem.title;
 
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
@@ -122,39 +153,18 @@ static uint32_t colors[] =
 }
 
 // -----------------------------------------------------------------------------
-// По сигналу RESET сбрасываем также контролерс НГМД
-// -----------------------------------------------------------------------------
-
-- (void) reset
-{
-	[super reset];
-	[self.floppy RESET];
-}
-
-// -----------------------------------------------------------------------------
 // createObjects/encodeWithCoder/decodeWithCoder
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
-		return FALSE;
-
-	if ((self.ram = [[Memory alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
 		return FALSE;
 
 	if ((self.kbd = [[MicroshaKeyboard alloc] init]) == nil)
 		return FALSE;
 
 	if ((self.ext = [[MicroshaExt alloc] init]) == nil)
-		return FALSE;
-
-	if ((self.dos29 = [[Memory alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
-		return FALSE;
-
-	*(uint8_t *)[self.dos29 bytesAtAddress:0xEDBF] = 0xD1;
-
-	if ((self.floppy = [[Floppy alloc] init]) == nil)
 		return FALSE;
 
 	if (![super createObjects])
@@ -171,8 +181,11 @@ static uint32_t colors[] =
 {
 	[super encodeWithCoder:encoder];
 
-	[encoder encodeObject:self.floppy forKey:@"floppy"];
-	[encoder encodeObject:self.dos29 forKey:@"dos29"];
+	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"]; if (self.isFloppy)
+	{
+		[encoder encodeObject:self.floppy forKey:@"floppy"];
+		[encoder encodeObject:self.dos29 forKey:@"dos29"];
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -182,11 +195,14 @@ static uint32_t colors[] =
 	if (![super decodeWithCoder:decoder])
 		return FALSE;
 
-	if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
-		return FALSE;
+	if ((self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"]))
+	{
+		if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
+			return FALSE;
 
-	if ((self.dos29 = [decoder decodeObjectForKey:@"dos29"]) == nil)
-		return FALSE;
+		if ((self.dos29 = [decoder decodeObjectForKey:@"dos29"]) == nil)
+			return FALSE;
+	}
 
 	return TRUE;
 }
@@ -204,21 +220,19 @@ static uint32_t colors[] =
 
 	self.ext.crt = self.crt;
 
-	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];
+	[self.cpu mapObject:self.ram from:0x0000 to:0xBFFF];
 	[self.cpu mapObject:self.kbd from:0xC000 to:0xC7FF];
 	[self.cpu mapObject:self.ext from:0xC800 to:0xCFFF];
 	[self.cpu mapObject:self.crt from:0xD000 to:0xD7FF];
 	[self.cpu mapObject:self.snd from:0xD800 to:0xDFFF];
-	[self.cpu mapObject:self.dma from:0xF800 to:0xFFFF WO:YES];
-	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF RO:YES];
+	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:self.dma];
 
-	[self.cpu mapObject:self.ram atPage:1 from:0x8000 to:0xBFFF];
-	[self.cpu mapObject:self.ram atPage:3 from:0x8000 to:0xBFFF];
-
-	[self.cpu mapObject:self.dos29 atPage:2 from:0xE000 to:0xEFFF RO:YES];
-	[self.cpu mapObject:self.dos29 atPage:3 from:0xE000 to:0xEFFF RO:YES];
-	[self.cpu mapObject:self.floppy atPage:2 from:0xF000 to:0xF7FF];
-	[self.cpu mapObject:self.floppy atPage:3 from:0xF000 to:0xF7FF];
+	if (self.isFloppy)
+	{
+		[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
+		[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+		[self.cpu addObjectToRESET:self.floppy];
+	}
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xFEEA];
 

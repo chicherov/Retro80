@@ -8,7 +8,7 @@
 
 // -----------------------------------------------------------------------------
 
-@protocol IRQ8275 <NSObject>
+@protocol IRQ8275
 
 - (void) IRQ8275:(BOOL)IRQ;
 
@@ -16,7 +16,7 @@
 
 // -----------------------------------------------------------------------------
 
-@interface X8275 : NSObject <DisplayController, ReadWrite, HLDA, NSCoding>
+@interface X8275 : NSObject <DisplayController, RD, WR, HLDA, NSCoding>
 {
 	// -------------------------------------------------------------------------
 	// Регистры i8275

@@ -10,7 +10,7 @@
 // Системнный регистр 1 - выбор станицы адресного простарнства
 // -----------------------------------------------------------------------------
 
-@interface PartnerSystem1 : NSObject <ReadWrite>
+@interface PartnerSystem1 : NSObject <WR>
 
 @property (weak) X8080 *cpu;
 
@@ -20,12 +20,11 @@
 // Системнный регистр 2 и внешние устройства
 // -----------------------------------------------------------------------------
 
-@interface PartnerSystem2 : NSObject <ReadWrite, NSCoding>
-
-@property uint8_t slot;
-@property BOOL mcpg;
+@interface PartnerSystem2 : NSObject <RD, WR, NSCoding>
 
 @property (weak) Partner *partner;
+@property uint8_t slot;
+@property BOOL mcpg;
 
 @end
 
@@ -33,8 +32,10 @@
 // Окно внешнего устройства
 // -----------------------------------------------------------------------------
 
-@interface PartnerExternal : NSObject <ReadWrite>
-@property NSObject <ReadWrite> *object;
+@interface PartnerExternal : NSObject <RD, WR>
+
+@property NSObject <RD> *object;
+
 @end
 
 // -----------------------------------------------------------------------------
@@ -59,10 +60,9 @@
 @property PartnerSystem1 *sys1;
 @property PartnerSystem2 *sys2;
 
-@property Memory *basic;
-@property Memory *ram2;
+@property ROM *basic;
 
-@property Memory *mcpgbios;
-@property Memory *mcpgfont;
+@property ROM *mcpgbios;
+@property RAM *mcpgfont;
 
 @end

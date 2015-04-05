@@ -35,6 +35,56 @@
 }
 
 // -----------------------------------------------------------------------------
+// shouldEnableURL
+// -----------------------------------------------------------------------------
+
+- (BOOL)panel:(id)sender shouldEnableURL:(NSURL *)url
+{
+	BOOL isDirectory; if ([[NSFileManager defaultManager] fileExistsAtPath:url.path.stringByResolvingSymlinksInPath isDirectory:&isDirectory])
+	{
+		if (!isDirectory)
+		{
+			NSError* outError; NSNumber *fileSize = nil; if ([url getResourceValue:&fileSize forKey:NSURLFileSizeKey error:&outError])
+			{
+				NSUInteger size = fileSize.unsignedIntegerValue; return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+			}
+		}
+		else
+		{
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+// -----------------------------------------------------------------------------
+// validateURL
+// -----------------------------------------------------------------------------
+
+- (BOOL)panel:(id)sender validateURL:(NSURL *)url error:(NSError **)outError
+{
+	BOOL isDirectory; if ([[NSFileManager defaultManager] fileExistsAtPath:url.path.stringByResolvingSymlinksInPath isDirectory:&isDirectory])
+	{
+		if (!isDirectory)
+		{
+			NSNumber *fileSize = nil; if ([url getResourceValue:&fileSize forKey:NSURLFileSizeKey error:outError])
+			{
+				NSUInteger size = fileSize.unsignedIntegerValue; return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+			}
+		}
+		else if ([sender isKindOfClass:[NSOpenPanel class]] && [(NSOpenPanel *)sender canChooseDirectories])
+		{
+			return [[NSFileManager defaultManager] fileExistsAtPath:[[NSURL URLWithString:@"boot/boot.rk" relativeToURL:url] path]];
+		}
+	}
+
+	return FALSE;
+}
+
+// -----------------------------------------------------------------------------
+// @property NSURL* url;
+// -----------------------------------------------------------------------------
 
 - (void) setUrl:(NSURL *)url
 {
@@ -68,18 +118,6 @@
 - (NSURL *) url
 {
 	return _url;
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) open
-{
-	NSOpenPanel *panel = [NSOpenPanel openPanel];
-	panel.canChooseDirectories = TRUE;
-	panel.allowedFileTypes = @[@"rom"];
-
-	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
-		self.url = panel.URLs.firstObject;
 }
 
 // -----------------------------------------------------------------------------

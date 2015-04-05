@@ -4,7 +4,7 @@
 
 #import "x8080.h"
 
-@interface X8257 : NSObject<ReadWrite, NSCoding>
+@interface X8257 : NSObject<RD, WR, NSCoding>
 {
 	union i8257_mode
 	{

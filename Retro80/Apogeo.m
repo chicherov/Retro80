@@ -66,9 +66,10 @@ static uint32_t colors[] =
 - (IBAction) ROMDisk:(NSMenuItem *)menuItem;
 {
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
-	panel.title = menuItem.title;
+	panel.allowedFileTypes = @[@"rom", @"bin"];
 	panel.canChooseDirectories = TRUE;
-	panel.allowedFileTypes = @[@"rom"];
+	panel.title = menuItem.title;
+	panel.delegate = self.ext;
 
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
@@ -97,10 +98,10 @@ static uint32_t colors[] =
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[Memory alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[Memory alloc] initWithLength:0xEC00 mask:0xFFFF]) == nil)
+	if ((self.ram = [[RAM alloc] initWithLength:0xEC00 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	if ((self.ext = [[ROMDisk alloc] init]) == nil)
@@ -138,8 +139,9 @@ static uint32_t colors[] =
 	[self.cpu mapObject:self.kbd from:0xED00 to:0xEDFF];
 	[self.cpu mapObject:self.ext from:0xEE00 to:0xEEFF];
 	[self.cpu mapObject:self.crt from:0xEF00 to:0xEFFF];
-	[self.cpu mapObject:self.dma from:0xF000 to:0xF7FF WO:YES];
-	[self.cpu mapObject:self.rom from:0xF000 to:0xFFFF RO:YES];
+
+	[self.cpu mapObject:self.rom from:0xF000 to:0xF7FF WR:self.dma];
+	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
