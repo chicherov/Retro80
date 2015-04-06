@@ -9,6 +9,7 @@
 
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
+#import "ROMDisk.h"
 
 // -----------------------------------------------------------------------------
 // Интерфейс графического экрана ПЭВМ "Специалист"
@@ -46,7 +47,7 @@
 @property SpecialistScreen *crt;
 
 @property SpecialistKeyboard *kbd;
-@property X8255 *ext;
+@property X8255* ext;
 @property X8253* snd;
 
 @property F806 *inpHook;

@@ -75,7 +75,7 @@
 		}
 		else if ([sender isKindOfClass:[NSOpenPanel class]] && [(NSOpenPanel *)sender canChooseDirectories])
 		{
-			return [[NSFileManager defaultManager] fileExistsAtPath:[[NSURL URLWithString:@"boot/boot.rk" relativeToURL:url] path]];
+			return [[NSFileManager defaultManager] fileExistsAtPath:[[NSURL URLWithString:[(NSOpenPanel *)sender canChooseFiles] ? @"boot/boot.rk" : @"boot/boot.rks" relativeToURL:url] path]];
 		}
 	}
 
@@ -97,9 +97,14 @@
 				if ((rom = [NSData dataWithContentsOfFile:[[[NSURL URLWithString:@"boot/boot.rk" relativeToURL:url] path] stringByResolvingSymlinksInPath]]) != nil)
 				{
 					_length = rom.length; _bytes = rom.bytes;
-					_url = url; romMode = 1;
+					_url = url; romMode = 11;
 					return;
-
+				}
+				else if ((rom = [NSData dataWithContentsOfFile:[[[NSURL URLWithString:@"boot/boot.rks" relativeToURL:url] path] stringByResolvingSymlinksInPath]]) != nil)
+				{
+					_length = rom.length; _bytes = rom.bytes;
+					_url = url; romMode = 21;
+					return;
 				}
 			}
 			else if ((rom = [NSData dataWithContentsOfFile:[[url path] stringByResolvingSymlinksInPath]]) != nil)
@@ -125,7 +130,7 @@
 - (uint8_t) A
 {
 	if (romMode)
-		return out;
+		return romMode < 20 ? out : 0xFF;
 
 	if (_length <= 0x10000)
 		addr = (C << 8) | B;
@@ -134,6 +139,13 @@
 		return _bytes[addr];
 	else
 		return 0xFF;
+}
+
+// -----------------------------------------------------------------------------
+
+- (uint8_t) C
+{
+	return romMode < 20 ? 0xFF : out;
 }
 
 // -----------------------------------------------------------------------------
@@ -155,7 +167,7 @@
 			break;
 		}
 
-		case 1:
+		case 11:
 		{
 			out = (data & 0x7F) < _length ? _bytes[data & 0x7F] : 0xFF;
 
@@ -165,7 +177,7 @@
 			break;
 		}
 
-		case 2:
+		case 12:
 		{
 			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
@@ -175,18 +187,18 @@
 				}
 				else
 				{
-					romMode = 1;
+					romMode = 11;
 				}
 			}
 			else if (data & ~0x20)
 			{
-				romMode = 1;
+				romMode = 11;
 			}
 
 			break;
 		}
 
-		case 3:
+		case 13:
 		{
 			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
@@ -204,24 +216,24 @@
 				}
 				else
 				{
-					romMode = 1;
+					romMode = 11;
 				}
 			}
 			else if (data & ~0x20)
 			{
-				romMode = 1;
+				romMode = 11;
 			}
 
 			break;
 		}
 
-		case 4:
+		case 14:
 		{
 			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
 				if (data == 0x00)
 				{
-					if ([self execute])
+					buffer[blen++] = A; if ([self execute])
 					{
 						romMode++;
 						bpos = 0;
@@ -229,18 +241,18 @@
 				}
 				else
 				{
-					romMode = 1;
+					romMode = 11;
 				}
 			}
 			else if (data & ~0x20)
 			{
-				romMode = 1;
+				romMode = 11;
 			}
 
 			break;
 		}
 
-		case 5:
+		case 15:
 		{
 			if ((B & 0x20) && (data & 0x20) == 0x00)
 			{
@@ -250,16 +262,91 @@
 				}
 				else
 				{
-					romMode = 1;
+					romMode = 11;
 				}
 			}
 			else if (data & ~0x20)
 			{
-				romMode = 1;
+				romMode = 11;
 			}
 
 			break;
 		}
+
+		case 21:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+				romMode = C == 0x13 ? 22 : 21;
+
+			break;
+
+		case 22:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+				romMode = C == 0xB4 ? 23 : 21;
+
+			break;
+
+		case 23:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+				romMode = C == 0x57 ? 24 : 21;
+
+			break;
+
+		case 24:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+			{
+				buffer[0] = C; bpos = 0; blen = 1; romMode++;
+			}
+			
+			break;
+
+		case 25:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+			{
+				out = 0x40; romMode = buffer[0] == 0x00 && [self cmd_boot] ? 28 :  26;
+			}
+
+			break;
+
+		case 26:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+			{
+				if (out == 0x42)
+					romMode++;
+
+				out = 0x42;
+			}
+
+			break;
+			
+		case 27:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+			{
+				buffer[blen++] = C; if ([self execute])
+				{
+					bpos = 0; romMode++;
+				}
+			}
+
+			break;
+
+		case 28:
+
+			if ((B & 0x80) && (data & 0x80) == 0x00)
+			{
+				if (bpos < blen && mode.H && mode.L)
+					out = buffer[bpos++];
+				else
+					romMode = 21;
+			}
+
+			break;
 	}
 }
 
@@ -280,7 +367,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 		const uint8_t *ptr = (uint8_t *)data.bytes;
 		length = data.length;
 
-		buffer[blen++] = 0x4F;
+		buffer[blen++] = romMode < 20 ? 0x4F : 0x00;
 		buffer[blen++] = length & 0xFF;
 		buffer[blen++] = length >> 8;
 
@@ -305,12 +392,12 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 		if (rk_header && rk_header.length == 4)
 		{
-			const uint8_t *ptr = (uint8_t *)rk_header.bytes;
-			uint16_t rk_length = ((ptr[2] << 8) | ptr[3]) - ((ptr[0] << 8) | ptr[1]) + 1;
+			const uint8_t *ptr = (const uint8_t *)rk_header.bytes;
+			uint16_t rk_length = romMode < 20 ? ((ptr[2] << 8) | ptr[3]) - ((ptr[0] << 8) | ptr[1]) + 1 : ((ptr[3] << 8) | ptr[2]) - ((ptr[1] << 8) | ptr[0]) + 1;
 
 			buffer[blen++] = 0x47;
-			buffer[blen++] = ptr[1];
-			buffer[blen++] = ptr[0];
+			buffer[blen++] = romMode < 20 ? ptr[1] : ptr[0];
+			buffer[blen++] = romMode < 20 ? ptr[0] : ptr[1];
 
 			[self sendLength:rk_length];
 		}
@@ -333,7 +420,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 {
 	blen = 0;
 
-	if ((file = [NSFileHandle fileHandleForReadingAtPath:[[NSURL URLWithString:@"boot/sdbios.rk" relativeToURL:_url] path]]) == nil)
+	if ((file = [NSFileHandle fileHandleForReadingAtPath:[[NSURL URLWithString:romMode < 20 ? @"boot/sdbios.rk" : @"boot/sdbios.rks" relativeToURL:_url] path]]) == nil)
 	{
 		buffer[blen++] = 4;
 		return TRUE;
@@ -352,7 +439,8 @@ NSString* stringFromPointer(uint8_t *ptr)
 	blen = 0;
 
 	buffer[blen++] = 1;
-	memcpy(buffer + blen, "V1.0 retro kr580", 16); blen += 16;
+
+	memcpy(buffer + blen, "V1.1 retro kr580", 16); blen += 16;
 
 	return TRUE;
 }
@@ -363,7 +451,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 - (BOOL) cmd_exec
 {
-	if (A)
+	if (buffer[blen-1])
 		return FALSE;
 
 	blen = 0;
@@ -386,7 +474,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 {
 	if (bpos != 2)
 	{
-		if (bpos || A == 0x00)
+		if (bpos || buffer[blen-1] == 0x00)
 		{
 			bpos++;
 		}
@@ -459,9 +547,9 @@ NSString* stringFromPointer(uint8_t *ptr)
 			*(uint32_t *)(buffer + blen) = fileSize.unsignedIntValue; blen += 4;
 		}
 
-		NSDate* modificationDate; [fileURL getResourceValue:&modificationDate forKey:NSURLAttributeModificationDateKey error:NULL];
+		NSDate* creationDate; [fileURL getResourceValue:&creationDate forKey:NSURLCreationDateKey error:NULL];
 
-		NSDateComponents* dateComponents = [[NSCalendar currentCalendar] components:NSYearCalendarUnit | NSMonthCalendarUnit |  NSDayCalendarUnit | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:modificationDate];
+		NSDateComponents* dateComponents = [[NSCalendar currentCalendar] components:NSYearCalendarUnit | NSMonthCalendarUnit |  NSDayCalendarUnit | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond fromDate:creationDate];
 
 		uint16_t dosTime = (dateComponents.hour << 11) | (dateComponents.minute << 5) | (dateComponents.second >> 2);
 
@@ -493,7 +581,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 - (BOOL) cmd_open
 {
-	if (blen < 3 || A)
+	if (blen < 3 || buffer[blen-1])
 		return FALSE;
 
 	NSString* path = [[NSURL URLWithString:stringFromPointer(buffer + 2) relativeToURL:_url] path];
@@ -611,13 +699,15 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 		case 101:	// fs_gettotal()
 		{
-			offset = 0x40000000;
+			NSError *error = nil; NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[self.url path] error: &error];
+			offset = dictionary ? (uint32_t) ([(NSNumber *)dictionary[NSFileSystemSize] unsignedIntegerValue] / 1000000) : 0;
 			break;
 		}
 
 		case 102:	// fs_free()
 		{
-			offset = 0x20000000;
+			NSError *error = nil; NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[self.url path] error: &error];
+			offset = dictionary ? (uint32_t) ([(NSNumber *)dictionary[NSFileSystemFreeSize] unsignedIntegerValue] / 1000000) : 0;
 			break;
 		}
 
@@ -745,7 +835,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 {
 	if (bpos == 0)
 	{
-		if (A == 0)
+		if (buffer[blen-1] == 0)
 			bpos = blen;
 
 		return FALSE;
@@ -756,7 +846,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 		out = 0x46; return FALSE;
 	}
 
-	else if (A)
+	else if (buffer[blen-1])
 	{
 		return FALSE;
 	}
@@ -785,7 +875,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 - (BOOL) execute
 {
-	buffer[blen++] = A; switch (buffer[0])
+	switch (buffer[0])
 	{
 		case 0:		// cmd_boot();
 		{

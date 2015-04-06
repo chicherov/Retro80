@@ -306,6 +306,12 @@
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
+	if (menuItem.action == @selector(ROMDisk:) && [self.ext isKindOfClass:[ROMDisk class]])
+	{
+		menuItem.state = [(ROMDisk*)self.ext length] != 0;
+		return YES;
+	}
+
 	if (menuItem.action == @selector(colorModule:))
 	{
 		menuItem.state = self.crt.isColor;
@@ -323,6 +329,41 @@
 {
 	[self.document registerUndoWithMenuItem:menuItem];
 	self.crt.isColor = !self.crt.isColor;
+}
+
+// -----------------------------------------------------------------------------
+// Внешний ROM-диск
+// -----------------------------------------------------------------------------
+
+- (IBAction) ROMDisk:(NSMenuItem *)menuItem;
+{
+	if ([self.ext isKindOfClass:[ROMDisk class]])
+	{
+		ROMDisk *romdisk = (ROMDisk *)self.ext;
+
+		NSOpenPanel *panel = [NSOpenPanel openPanel];
+		panel.canChooseDirectories = TRUE;
+		panel.canChooseFiles = FALSE;
+		panel.title = menuItem.title;
+		panel.delegate = romdisk;
+
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		{
+			[self.document registerUndoWithMenuItem:menuItem];
+			romdisk.url = panel.URLs.firstObject;
+
+			if (romdisk.length)
+			{
+				[self.inpHook setData:[NSData dataWithBytes:romdisk.bytes length:romdisk.length]];
+				self.cpu.RESET = TRUE;
+			}
+		}
+		else if (romdisk.url != nil)
+		{
+			[self.document registerUndoWithMenuItem:menuItem];
+			romdisk.url = nil;
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -348,7 +389,7 @@
 	if (self.kbd == nil && (self.kbd = [[SpecialistKeyboard alloc] init]) == nil)
 		return FALSE;
 
-	if ((self.ext = [[X8255 alloc] init]) == nil)
+	if (self.ext == nil && (self.ext = [[X8255 alloc] init]) == nil)
 		return FALSE;
 
 	if ((self.snd = [[X8253 alloc] init]) == nil)
@@ -397,8 +438,12 @@
 {
 	switch (variant)
 	{
-		case 1:
 		case 2:
+
+			if ((self.ext = [[ROMDisk alloc] init]) == nil)
+				return self = nil;
+
+		case 1:
 		case 3:
 		case 4:
 
