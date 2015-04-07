@@ -31,6 +31,7 @@
 	if (menuItem.action == @selector(ROMDisk:))
 	{
 		menuItem.state = self.ext.length != 0;
+		menuItem.submenu = nil;
 		return YES;
 	}
 

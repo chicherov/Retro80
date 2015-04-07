@@ -308,8 +308,24 @@
 {
 	if (menuItem.action == @selector(ROMDisk:) && [self.ext isKindOfClass:[ROMDisk class]])
 	{
-		menuItem.state = [(ROMDisk*)self.ext length] != 0;
-		return YES;
+		switch (menuItem.tag)
+		{
+			case 0:
+				menuItem.submenu = [[NSMenu alloc] init];
+				[menuItem.submenu addItemWithTitle:@"SD STARTER ROM" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 1;
+				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 2;
+
+				menuItem.state = [(ROMDisk*)self.ext length] != 0;
+				return YES;
+
+			case 1:
+				menuItem.state = self.rom.length == 8192;
+				return YES;
+
+			case 2:
+				menuItem.state = [(ROMDisk*)self.ext tapeEmulator];
+				return [(ROMDisk*)self.ext length] != 0 && self.rom.length != 8192 && self.inpHook.enabled;
+		}
 	}
 
 	if (menuItem.action == @selector(colorModule:))
@@ -340,29 +356,53 @@
 	if ([self.ext isKindOfClass:[ROMDisk class]])
 	{
 		ROMDisk *romdisk = (ROMDisk *)self.ext;
-
-		NSOpenPanel *panel = [NSOpenPanel openPanel];
-		panel.canChooseDirectories = TRUE;
-		panel.canChooseFiles = FALSE;
-		panel.title = menuItem.title;
-		panel.delegate = romdisk;
-
-		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		switch (menuItem.tag)
 		{
-			[self.document registerUndoWithMenuItem:menuItem];
-			romdisk.url = panel.URLs.firstObject;
-
-			if (romdisk.length)
+			case 0:
 			{
-				[self.inpHook setData:[NSData dataWithBytes:romdisk.bytes length:romdisk.length]];
-				self.cpu.RESET = TRUE;
+				NSOpenPanel *panel = [NSOpenPanel openPanel];
+				panel.canChooseDirectories = TRUE;
+				panel.canChooseFiles = FALSE;
+				panel.title = menuItem.title;
+				panel.delegate = romdisk;
+
+				if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+				{
+					[self.document registerUndoWithMenuItem:menuItem];
+					romdisk.url = panel.URLs.firstObject;
+				}
+				else if (romdisk.url != nil)
+				{
+					[self.document registerUndoWithMenuItem:menuItem];
+					romdisk.url = nil;
+				}
+
+				break;
+			}
+
+			case 1:
+			{
+				@synchronized(self.snd.sound)
+				{
+					ROM *rom; if ((rom = [[ROM alloc] initWithContentsOfResource:self.rom.length == 8192 ? @"Specialist2" : @"Specialist2SD" mask:0x3FFF]) != nil)
+					{
+						[self.document registerUndoWithMenuItem:menuItem];
+
+						[self.cpu mapObject:self.rom = rom from:0xC000 to:0xEFFF WR:nil];
+						if (rom.length == 8192) romdisk.tapeEmulator = FALSE;
+					}
+				}
+
+				break;
+			}
+
+			case 2:
+			{
+				romdisk.tapeEmulator = !romdisk.tapeEmulator;
+				break;
 			}
 		}
-		else if (romdisk.url != nil)
-		{
-			[self.document registerUndoWithMenuItem:menuItem];
-			romdisk.url = nil;
-		}
+
 	}
 }
 
@@ -423,6 +463,9 @@
 	self.inpHook.extension = @"rks";
 	self.inpHook.type = 3;
 
+	if ([self.ext isKindOfClass:[ROMDisk class]])
+		[(ROMDisk *)self.ext setRecorder:self.inpHook];
+
 	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xC3D0];
 	self.outHook.extension = @"rks";
 	self.outHook.type = 3;
@@ -442,6 +485,8 @@
 
 			if ((self.ext = [[ROMDisk alloc] init]) == nil)
 				return self = nil;
+
+			[(ROMDisk *)self.ext setTapeEmulator:TRUE];
 
 		case 1:
 		case 3:
@@ -759,13 +804,10 @@
 		{
 			case 0:
 
-				if (menuItem.submenu == nil)
-				{
-					menuItem.submenu = [[NSMenu alloc] init];
-					[menuItem.submenu addItemWithTitle:@"128K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 1;
-					[menuItem.submenu addItemWithTitle:@"256K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 2;
-					[menuItem.submenu addItemWithTitle:@"512K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 3;
-				}
+				menuItem.submenu = [[NSMenu alloc] init];
+				[menuItem.submenu addItemWithTitle:@"128K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 1;
+				[menuItem.submenu addItemWithTitle:@"256K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 2;
+				[menuItem.submenu addItemWithTitle:@"512K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 3;
 
 				menuItem.state = self.ram.length != 0x20000;
 				break;

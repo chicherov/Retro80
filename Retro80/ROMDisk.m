@@ -1,4 +1,5 @@
 #import "ROMDisk.h"
+#import "RKRecorder.h"
 
 @implementation ROMDisk
 {
@@ -24,12 +25,16 @@
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeObject:self.url forKey:@"url"];
+	[encoder encodeBool:self.tapeEmulator forKey:@"tapeEmulator"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [super initWithCoder:decoder])
+	{
 		self.url = [decoder decodeObjectForKey:@"url"];
+		self.tapeEmulator = [decoder decodeBoolForKey:@"tapeEmulator"];
+	}
 
 	return self;
 }
@@ -123,6 +128,18 @@
 - (NSURL *) url
 {
 	return _url;
+}
+
+// -----------------------------------------------------------------------------
+// RESET - для TAPE EMULATOR
+// -----------------------------------------------------------------------------
+
+- (void) RESET
+{
+	if (romMode > 20 && self.tapeEmulator && self.recorder.enabled)
+		[self.recorder setData:rom];
+
+	[super RESET];
 }
 
 // -----------------------------------------------------------------------------
@@ -316,7 +333,7 @@
 
 			if ((B & 0x80) && (data & 0x80) == 0x00)
 			{
-				if (out == 0x42)
+				if (buffer[0] == 0x01 || out == 0x42)
 					romMode++;
 
 				out = 0x42;
