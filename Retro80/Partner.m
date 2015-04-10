@@ -48,7 +48,7 @@
 			self.snd.channel1 = self.isColor;
 			self.snd.channel2 = self.isColor;
 
-			self.sys2.mcpg = self.isColor;
+			self.sys2.mcpg = self.sys2.mcpg;
 		}
 	}
 }
@@ -320,7 +320,7 @@
 
 - (void) setMcpg:(BOOL)data
 {
-	mcpg = data; [partner.crt setMcpg:(mcpg ? partner.mcpgfont.mutableBytes : NULL)];
+	mcpg = data; [partner.crt setMcpg:(mcpg && partner.isColor ? partner.mcpgfont.mutableBytes : NULL)];
 }
 
 - (BOOL) mcpg
@@ -333,29 +333,24 @@
 	if ((addr & 0x200) == 0)
 	{
 		if (slot & 0x04 && partner.isColor)
-		{
-			if ((addr & 0x100) == 0)
-			{
-				return self.mcpg ? 0x00 : 0xFF;
-			}
-			else
-			{
-				return [partner.snd RD:addr >> 2 CLK:clock status:status];
-			}
-		}
+			return (addr & 0x100) == 0 ? status : [partner.snd RD:addr >> 2 CLK:clock status:status];
 
-		NSLog(@"RD: %02X", addr);
+#ifdef DEBUG
+		NSLog(@"IO RD: %02X", addr);
+#endif
 		return status;
 	}
 
 	else if ((addr & 0x100) == 0)
 	{
-		return ~self.slot;
+		return status;
 	}
 
 	else
 	{
+#ifdef DEBUG
 		NSLog(@"RD: %02X", addr);
+#endif
 		return status;
 	}
 }
@@ -367,18 +362,16 @@
 		if (slot & 0x04 && partner.isColor)
 		{
 			if ((addr & 0x100) == 0)
-			{
 				self.mcpg = data != 0xFF;
-			}
 			else
-			{
 				[partner.snd WR:addr >> 2 byte:data CLK:clock];
-			}
 		}
 
 		else
 		{
-			NSLog(@"WR: %04X %02X", addr, data);
+#ifdef DEBUG
+			NSLog(@"IO WR: %04X %02X", addr, data);
+#endif
 		}
 	}
 
@@ -389,7 +382,9 @@
 
 	else
 	{
+#ifdef DEBUG
 		NSLog(@"WR: %04X %02X", addr, data);
+#endif
 	}
 }
 

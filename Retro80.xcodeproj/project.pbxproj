@@ -401,7 +401,7 @@
 		D974FC8819ADE9450041DF91 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0620;
+				LastUpgradeCheck = 0630;
 				ORGANIZATIONNAME = "Andrey Chicherov";
 				TargetAttributes = {
 					D974FC8F19ADE9450041DF91 = {
@@ -589,6 +589,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				WARNING_CFLAGS = "-Wno-objc-property-synthesis";
 			};
 			name = Debug;
 		};
@@ -621,6 +622,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
+				WARNING_CFLAGS = "-Wno-objc-property-synthesis";
 			};
 			name = Release;
 		};

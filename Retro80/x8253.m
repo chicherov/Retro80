@@ -418,7 +418,12 @@ void updateTimer(struct i8253_timer *timer, uint64_t clock)
 - (void) setRkmode:(BOOL)rkmode
 {
 	timers[0].gate = timers[0].clk = timers[1].gate = timers[1].clk = timers[2].gate = timers[2].clk = NULL;
-	if (rkmode) timers[1].clk = timers + 2; timers[2].gate = timers;
+
+	if (rkmode)
+	{
+		timers[1].clk = timers + 2;
+		timers[2].gate = timers;
+	}
 }
 
 - (BOOL) rkmode
