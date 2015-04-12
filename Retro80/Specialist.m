@@ -48,7 +48,7 @@
 // @protocol HLDA
 // -----------------------------------------------------------------------------
 
-- (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr
+- (unsigned) HLDA:(uint64_t)clock
 {
 	if (CLK < clock)
 	{
@@ -736,7 +736,7 @@
 @synthesize cpu;
 @synthesize crt;
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
 	switch (addr)
 	{
@@ -744,7 +744,7 @@
 			return crt.color;
 
 		default:
-			return status;
+			return data;
 	}
 }
 
@@ -899,7 +899,7 @@
 	self.sys.cpu = self.cpu;
 	self.sys.crt = self.crt;
 
-	[self.cpu mapObject:self.sys  from:0xFFF8 to:0xFFFF RD:nil];
+	[self.cpu mapObject:self.sys  from:0xFFF8 to:0xFFFF];
 //	[self.cpu mapObject:nil       from:0xFFF4 to:0xFFF7];
 //	[self.cpu mapObject:nil       from:0xFFF0 to:0xFFF3];	// Дисковод 2
 	[self.cpu mapObject:self.snd  from:0xFFEC to:0xFFEF];

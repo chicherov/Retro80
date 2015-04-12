@@ -217,11 +217,11 @@
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
 	@synchronized(self)
 	{
-		current = clock; return (addr & 0x07) == 0x04 ? self.D : [super RD:addr CLK:clock status:status];
+		current = clock; return (addr & 0x07) == 0x04 ? self.D : [super RD:addr CLK:clock data:data];
 	}
 }
 

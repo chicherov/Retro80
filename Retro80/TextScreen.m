@@ -37,7 +37,7 @@
 
 // -----------------------------------------------------------------------------
 
-- (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr
+- (unsigned) HLDA:(uint64_t)clock
 {
 	if (CLK < clock)
 	{

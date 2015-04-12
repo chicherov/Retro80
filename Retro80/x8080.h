@@ -5,7 +5,7 @@
 #import "Retro80.h"
 
 @protocol RD
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status;
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data;
 @end
 
 @protocol WR
@@ -27,15 +27,19 @@
 @end
 
 @protocol HLDA
-- (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr;
+- (unsigned) HLDA:(uint64_t)clock;
 @end
 
 @protocol INTE
-- (void) INTE:(BOOL)IF;
+- (void) INTE:(BOOL)IF clock:(uint64_t)clock;
+@end
+
+@protocol INTR
+- (BOOL) INTR:(uint64_t)clock;
 @end
 
 @protocol INTA
-- (uint8_t) INTA;
+- (uint8_t) INTA:(uint64_t)clock;
 @end
 
 // -----------------------------------------------------------------------------
@@ -44,12 +48,12 @@
 
 @interface X8080 : NSObject <Processor, NSCoding>
 
-@property (weak) NSObject<HLDA> *HLDA;
-@property (weak) NSObject<INTE> *INTE;
-@property (weak) NSObject<INTA> *INTA;
-@property BOOL INTR;
+- (void) setHLDA:(NSObject<HLDA> *)object;
+- (void) setINTE:(NSObject<INTE> *)object;
+- (void) setINTR:(NSObject<INTR> *)object;
+- (void) setINTA:(NSObject<INTA> *)object;
 
-@property uint32_t quartz;
+@property unsigned quartz;
 @property uint64_t CLK;
 
 @property uint8_t PAGE;
@@ -74,7 +78,7 @@
 
 // -----------------------------------------------------------------------------
 
-- (id) initWithQuartz:(uint32_t)quartz;
+- (id) initWithQuartz:(unsigned)quartz;
 
 // -----------------------------------------------------------------------------
 
@@ -123,8 +127,8 @@
 
 // -----------------------------------------------------------------------------
 
-uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status);
-void MEMW(X8080 *cpu, uint16_t addr, uint8_t data);
+uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data);
+void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
 
 // -----------------------------------------------------------------------------
 
@@ -137,8 +141,8 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data);
 
 // -----------------------------------------------------------------------------
 
-uint8_t IOR(X8080 *cpu, uint16_t addr, uint8_t status);
-void IOW(X8080 *cpu, uint16_t addr, uint8_t data);
+uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data);
+void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
 
 // -----------------------------------------------------------------------------
 

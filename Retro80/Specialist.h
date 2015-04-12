@@ -75,7 +75,7 @@
 // Системные регистры ПЭВМ "Специалист MX"
 // -----------------------------------------------------------------------------
 
-@interface SpecialistMXSystem : NSObject <WR>
+@interface SpecialistMXSystem : NSObject <RD, WR>
 
 @property SpecialistScreen *crt;
 @property (weak) X8080 *cpu;

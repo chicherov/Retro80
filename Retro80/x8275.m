@@ -83,6 +83,13 @@
 	uint8_t shiftMask;
 }
 
+@synthesize INTR;
+
+- (BOOL) INTR:(uint64_t)clock
+{
+	return INTR;
+}
+
 // -----------------------------------------------------------------------------
 
 - (void) setColors:(const uint32_t *)ptr attributesMask:(uint8_t)mask shiftMask:(uint8_t)shift
@@ -131,6 +138,11 @@
 	font = offset; memset(screen, -1, sizeof(screen));
 }
 
+- (void) INTE:(BOOL)IF clock:(uint64_t)clock
+{
+	[self selectFont:IF ? 0x2400 : 0x2000];
+}
+
 // -----------------------------------------------------------------------------
 // Графические символы
 // -----------------------------------------------------------------------------
@@ -168,7 +180,7 @@ CCCC[][3] =
 // Чтение/запись регистров ВГ75
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)st
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
 	@synchronized(self)
 	{
@@ -176,8 +188,7 @@ CCCC[][3] =
 		{
 			uint8_t ret = status.byte;
 
-			if (status.IR)
-				[self.IRQ IRQ8275:status.IR = FALSE];
+			status.IR = FALSE;
 
 			status.IC = 0;
 			status.DU = 0;
@@ -227,8 +238,7 @@ CCCC[][3] =
 			{
 				case 0x00:					// Команда Reset
 				{
-					if (status.IR)
-						[self.IRQ IRQ8275:status.IR = FALSE];
+					INTR = status.IR = FALSE;
 
 					status.VE = 0;
 					status.IE = 0;
@@ -314,7 +324,7 @@ CCCC[][3] =
 // Переодические вызовы из модуля CPU
 // -----------------------------------------------------------------------------
 
-- (unsigned) HLDA:(uint64_t)clock WR:(BOOL)wr
+- (unsigned) HLDA:(uint64_t)clock
 {
 	if (rowClock)
 	{
@@ -342,9 +352,11 @@ CCCC[][3] =
 					}
 
 					if (row == config.R && status.IE)
-						[self.IRQ IRQ8275:status.IR = TRUE];
+						INTR = status.IR = TRUE;
+					else
+						INTR = FALSE;
 
-					EoR = FALSE; for (uint8_t col = 0, f = 0; col <= config.H; col++)
+						EoR = FALSE; for (uint8_t col = 0, f = 0; col <= config.H; col++)
 					{
 						union i8275_char ch; if (status.VE && !EoS && !EoR)
 						{
@@ -557,7 +569,8 @@ CCCC[][3] =
 				{
 					if (status.VE && (row < config.R || row == config.R + config.V + 1))
 					{
-						pos = 0; fpos = 0; dmaTimer = rowTimer + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
+						dmaTimer = rowTimer + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
+						memset(buffer, 0, sizeof(buffer)); pos = 0; fpos = 0;
 					}
 					else
 					{
@@ -567,82 +580,89 @@ CCCC[][3] =
 
 				rowTimer += rowClock;
 			}
-
-			if (_dma && dmaTimer <= clock)
-			{
-				unsigned count = 1 << mode.B; if (count + pos > config.H + 1)
-				{
-					count = config.H + 1 - pos;
-				}
-
-				unsigned clk = 0; while (count--)
-				{
-					uint8_t byte; if (i8257DMA2(_dma, &byte))
-					{
-						clk += clk ? 36 : (wr ? 54 : 45); buffer[pos++] = byte;
-
-						if ((byte & 0xC0) == 0x80 && config.F == 0)
-						{
-							if (i8257DMA2(_dma, &byte))
-							{
-								clk += 36; fifo[fpos++ & 0x0F] = byte & 0x7F;
-
-								if (fpos == 17)
-									status.FO = 1;
-							}
-							else
-							{
-								dmaTimer = -2;
-								return clk;
-							}
-						}
-
-						else if ((byte & 0xF3) == 0xF1)
-						{
-							pos = config.H + 1;
-							dmaTimer = -1;
-
-							if (count && i8257DMA2(_dma, &byte))
-								clk += 36;
-							
-							return clk;
-						}
-						
-						else if ((byte & 0xF3) == 0xF3)
-						{
-							pos = config.H + 1;
-							dmaTimer = -2;
-
-							if (count && i8257DMA2(_dma, &byte))
-								clk += 36;
-							
-							return clk;
-						}
-					}
-					else
-					{
-						dmaTimer = -2;
-						return clk;
-					}
-				}
-
-				if (pos <= config.H)
-				{
-					dmaTimer = clock + clk + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
-					dmaTimer += 12 - (dmaTimer % 12);
-				}
-				else
-				{
-					dmaTimer = -1;
-				}
-
-				return clk;
-			}
 		}
-
 	}
 
 	return 0;
+}
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+- (uint64_t *) DRQ
+{
+	return &dmaTimer;
+}
+
+- (void) RD:(uint8_t *)data clock:(uint64_t)clock
+{
+
+}
+
+- (void) WR:(uint8_t)data clock:(uint64_t)clock
+{
+	BOOL burst = pos != config.H && (pos + 1) % (1 << mode.B);
+
+	if ((buffer[pos] & 0xC0) == 0x80 &&  config.F == 0)
+	{
+		fifo[fpos++ & 0x0F] = data & 0x7F;
+		if (fpos == 17) status.FO = 1;
+	}
+	else if ((buffer[pos] & 0xF3) == 0xF1)
+	{
+		pos = config.H + 1;
+		dmaTimer = -1;
+		return;
+	}
+
+	else if ((buffer[pos] & 0xF3) == 0xF3)
+	{
+		pos = config.H + 1;
+		dmaTimer = -2;
+		return;
+	}
+	else
+	{
+		buffer[pos] = data; if ((data & 0xC0) == 0x80 && config.F == 0)
+		{
+			return;
+		}
+
+		if ((data & 0xF3) == 0xF1)
+		{
+			if (!burst)
+			{
+				pos = config.H + 1;
+				dmaTimer = -1;
+			}
+
+			return;
+		}
+
+		if ((data & 0xF3) == 0xF3)
+		{
+			if (!burst)
+			{
+				pos = config.H + 1;
+				dmaTimer = -2;
+			}
+
+			return;
+		}
+	}
+
+	pos++; if (!burst)
+	{
+		if (pos <= config.H)
+		{
+			dmaTimer = clock + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
+			dmaTimer += 12 - (dmaTimer % 12);
+		}
+		else
+		{
+			dmaTimer = -1;
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -775,6 +795,7 @@ CCCC[][3] =
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:status.byte forKey:@"status"];
+	[encoder encodeBool:INTR forKey:@"INTR"];
 	[encoder encodeInt32:*(uint32_t *)config.byte forKey:@"config"];
 	[encoder encodeInt:*(uint16_t *)cursor.byte forKey:@"cursor"];
 	[encoder encodeInt:mode.byte forKey:@"mode"];
@@ -798,6 +819,7 @@ CCCC[][3] =
 	if (self = [self init])
 	{
 		status.byte = [decoder decodeIntForKey:@"status"];
+		INTR = [decoder decodeBoolForKey:@"INTR"];
 		*(uint32_t *)config.byte = [decoder decodeInt32ForKey:@"config"];
 		*(uint16_t *)cursor.byte = [decoder decodeIntForKey:@"cursor"];
 		mode.byte = [decoder decodeIntForKey:@"mode"];

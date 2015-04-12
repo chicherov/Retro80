@@ -337,7 +337,7 @@ static uint32_t colors[] =
 
 - (int) execute:(X8080 *)cpu
 {
-	if (cpu.SP == 0x76CD && MEMR(cpu, 0x76CD, 0) == 0x9D && MEMR(cpu, 0x76CE, 0) == 0xF8)
+	if (cpu.SP == 0x76CD && MEMR(cpu, 0x76CD, cpu.CLK, 0) == 0x9D && MEMR(cpu, 0x76CE, cpu.CLK, 0) == 0xF8)
 		return 2;
 
 	return [super execute:cpu];

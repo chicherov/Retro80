@@ -12,7 +12,7 @@
 
 @end
 
-@interface Radio86RK : RK86Base <INTE>
+@interface Radio86RK : RK86Base
 
 @property Radio86RK8253 *snd;
 @property ROMDisk *ext;

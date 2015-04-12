@@ -22,6 +22,27 @@
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
+	if (menuItem.action == @selector(floppy:))
+	{
+		if (menuItem.tag == 0)
+		{
+			menuItem.state = self.isFloppy;
+			return (self.sys2.slot & 0x02) == 0;
+		}
+
+		else if (self.isFloppy)
+		{
+			menuItem.state = [self.floppy getDisk:menuItem.tag] != nil;
+			return !self.floppy.busy || menuItem.tag != self.floppy.selected;
+		}
+
+		else
+		{
+			menuItem.state = FALSE;
+			return NO;
+		}
+	}
+
 	if (menuItem.action == @selector(colorModule:))
 	{
 		menuItem.state = self.isColor;
@@ -29,6 +50,45 @@
 	}
 
 	return [super validateMenuItem:menuItem];
+}
+
+// -----------------------------------------------------------------------------
+// Модуль контроллера дисковода "Партнер 01.51"
+// -----------------------------------------------------------------------------
+
+- (IBAction) floppy:(NSMenuItem *)menuItem
+{
+	if (menuItem.tag == 0) @synchronized(self.snd.sound)
+	{
+		if ((self.sys2.slot & 0x02) == 0)
+		{
+			[self.document registerUndoWithMenuItem:menuItem];
+			self.isFloppy = !self.isFloppy;
+		}
+	}
+	else if (menuItem.tag && self.isFloppy)
+	{
+		NSOpenPanel *panel = [NSOpenPanel openPanel];
+		panel.allowedFileTypes = @[@"cpm"];
+		panel.title = menuItem.title;
+
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		{
+			@synchronized(self.snd.sound)
+			{
+				[self.document registerUndoWithMenuItem:menuItem];
+				[self.floppy setDisk:menuItem.tag URL:panel.URLs.firstObject];
+			}
+		}
+		else if ([self.floppy getDisk:menuItem.tag] != nil)
+		{
+			@synchronized(self.snd.sound)
+			{
+				[self.document registerUndoWithMenuItem:menuItem];
+				[self.floppy setDisk:menuItem.tag URL:nil];
+			}
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -51,21 +111,6 @@
 			self.sys2.mcpg = self.sys2.mcpg;
 		}
 	}
-}
-
-// -----------------------------------------------------------------------------
-// Прерывания
-// -----------------------------------------------------------------------------
-
-- (void) IRQ8275:(BOOL)IRQ
-{
-	self.cpu.INTR = IRQ;
-}
-
-- (uint8_t) INTA
-{
-	self.cpu.INTR = FALSE;
-	return 0xF7;
 }
 
 // -----------------------------------------------------------------------------
@@ -92,6 +137,12 @@
 	if ((self.sys2 = [[PartnerSystem2 alloc] init]) == nil)
 		return FALSE;
 
+	if ((self.fddbios = [[ROM alloc] initWithContentsOfResource:@"fdd" mask:0x07FF]) == nil)
+		return FALSE;
+
+	if ((self.floppy = [[VG93 alloc] initWithQuartz:self.cpu.quartz]) == nil)
+		return FALSE;
+
 	if ((self.mcpgbios = [[ROM alloc] initWithContentsOfResource:@"mcpg" mask:0x07FF]) == nil)
 		return FALSE;
 
@@ -105,6 +156,7 @@
 	self.snd.channel1 = TRUE;
 	self.snd.channel2 = TRUE;
 
+	self.isFloppy = TRUE;
 	self.isColor = TRUE;
 
 	return TRUE;
@@ -133,6 +185,7 @@
 		return FALSE;
 
 	self.sys1.cpu = self.cpu;
+	self.sys1.crt = self.crt;
 
 	// Окошки для внешних устройств
 
@@ -214,10 +267,12 @@
 	[self.cpu mapObject:self.win2	atPage:10 from:0x8000 to:0xBFFF];
 	[self.cpu mapObject:self.rom	atPage:10 from:0xC000 to:0xCFFF WR:nil];
 
-	self.cpu.INTA = self;
+	self.cpu.INTA = self.sys1;
+	self.cpu.INTR = self.crt;
 	self.cpu.FF = TRUE;
 
-	self.crt.IRQ = self;
+	self.dma.DMA0 = self.floppy;
+	[self.cpu addObjectToRESET:self.floppy];
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
@@ -243,6 +298,10 @@
 	[encoder encodeObject:self.basic forKey:@"basic"];
 	[encoder encodeObject:self.sys2 forKey:@"sys2"];
 
+	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
+	[encoder encodeObject:self.fddbios forKey:@"fddbios"];
+	[encoder encodeObject:self.floppy forKey:@"floppy"];
+
 	[encoder encodeObject:self.mcpgbios forKey:@"mcpgbios"];
 	[encoder encodeObject:self.mcpgfont forKey:@"mcpgfont"];
 }
@@ -256,6 +315,14 @@
 		return FALSE;
 
 	if ((self.sys2 = [decoder decodeObjectForKey:@"sys2"]) == nil)
+		return FALSE;
+
+	self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"];
+
+	if ((self.fddbios = [decoder decodeObjectForKey:@"fddbios"]) == nil)
+		return FALSE;
+
+	if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
 		return FALSE;
 
 	if ((self.mcpgbios = [decoder decodeObjectForKey:@"mcpgbios"]) == nil)
@@ -276,10 +343,17 @@
 @implementation PartnerSystem1
 
 @synthesize cpu;
+@synthesize crt;
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
 	cpu.PAGE = data >> 4;
+}
+
+- (uint8_t) INTA:(uint64_t)clock
+{
+	crt.INTR = FALSE;
+	return 0xF7;
 }
 
 @end
@@ -300,7 +374,13 @@
 {
 	slot = data;
 
-	if (slot & 0x04 && partner.isColor)
+	if (slot & 0x02 && partner.isFloppy)
+	{
+		partner.win1.object = partner.fddbios;
+		partner.win2.object = nil;
+	}
+
+	else if (slot & 0x04 && partner.isColor)
 	{
 		partner.win1.object = partner.mcpgbios;
 		partner.win2.object = partner.mcpgfont;
@@ -328,63 +408,50 @@
 	return mcpg;
 }
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
 	if ((addr & 0x200) == 0)
 	{
+		if (slot & 0x02 && partner.isFloppy)
+			return (addr & 0x100) == 0 ? [partner.floppy RD:addr CLK:clock data:data] : data;
+
 		if (slot & 0x04 && partner.isColor)
-			return (addr & 0x100) == 0 ? status : [partner.snd RD:addr >> 2 CLK:clock status:status];
+			return (addr & 0x100) == 0 ? data : [partner.snd RD:addr>>2 CLK:clock data:data];
 
-#ifdef DEBUG
-		NSLog(@"IO RD: %02X", addr);
-#endif
-		return status;
+		return data;
 	}
 
-	else if ((addr & 0x100) == 0)
-	{
-		return status;
-	}
-
-	else
-	{
-#ifdef DEBUG
-		NSLog(@"RD: %02X", addr);
-#endif
-		return status;
-	}
+	return data;
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
 	if ((addr & 0x200) == 0)
 	{
-		if (slot & 0x04 && partner.isColor)
+		if (slot & 0x02 && partner.isFloppy)
+		{
+			if ((addr & 0x100) == 0)
+				[partner.floppy WR:addr byte:data CLK:clock];
+
+			else
+			{
+				partner.floppy.selected = data & 0x40 ? 1 : data & 0x08 ? 2 : 0;
+				partner.floppy.head = (data & 0x80) != 0;
+			}
+		}
+
+		else if (slot & 0x04 && partner.isColor)
 		{
 			if ((addr & 0x100) == 0)
 				self.mcpg = data != 0xFF;
 			else
-				[partner.snd WR:addr >> 2 byte:data CLK:clock];
-		}
-
-		else
-		{
-#ifdef DEBUG
-			NSLog(@"IO WR: %04X %02X", addr, data);
-#endif
+				[partner.snd WR:addr>>2 byte:data CLK:clock];
 		}
 	}
 
 	else if ((addr & 0x100) == 0)
 	{
 		self.slot = ~(data | 0xF0);
-	}
-
-	else
-	{
-#ifdef DEBUG
-		NSLog(@"WR: %04X %02X", addr, data);
-#endif
 	}
 }
 
@@ -415,9 +482,9 @@
 
 @synthesize object;
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
-	return object ? [object RD:addr CLK:clock status:status] : status;
+	return object ? [object RD:addr CLK:clock data:data] : data;
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock

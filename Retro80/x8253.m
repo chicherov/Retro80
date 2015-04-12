@@ -237,10 +237,10 @@ void updateTimer(struct i8253_timer *timer, uint64_t clock)
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
 	if ((addr & 3) == 3)
-		return status;
+		return data;
 
 	struct i8253_timer *timer = timers + (addr & 3);
 
@@ -277,18 +277,10 @@ void updateTimer(struct i8253_timer *timer, uint64_t clock)
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-//#ifdef DEBUG
-//	NSLog(@"%04X: %02X", addr, data);
-//#endif
-
 	if ((addr & 3) == 3)
 	{
 		union i8253_mode mode; mode.byte = data; if (mode.SC == 3) return;
 		struct i8253_timer *timer = timers + mode.SC;
-
-//#ifdef DEBUG
-//		NSLog(@"Timer %d: mode %d", mode.SC, mode.MODE);
-//#endif
 
 		if (mode.RL == 0)
 		{
@@ -386,6 +378,15 @@ void updateTimer(struct i8253_timer *timer, uint64_t clock)
 			updateTimer(timer, clock + 18);
 		}
 	}
+}
+
+// -----------------------------------------------------------------------------
+// INTE
+// -----------------------------------------------------------------------------
+
+- (void) INTE:(BOOL)IF clock:(uint64_t)clock
+{
+	sound.beeper = IF;
 }
 
 // -----------------------------------------------------------------------------

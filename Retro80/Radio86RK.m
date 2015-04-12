@@ -232,8 +232,7 @@ static uint32_t colors[] =
 	else
 		[self.crt setColors:NULL attributesMask:0x22 shiftMask:0x00];
 
-	self.cpu.INTE = self;
-
+	self.cpu.INTE = self.snd;
 	self.snd.ext = self.ext;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];

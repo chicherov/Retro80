@@ -3,6 +3,7 @@
  ******************************************************************************/
 
 #import "RK86Base.h"
+#import "vg93.h"
 
 @class Partner;
 
@@ -10,9 +11,10 @@
 // Системнный регистр 1 - выбор станицы адресного простарнства
 // -----------------------------------------------------------------------------
 
-@interface PartnerSystem1 : NSObject <WR>
+@interface PartnerSystem1 : NSObject <WR, INTA>
 
 @property (weak) X8080 *cpu;
+@property X8275* crt;
 
 @end
 
@@ -50,7 +52,7 @@
 // ПЭВМ «Партнер 01.01»
 // -----------------------------------------------------------------------------
 
-@interface Partner : RK86Base <IRQ8275, INTA>
+@interface Partner : RK86Base
 
 @property PartnerKeyboard *kbd;
 
@@ -61,6 +63,10 @@
 @property PartnerSystem2 *sys2;
 
 @property ROM *basic;
+
+@property BOOL isFloppy;
+@property ROM *fddbios;
+@property VG93 *floppy;
 
 @property ROM *mcpgbios;
 @property RAM *mcpgfont;

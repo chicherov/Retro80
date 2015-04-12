@@ -7,11 +7,50 @@
 @implementation X8257
 {
 	BOOL latch;
+
+	unsigned (*CallHLDA) (id, SEL, uint64_t);
+	NSObject<HLDA> *HLDA;
+
+	NSObject<DMA> *DMA[4];
+	uint64_t* DRQ[4];
+
+	unsigned channel;
+}
+
+@synthesize cpu;
+
+// -----------------------------------------------------------------------------
+
+- (void) setHLDA:(NSObject<HLDA> *)object
+{
+	CallHLDA = (unsigned (*) (id, SEL, uint64_t)) [HLDA = object methodForSelector:@selector(HLDA:)];
 }
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)data
+- (void) setDMA0:(NSObject<DMA> *)object
+{
+	DRQ[0] = [DMA[0] = object DRQ];
+}
+
+- (void) setDMA1:(NSObject<DMA> *)object
+{
+	DRQ[1] = [DMA[1] = object DRQ];
+}
+
+- (void) setDMA2:(NSObject<DMA> *)object
+{
+	DRQ[2] = [DMA[2] = object DRQ];
+}
+
+- (void) setDMA3:(NSObject<DMA> *)object
+{
+	DRQ[3] = [DMA[3] = object DRQ];
+}
+
+// -----------------------------------------------------------------------------
+
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
 	if ((addr & 0x08) == 0)
 	{
@@ -33,11 +72,9 @@
 {
 	if ((addr & 0x08) == 0)
 	{
-		unsigned channel = (addr & 0x06) >> 1;
+		dma[(addr & 0x06) >> 1].byte[addr & 1][latch] = data;
 
-		dma[channel].byte[addr & 1][latch] = data;
-
-		if (channel == 2 && mode.a)
+		if (addr & 0x04 && mode.a)
 			dma[3].byte[addr & 1][latch] = data;
 
 		latch = !latch;
@@ -46,6 +83,11 @@
 	else if ((addr & 0x0F) == 0x08)
 	{
 		mode.byte = data;
+
+#ifdef DEBUG
+		if (mode.dma0)
+			NSLog(@"Enable DMA CHANNEL 0: %d: %04X/%d", dma[0].type, dma[0].address, dma[0].count+1);
+#endif
 
 		if (mode.a  == FALSE)
 			status.U = FALSE;
@@ -56,35 +98,66 @@
 
 // -----------------------------------------------------------------------------
 
-BOOL i8257DMA2(X8257* dma, uint8_t *data)
+- (unsigned) HLDA:(uint64_t)clock
 {
-	if (dma->mode.dma2 && dma->dma[2].type == 1)
+	if (HLDA)
+		CallHLDA(HLDA, @selector(HLDA:), clock);
+
+	channel = mode.r ? (channel + 1) & 3 : 0;
+
+	if (!(mode.byte & (1 << channel) && dma[channel].type && dma[channel].type != 3 && DRQ[channel] && *DRQ[channel] <= clock))
 	{
-		if (dma->status.U)
+		channel = (channel + 1) & 3; if (!(mode.byte & (1 << channel) && dma[channel].type && dma[channel].type != 3 && DRQ[channel] && *DRQ[channel] <= clock))
 		{
-			dma->dma[2].address = dma->dma[3].address;
-			dma->dma[2].count = dma->dma[3].count;
-			dma->status.U = FALSE;
+			channel = (channel + 1) & 3; if (!(mode.byte & (1 << channel) && dma[channel].type && dma[channel].type != 3 && DRQ[channel] && *DRQ[channel] <= clock))
+			{
+				channel = (channel + 1) & 3; if (!(mode.byte & (1 << channel) && dma[channel].type && dma[channel].type != 3 && DRQ[channel] && *DRQ[channel] <= clock))
+				{
+					return 0;
+				}
+			}
 		}
-
-		*data = MEMR(dma->_cpu, dma->dma[2].address++, 0x00);
-
-		if (dma->dma[2].count-- == 0)
-		{
-			dma->status.TC2 = TRUE;
-
-			if (dma->mode.a)
-				dma->status.U = TRUE;
-
-			else if (dma->mode.t)
-				dma->mode.dma2 = FALSE;
-		}
-
-		return TRUE;
 	}
 
-	*data = 0x00;
-	return FALSE;
+	unsigned clk = 18;
+
+	do
+	{
+		if (channel == 2 && status.U)
+		{
+			dma[2].address = dma[3].address;
+			dma[2].count = dma[3].count;
+			status.U = FALSE;
+		}
+
+		if (dma[channel].type == 1)
+		{
+			uint8_t data = MEMR(cpu, dma[channel].address++, clock + clk + 9, 0x00);
+			[DMA[channel] WR:data clock:clock + clk + 18];
+		}
+
+		else
+		{
+			uint8_t data = 0x00; [DMA[channel] RD:&data clock:clock + clk + 9];
+			MEMW(cpu, dma[channel].address++, data, clock + clk + 18);
+		}
+
+		if (dma[channel].count-- == 0)
+		{
+			status.byte |= 1 << channel;
+
+			if (channel == 2 && mode.a)
+				status.U = TRUE;
+
+			else if (mode.t)
+				mode.byte &= ~(1 << channel);
+		}
+		
+		clk += 36;
+
+	} while (*DRQ[channel] <= clock + clk);
+
+	return clk;
 }
 
 // -----------------------------------------------------------------------------

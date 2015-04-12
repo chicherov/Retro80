@@ -50,8 +50,9 @@
 	[self.cpu addObjectToRESET:self.kbd];
 	[self.cpu addObjectToRESET:self.ext];
 
-	self.cpu.HLDA = self.crt;
-	self.crt.dma  = self.dma;
+	self.cpu.HLDA = self.dma;
+	self.dma.HLDA = self.crt;
+	self.dma.DMA2 = self.crt;
 	self.dma.cpu  = self.cpu;
 
 	self.kbd.snd  = self.snd;

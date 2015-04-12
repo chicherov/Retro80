@@ -85,15 +85,6 @@ static uint32_t colors[] =
 }
 
 // -----------------------------------------------------------------------------
-// В Апогей БК-01 на INTE сидит переключение знакогенератора
-// -----------------------------------------------------------------------------
-
-- (void) INTE:(BOOL)IF
-{
-	[self.crt selectFont:IF ? 0x2400 : 0x2000];
-}
-
-// -----------------------------------------------------------------------------
 // createObjects
 // -----------------------------------------------------------------------------
 
@@ -133,7 +124,7 @@ static uint32_t colors[] =
 	else
 		[self.crt setColors:NULL attributesMask:0x33 shiftMask:0x11];
 
-	self.cpu.INTE = self;
+	self.cpu.INTE = self.crt;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0xEBFF];
 	[self.cpu mapObject:self.snd from:0xEC00 to:0xECFF];

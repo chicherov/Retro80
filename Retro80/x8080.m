@@ -102,8 +102,29 @@
 	// Сигнал HLDA
 	// -------------------------------------------------------------------------
 
-	unsigned (*CallHLDA) (id, SEL, uint64_t, BOOL);
+	unsigned (*CallHLDA) (id, SEL, uint64_t);
 	NSObject<HLDA> *HLDA;
+
+	// -------------------------------------------------------------------------
+	// Сигнал INTE
+	// -------------------------------------------------------------------------
+
+	void (*CallINTE) (id, SEL, BOOL, uint64_t);
+	NSObject<INTE> *INTE;
+
+	// -------------------------------------------------------------------------
+	// Сигнал INTR
+	// -------------------------------------------------------------------------
+
+	BOOL (*CallINTR) (id, SEL, uint64_t);
+	NSObject<INTE> *INTR;
+
+	// -------------------------------------------------------------------------
+	// Сигнал INTA
+	// -------------------------------------------------------------------------
+
+	uint8_t (*CallINTA) (id, SEL, uint64_t);
+	NSObject<INTA> *INTA;
 }
 
 // -----------------------------------------------------------------------------
@@ -160,14 +181,6 @@
 
 - (void) setL:(uint8_t)value { HL.L = value; }
 - (uint8_t) L { return HL.L; }
-
-// -----------------------------------------------------------------------------
-// Сигнналы процессора
-// -----------------------------------------------------------------------------
-
-@synthesize INTE;
-@synthesize INTR;
-@synthesize INTA;
 
 // -----------------------------------------------------------------------------
 // Доступ к адресному пространству
@@ -244,24 +257,24 @@
 
 // -----------------------------------------------------------------------------
 
-uint8_t MEMR(X8080 *cpu, uint16_t addr, uint8_t status)
+uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
 {
 	const uint8_t *ptr = cpu->RDMEM[cpu->PAGE][addr]; if (ptr) return *ptr;
 
 	else if (cpu->RD[cpu->PAGE][addr])
-		return [cpu->RD[cpu->PAGE][addr] RD:addr CLK:cpu->CLK status:cpu->FF ? 0xFF : status];
+		return [cpu->RD[cpu->PAGE][addr] RD:addr CLK:clock data:cpu->FF ? 0xFF : data];
 	else
-		return cpu->FF ? 0xFF : status;
+		return cpu->FF ? 0xFF : data;
 }
 
 // -----------------------------------------------------------------------------
 
-void MEMW(X8080 *cpu, uint16_t addr, uint8_t data)
+void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 {
 	uint8_t *ptr = cpu->WRMEM[cpu->PAGE][addr]; if (ptr) *ptr = data;
 
 	else if (cpu->WR[cpu->PAGE][addr])
-		[cpu->WR[cpu->PAGE][addr] WR:addr byte:data CLK:cpu->CLK];
+		[cpu->WR[cpu->PAGE][addr] WR:addr byte:data CLK:clock];
 }
 
 // -----------------------------------------------------------------------------
@@ -280,24 +293,24 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data)
 
 // -----------------------------------------------------------------------------
 
-uint8_t IOR(X8080 *cpu, uint16_t addr, uint8_t status)
+uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
 {
 	uint8_t page = addr >> 8; if (cpu->IO[page])
-		return [cpu->IO[page] RD:addr CLK:cpu->CLK status:cpu->FF ? 0xFF : status];
+		return [cpu->IO[page] RD:addr CLK:clock data:cpu->FF ? 0xFF : data];
 	else if (cpu->MEMIO)
-		return MEMR(cpu, addr, cpu->FF ? 0xFF : status);
+		return MEMR(cpu, addr, clock, data);
 	else
-		return cpu->FF ? 0xFF : status;
+		return cpu->FF ? 0xFF : data;
 }
 
 // -----------------------------------------------------------------------------
 
-void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
+void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 {
 	uint8_t page = addr >> 8; if (cpu->IO[page])
-		[cpu->IO[page] WR:addr byte:data CLK:cpu->CLK];
+		[cpu->IO[page] WR:addr byte:data CLK:clock];
 	else if (cpu->MEMIO)
-		MEMW(cpu, addr, data);
+		MEMW(cpu, addr, data, clock);
 }
 
 // -----------------------------------------------------------------------------
@@ -318,8 +331,8 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
 
 - (void) mapHook:(NSObject<Hook> *)object atAddress:(uint16_t)addr
 {
-	while (MEMR(self, addr, 0) == 0xC3)
-		addr = MEMR(self, addr + 1, 0) | (MEMR(self, addr + 2, 0) << 8);
+	while (RDMEM[0][addr] && RDMEM[0][addr+1] && RDMEM[0][addr+2] && *RDMEM[0][addr] == 0xC3)
+		addr = *RDMEM[0][addr + 1] | (*RDMEM[0][addr + 2] << 8);
 
 	HOOK[addr] = object;
 }
@@ -330,17 +343,12 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data)
 
 - (void) setHLDA:(NSObject<HLDA> *)object
 {
-	CallHLDA = (unsigned (*) (id, SEL, uint64_t, BOOL)) [HLDA = object methodForSelector:@selector(HLDA:WR:)];
+	CallHLDA = (unsigned (*) (id, SEL, uint64_t)) [HLDA = object methodForSelector:@selector(HLDA:)];
 }
 
-- (NSObject<HLDA> *)HLDA
+static unsigned HOLD(X8080* cpu, unsigned clk)
 {
-	return HLDA;
-}
-
-static unsigned HOLD(X8080* cpu, unsigned clk, BOOL wr)
-{
-	unsigned clkHOLD = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:WR:), cpu->CLK, wr) : 0;
+	unsigned clkHOLD = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:), cpu->CLK) : 0;
 	return clk > clkHOLD ? clk : clkHOLD;
 }
 
@@ -348,14 +356,38 @@ static unsigned HOLD(X8080* cpu, unsigned clk, BOOL wr)
 // Работа с сигналом INTE
 // -----------------------------------------------------------------------------
 
-- (void) setIF:(BOOL)enable
+- (void) setINTE:(NSObject<INTE> *)object
 {
-	[INTE INTE:IF = enable];
+	CallINTE = (void (*) (id, SEL, BOOL, uint64_t)) [INTE = object methodForSelector:@selector(INTE:clock:)];
+}
+
+- (void) setIF:(BOOL)IE
+{
+	IF = IE; if (INTE)
+		CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
 }
 
 - (BOOL) IF
 {
 	return IF;
+}
+
+// -----------------------------------------------------------------------------
+// Работа с сигналом INTR
+// -----------------------------------------------------------------------------
+
+- (void) setINTR:(NSObject<INTE> *)object
+{
+	CallINTR = (BOOL (*) (id, SEL, uint64_t)) [INTR = object methodForSelector:@selector(INTR:)];
+}
+
+// -----------------------------------------------------------------------------
+// Работа с сигналом INTA
+// -----------------------------------------------------------------------------
+
+- (void) setINTA:(NSObject<INTA> *)object
+{
+	CallINTA = (uint8_t (*) (id, SEL, uint64_t)) [INTA = object methodForSelector:@selector(INTA:)];
 }
 
 // -----------------------------------------------------------------------------
@@ -387,28 +419,28 @@ static unsigned timings[256] =
 
 static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 {
-	uint8_t data = MEMR(cpu, addr, status); cpu->CLK += 27;
-	cpu->CLK += HOLD(cpu, 0, FALSE);
+	cpu->CLK += 9; uint8_t data = MEMR(cpu, addr, cpu->CLK, status);
+	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 9);
 	return data;
 }
 
 static void put(X8080* cpu, uint16_t addr, uint8_t data)
 {
-	cpu->CLK += 27; MEMW(cpu, addr, data);
-	cpu->CLK += HOLD(cpu, 0, TRUE);
+	cpu->CLK += 18; MEMW(cpu, addr, data, cpu->CLK);
+	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
 }
 
 static uint8_t inp(X8080* cpu, uint16_t addr)
 {
-	uint8_t data = IOR(cpu, addr, 0x42); cpu->CLK += 27;
-	cpu->CLK += HOLD(cpu, 0, FALSE);
+	cpu->CLK += 9; uint8_t data = IOR(cpu, addr, cpu->CLK, 0x42);
+	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 9);
 	return data;
 }
 
 static void out(X8080* cpu, uint16_t addr, uint8_t data)
 {
-	cpu->CLK += 27; IOW(cpu, addr, data);
-	cpu->CLK += HOLD(cpu, 0, TRUE);
+	cpu->CLK += 18; IOW(cpu, addr, data, cpu->CLK);
+	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -560,21 +592,21 @@ static bool test(uint8_t IR, uint8_t F)
 			RESET = FALSE;
 		}
 
-		uint8_t IR; if (HALT)
+		uint8_t IR; CLK += 9; if (HALT)
 		{
 			IR = 0x00;
 		}
 
-		else if (INTR && IF && INTA)
+		else if (IF && INTR && CallINTR(INTR, @selector(INTR:), CLK) && INTA)
 		{
-			IR = [INTA INTA];
+			IR = CallINTA(INTA, @selector(INTA:), CLK);
 		}
 
 		else switch (HOOK[PC.PC] == NULL ? 2 : [HOOK[PC.PC] execute:self])
 		{
 			default:
 			{
-				IR = MEMR(self, PC.PC++, 0xA2);
+				IR = MEMR(self, PC.PC++, CLK, 0xA2);
 				break;
 			}
 
@@ -591,7 +623,7 @@ static bool test(uint8_t IR, uint8_t F)
 			}
 		}
 
-		CLK +=  27; CLK += HOLD(self, timings[IR], FALSE);
+		CLK += 9; CLK += HOLD(self, timings[IR] + 9);
 
 		switch (IR)
 		{
@@ -2020,8 +2052,8 @@ static bool test(uint8_t IR, uint8_t F)
 				WZ.W = get(self, SP.SP++, 0x86);
 				put(self, --SP.SP, HL.H);
 
-				CLK += 27; MEMW(self, --SP.SP, HL.L);
-				CLK += HOLD(self, 18, TRUE);
+				CLK += 18; MEMW(self, --SP.SP, HL.L, CLK);
+				CLK += 9; CLK += HOLD(self, 18);
 
 				HL.HL = WZ.WZ;
 				break;
@@ -2124,7 +2156,7 @@ static bool test(uint8_t IR, uint8_t F)
 	return self;
 }
 
-- (id) initWithQuartz:(uint32_t)freq
+- (id) initWithQuartz:(unsigned)freq
 {
 	if (self = [self init])
 		quartz = freq;
@@ -2138,7 +2170,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeInt32:quartz forKey:@"quartz"];
+	[encoder encodeInt:quartz forKey:@"quartz"];
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 	[encoder encodeBool:IF forKey:@"IF"];
 
@@ -2158,7 +2190,7 @@ static bool test(uint8_t IR, uint8_t F)
 {
 	if (self = [self init])
 	{
-		quartz = [decoder decodeInt32ForKey:@"quartz"];
+		quartz = [decoder decodeIntForKey:@"quartz"];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 		IF = [decoder decodeBoolForKey:@"IF"];
 

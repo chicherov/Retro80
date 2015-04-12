@@ -8,15 +8,7 @@
 
 // -----------------------------------------------------------------------------
 
-@protocol IRQ8275
-
-- (void) IRQ8275:(BOOL)IRQ;
-
-@end
-
-// -----------------------------------------------------------------------------
-
-@interface X8275 : NSObject <DisplayController, RD, WR, HLDA, NSCoding>
+@interface X8275 : NSObject <DisplayController, RD, WR, HLDA, DMA, INTE, INTR, NSCoding>
 {
 	// -------------------------------------------------------------------------
 	// Регистры i8275
@@ -93,7 +85,6 @@
 
 - (void) selectFont:(unsigned)offset;
 
-@property (weak) NSObject<IRQ8275>* IRQ;
-@property (weak) X8257* dma;
+@property BOOL INTR;
 
 @end

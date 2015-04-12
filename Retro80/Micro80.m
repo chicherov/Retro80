@@ -165,7 +165,7 @@
 	return 0;
 }
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
 	return sound.input;
 }
@@ -183,9 +183,9 @@
 
 @implementation Micro80Keyboard
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock status:(uint8_t)status
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
-	return [super RD:addr ^ 3 CLK:clock status:status];
+	return [super RD:addr ^ 3 CLK:clock data:data];
 }
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock

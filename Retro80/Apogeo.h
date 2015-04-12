@@ -5,7 +5,7 @@
 #import "RK86Base.h"
 #import "ROMDisk.h"
 
-@interface Apogeo : RK86Base <INTE>
+@interface Apogeo : RK86Base
 
 @property ROMDisk *ext;
 

@@ -4,7 +4,20 @@
 
 #import "x8080.h"
 
-@interface X8257 : NSObject<RD, WR, NSCoding>
+// -----------------------------------------------------------------------------
+
+@protocol DMA <NSObject>
+
+- (void) RD:(uint8_t *)data clock:(uint64_t)clock;
+- (void) WR:(uint8_t)data clock:(uint64_t)clock;
+
+- (uint64_t *) DRQ;
+
+@end
+
+// -----------------------------------------------------------------------------
+
+@interface X8257 : NSObject<RD, WR, HLDA, NSCoding>
 {
 	union i8257_mode
 	{
@@ -33,7 +46,6 @@
 			unsigned TC3:1;		// TC CHANNEL 0
 
 			unsigned U:1;		// UPDATE
-
 		};
 
 	} status;
@@ -52,6 +64,11 @@
 
 @property (weak) X8080* cpu;
 
-BOOL i8257DMA2(X8257* dma, uint8_t *data);
+- (void) setHLDA:(NSObject<HLDA> *)object;
+
+- (void) setDMA0:(NSObject<DMA> *)DMA;
+- (void) setDMA1:(NSObject<DMA> *)DMA;
+- (void) setDMA2:(NSObject<DMA> *)DMA;
+- (void) setDMA3:(NSObject<DMA> *)DMA;
 
 @end
