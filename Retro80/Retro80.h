@@ -38,6 +38,8 @@
 
 - (unichar) charAtX:(unsigned)x Y:(unsigned)y;
 
+- (void) draw;
+
 @end
 
 // -----------------------------------------------------------------------------
@@ -82,10 +84,12 @@
 @property NSObject <SoundController> *snd;
 @property NSObject <Keyboard> *kbd;
 
-- (id) init:(NSInteger)variant;
+- (id) initWithData:(NSData *)data URL:(NSURL *)url;
+- (id) initWithType:(NSInteger)type;
 
 + (NSString *) title;
-+ (NSString *) ext;
+
++ (NSArray *) extensions;
 
 - (void) start;
 - (void) stop;
@@ -128,7 +132,7 @@
 
 @interface DocumentController : NSDocumentController
 
-- (Computer *) computerByFileExtension:(NSString *)fileExtension
+- (Computer *) computerByFileExtension:(NSURL *)url
 								  data:(NSData *)data;
 
 @end

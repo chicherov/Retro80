@@ -11,9 +11,9 @@
 	return @"Микроша";
 }
 
-+ (NSString *) ext
++ (NSArray *) extensions
 {
-	return @"rkm";
+	return @[@"rkm"];
 }
 
 // -----------------------------------------------------------------------------
@@ -40,14 +40,19 @@
 
 	if (menuItem.action == @selector(floppy:))
 	{
-		if (self.isFloppy)
+		if (menuItem.tag == 0)
 		{
-			menuItem.state = menuItem.tag == 0 || [self.floppy getDisk:menuItem.tag];
-			return menuItem.tag == 0 || menuItem.tag != [self.floppy selected];
+			menuItem.state = self.isFloppy;
+			return YES;
 		}
 		else
 		{
-			menuItem.state = FALSE; return menuItem.tag == 0;
+			NSURL *url = [self.floppy getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			else
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
+
+			return self.isFloppy && menuItem.tag != [self.floppy selected];
 		}
 	}
 

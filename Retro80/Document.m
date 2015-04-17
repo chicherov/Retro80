@@ -100,7 +100,7 @@
 	}
 }
 
-- (BOOL) readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError
+- (BOOL) readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError *__autoreleasing *)outError
 {
 	@try
 	{
@@ -112,7 +112,7 @@
 		}
 		else
 		{
-			object = [documentController computerByFileExtension:[[self.fileURL pathExtension]lowercaseString] data:data];
+			object = [documentController computerByFileExtension:self.fileURL data:data];
 			self.fileURL = nil;
 		}
 

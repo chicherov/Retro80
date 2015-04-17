@@ -9,7 +9,6 @@
 	unsigned ms200, ms;
 	NSURL *URLs[2];
 
-	unsigned selected;
 	unsigned TRACK;
 	BOOL DIRC;
 
@@ -33,16 +32,9 @@
 	uint8_t *ptr;
 }
 
+@synthesize selected;
 @synthesize head;
-
-//------------------------------------------------------------------------------
-//
-//------------------------------------------------------------------------------
-
-- (BOOL) busy
-{
-	return started != 0;
-}
+@synthesize HOLD;
 
 //------------------------------------------------------------------------------
 // setDisk/getDisk
@@ -55,7 +47,7 @@
 		if (disk != selected)
 			URLs[disk-1] = url;
 
-		else if (started == 0)
+		else if (!self.busy)
 		{
 			self.selected = 0; URLs[disk-1] = url;
 			self.selected = (unsigned)disk;
@@ -71,6 +63,11 @@
 	return nil;
 }
 
+- (BOOL) busy
+{
+	return write != nil || read != nil;
+}
+
 //------------------------------------------------------------------------------
 // select disk
 //------------------------------------------------------------------------------
@@ -79,17 +76,23 @@
 {
 	if (selected != disk)
 	{
+		if (started)
+		{
+			write = nil; read = nil;
+			started = 0; DRQ = -1;
+		}
+
 		if (file)
 		{
 			[file closeFile];
 			file = nil;
 		}
 
-		readOnly = FALSE;
-		newDisk = FALSE;
 
 		if (disk && URLs[disk - 1] != nil)
 		{
+			readOnly = FALSE;
+
 			if ((file = [NSFileHandle fileHandleForUpdatingURL:URLs[disk - 1] error:NULL]) == nil)
 				if ((file = [NSFileHandle fileHandleForReadingFromURL:URLs[disk - 1] error:NULL]) != nil)
 					readOnly = TRUE;
@@ -98,10 +101,9 @@
 			{
 				unsigned long long fileSize = file.seekToEndOfFile;
 
-				if (fileSize == 0)
+				if ((newDisk = fileSize == 0))
 				{
 					TRACKS = 0; HEADS = 1; SECTORS = 0; SECSIZE = 0;
-					newDisk = TRUE;
 				}
 
 				else if (fileSize % 5120 == 0)
@@ -109,15 +111,24 @@
 					HEADS = 1; SECTORS = 5; SECSIZE = 1024;
 					TRACKS = (unsigned) fileSize / 5120;
 
-					if (TRACKS >= 160 && (TRACKS & 1) == 0)
+					if (TRACKS >= 160 && TRACKS <= 166 && (TRACKS & 1) == 0)
 					{
 						TRACKS >>= 1; HEADS = 2;
 					}
 
-					if (TRACKS < 80 || TRACKS > 83)
+					else if (TRACKS >= 80 && TRACK <= 83)
+					{
+					}
+
+					else if (TRACKS >= 40 && TRACK <= 43)
+					{
+					}
+
+					else
 					{
 						file = nil;
 					}
+
 				}
 
 				else
@@ -127,7 +138,7 @@
 			}
 		}
 
-		status.S7 = (selected = disk) == 0;
+		selected = disk;
 	}
 }
 
@@ -137,441 +148,162 @@
 }
 
 //------------------------------------------------------------------------------
-//
+// Команды первого типа
 //------------------------------------------------------------------------------
 
-- (void) step:(uint64_t)clock
+- (void) step
 {
-	status.byte = 1;
-
-	status.S6 = file != nil && readOnly;	// Защита записи
-	status.S5 = command.h;					// Загрузка МГ
-	status.S2 = TRACK == 0;					// Дор.0
-
-	if (command.code < 2)
+	if (command.code > 1 || shift != cylinder)
 	{
-		if (shift == cylinder)
+		if (command.code < 2)
 		{
-			started = clock;
-			return;
+			if ((DIRC = shift > cylinder))
+				cylinder++;
+			else
+				cylinder--;
 		}
 
-		if ((DIRC = shift > cylinder))
-			cylinder++;
+		else if (command.u)
+		{
+			if (DIRC)
+				cylinder++;
+			else
+				cylinder--;
+		}
+
+		if (TRACK == 0 && DIRC == FALSE)
+		{
+			status.S2 = 1; cylinder = 0;
+		}
 		else
-			cylinder--;
-	}
-
-	else if (command.u)
-	{
-		if (DIRC)
-			cylinder++;
-		else
-			cylinder--;
-	}
-
-	if (TRACK == 0 && DIRC == FALSE)
-	{
-		started = clock;
-		cylinder = 0;
-		return;
-	}
-
-	static unsigned timing[4] = { 6, 12, 20, 30 };
-	started = clock + timing[command.r] * ms;
-
-	if (DIRC)
-	{
-		if (TRACK < 83)
-			TRACK++;
-	}
-	else
-	{
-		if (TRACK > 0)
-			TRACK--;
-	}
-}
-
-- (void) read:(uint64_t)clock
-{
-	status.byte = 1;
-
-	started = clock; if (command.E)
-		started += ms * 15;
-
-	if (file != nil && cylinder == TRACK && cylinder < TRACKS && head < HEADS && sector && sector <= SECTORS)
-	{
-		NSLog(@"ВГ93 Read from drive %c: track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
-		[file seekToFileOffset:((cylinder * HEADS + head) * SECTORS + sector - 1) * SECSIZE];
-		read = [file readDataOfLength:SECSIZE];
-	}
-	else
-	{
-		read = nil;
-	}
-
-	if (read == nil || read.length != SECSIZE)
-	{
-		read = nil; started += ms200 * 5 - started % ms200;
-	}
-	else
-	{
-		DRQ = started + ms200 / SECTORS - started % (ms200 / SECTORS);
-		unsigned s = DRQ / (ms200 / SECTORS) % SECTORS + 1;
-		s = s > sector ? sector + SECTORS - s : sector - s;
-		DRQ += ms200 / SECTORS * s;
-
-		started = DRQ + ms200 / SECTORS;
-
-		ptr = (uint8_t *) read.bytes;
-		length = SECSIZE;
-		pos = 0;
-	}
-}
-
-- (void) write:(uint64_t)clock
-{
-	status.byte = 1;
-
-	started = clock; if (command.E)
-		started += ms * 15;
-
-	if (file && readOnly)
-		return;
-
-	if (file != nil && cylinder == TRACK && cylinder < TRACKS && head < HEADS && sector && sector <= SECTORS)
-	{
-		NSLog(@"ВГ93 Write to drive %c:  track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
-		[file seekToFileOffset:((cylinder * HEADS + head) * SECTORS + sector - 1) * SECSIZE];
-		write = [[NSMutableData alloc] initWithLength:SECSIZE];
-
-		DRQ = started + ms200 / SECTORS - started % (ms200 / SECTORS);
-		unsigned s = DRQ / (ms200 / SECTORS) % SECTORS + 1;
-		s = s > sector ? sector + SECTORS - s : sector - s;
-		DRQ += ms200 / SECTORS * s;
-
-		started = DRQ + ms200 / SECTORS;
-
-		ptr = write.mutableBytes;
-		length = SECSIZE;
-		pos = 0;
-	}
-
-	else
-	{
-		write = nil; started += ms200 * 5 - started % ms200;
-	}
-}
-
-- (void) writeTrack:(uint64_t)clock
-{
-	status.byte = 1;
-
-	started = clock; if (command.E)
-		started += ms * 15;
-
-	if (file && readOnly)
-		return;
-
-	if (file != nil && newDisk)
-	{
-		if (head == 0)
 		{
-			if (cylinder == TRACKS)
-				TRACKS++;
-		}
-		else if (HEADS == 1)
-		{
-			if (TRACKS == 1 && SECTORS && SECSIZE)
-				HEADS++;
+			static unsigned timing[4] = { 6, 12, 20, 30 };
+			started += timing[command.r] * ms;
+
+			if (DIRC)
+			{
+				if (TRACK < 83)
+					TRACK++;
+			}
+			else
+			{
+				if (TRACK)
+					TRACK--;
+			}
 		}
 	}
 
-	if (file != nil && cylinder == TRACK && cylinder < TRACKS && head < HEADS)
+	if (command.V && (command.code > 1 || shift == cylinder || status.S2))
 	{
-		NSLog(@"ВГ93 Write track %d head %d to drive %c", cylinder, head, selected - 1 + 'A');
-		write = [[NSMutableData alloc] initWithLength:6250];
+		started += ms * 15; started += ms200 - started % ms200;
 
-		DRQ = started; started = started + ms200 * 2 - started % ms200;
-
-		ptr = write.mutableBytes;
-		length = 6250;
-		pos = 0;
-	}
-
-	else
-	{
-		write = nil; started += ms200 * 5 - started % ms200;
+		if (file == nil || cylinder != TRACK || TRACK >= TRACKS)
+			started += ms200 * 8;
 	}
 }
 
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
-
-- (void) startCommand:(uint8_t)data clock:(uint64_t)clock
-{
-	if ((data & 0xF0) == 0xD0 || (selected && started == 0))
-	{
-		command.byte = data; switch (command.code)
-		{
-			case 0x0:	// Восстановление
-
-				NSLog(@"ВГ93 Восстановление: h=%d, V=%d, r=%d", command.h, command.V, command.r);
-				cylinder = 0xFF; shift = 0x00; [self step:clock]; break;
-
-			case 0x1:	// Поиск
-
-				NSLog(@"ВГ93 Поиск: h=%d, V=%d, r=%d", command.h, command.V, command.r);
-				[self step:clock]; break;
-
-			case 0x2:	// Шаг
-			case 0x3:
-
-				NSLog(@"ВГ93 Шаг: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r);
-				[self step:clock]; break;
-
-			case 0x4:	// Шаг вперед
-			case 0x5:
-
-				NSLog(@"ВГ93 Шаг вперед: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r);
-				DIRC = TRUE; [self step:clock]; break;
-
-			case 0x6:	// Шаг назад
-			case 0x7:
-
-				NSLog(@"ВГ93 Шаг назад: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r);
-				DIRC = FALSE; [self step:clock]; break;
-
-			case 0x8:	// Чтение сектора
-			case 0x9:
-
-				NSLog(@"ВГ93 Чтение сектора: m=%d, s=%d, E=%d, C=%d", command.m, command.s, command.E, command.C);
-				[self read:clock];
-				break;
-
-			case 0xA:	// Запись сектора
-			case 0xB:
-
-				NSLog(@"ВГ93 Запись сектора: m=%d, s=%d, E=%d, C=%d, a=%d", command.m, command.s, command.E, command.C, command.a);
-				[self write:clock];
-				break;
-
-			case 0x0C:	// Чтение адреса
-
-				NSLog(@"ВГ93 Чтение адреса: E=%d", command.E);
-				status.byte = 0x03;
-				break;
-
-			case 0xD:	// Принудительное прерывание
-
-				NSLog(@"ВГ93 Принудительное прерывание: J3=%d, J2=%d, J1=%d, J0=%d", command.J3, command.J2, command.J1, command.J0);
-				started = 0; DRQ = -1; write = nil; read = nil;
-				status.S0 = 0;
-				break;
-
-			case 0xE:	// Чтение дорожки
-
-				NSLog(@"ВГ93 Чтение дорожки: E=%d", command.E);
-				status.byte = 0x03;
-				break;
-
-			case 0xF:	// Запись дорожки
-
-				NSLog(@"ВГ93 Запись дорожки: E=%d", command.E);
-				[self writeTrack:clock];
-				break;
-		}
-	}
-}
 
 - (void) execute:(uint64_t)clock
 {
-	if (started) switch (command.code)
+	if (started && started <= clock)
 	{
-		case 0x0:	// Восстановление
-		case 0x1:	// Поиск
-		case 0x2:	// Шаг
-		case 0x3:
-		case 0x4:	// Шаг вперед
-		case 0x5:
-		case 0x6:	// Шаг назад
-		case 0x7:
-
-			status.S1 = clock % ms200 < ms; while (started <= clock)
+		if ((command.code & 8) == 0)
+		{
+			if (command.code < 2)
 			{
-				if (command.code < 2 && (shift != cylinder))
-				{
-					[self step:started]; continue;
-				}
+				while (started <= clock && shift != cylinder && !status.S2)
+					[self step];
 
-				if (command.V == 0)
-				{
-					status.S0 = 0;
-					started = 0;
-				}
-
-				else
-				{
-					status.S5 = 1; if (file != nil && cylinder == TRACK && cylinder < TRACKS && head < HEADS)
-					{
-						if (started + (ms * 216) - (started + ms * 15) % ms200 <= clock)
-						{
-							status.S0 = 0;
-							started = 0;
-						}
-					}
-					else if (started + (ms * 1816) - (started + ms * 15) % ms200 <= clock)
-					{
-						status.S4 = 1;	// Ошибка поиска
-
-						status.S0 = 0;
-						started = 0;
-					}
-				}
-
-				break;
+				if (started > clock)
+					return;
 			}
 
-			break;
-
-		case 0x8:	// Чтение сектора
-		case 0x9:
-
-			status.S1 = DRQ < clock;
-
-			if (DRQ != -1 && DRQ + ms200 / 6250 < clock)
-				status.S2 = 1;
-
-			if (started < clock)
+			if (command.V)
 			{
-				status.S4 = read == nil;
-
-				status.S0 = 0;
-				started = 0;
-
-				read = nil;
-				DRQ = -1;
+				if (cylinder != TRACK || TRACK >= TRACKS)
+					status.S4 = 1;
 			}
+		}
 
-			break;
+		else if (file == nil)
+		{
+			status.S7 = 1;
+		}
 
-		case 0xA:	// Запись сектора
-		case 0xB:
-
-			status.S1 = DRQ < clock;
-
-			if (DRQ != -1 && DRQ + ms200 / 6250 < clock)
-				status.S2 = 1;
-
-			if (started < clock)
+		else if ((command.code & 4) == 0)
+		{
+			if ((command.code & 2) == 0)
 			{
-				if (file != nil && readOnly)
-					status.S6 = 1;
+				if (read == nil)
+					status.S4 = 1;
 				else
+					status.S2 = 1;
+			}
+			else if (!readOnly)
+			{
+				if (write == nil)
+					status.S4 = 1;
+				else
+					status.S2 = 1;
+			}
+			else
+			{
+				status.S6 = 1;
+			}
+		}
+
+		else if (command.code == 0xF)
+		{
+			if (!readOnly)
+			{
+				if (write == nil)
 					status.S5 = 1;
-
-				status.S0 = 0;
-				started = 0;
-
-				write = nil;
-				DRQ = -1;
-			}
-
-			break;
-
-		case 0xC:	// Чтение адреса
-		case 0xE:	// Чтение дорожки
-
-			break;
-
-		case 0xF:	// Запись дорожки
-
-			status.S1 = DRQ < clock;
-
-			if (DRQ != -1 && DRQ + ms200 / 6250 < clock)
-				status.S2 = 1;
-
-			if (started < clock)
-			{
-				if (file != nil && readOnly)
-					status.S6 = 1;
-
-				else if (write == nil)
-					status.S5 = 1;
-
 				else
-				{
-					length = pos; for (pos = 0; pos < length; pos++) if (pos + 7 <= length && ptr[pos] == 0xF5 && ptr[pos + 1] == 0xFE && ptr[pos + 6] == 0xF7)
-					{
-						if (newDisk && TRACKS == 1 && HEADS == 1)
-						{
-							if (SECTORS < ptr[pos + 4] && ptr[pos + 4] <= 32)
-								SECTORS = ptr[pos + 4];
-
-							if (SECSIZE == 0 && ptr[pos + 5] < 4)
-								SECSIZE = 128 << ptr[pos + 5];
-						}
-
-						if (ptr[pos + 2] != cylinder || ptr[pos + 3] != head || ptr[pos + 4] == 0x00 || ptr[pos + 4] > SECTORS || 128 << ptr[pos + 5] != SECSIZE)
-						{
-							status.S5 = 1; length = 0; break;
-						}
-
-						[file seekToFileOffset:((cylinder * HEADS + head) * SECTORS + ptr[pos + 4] - 1) * SECSIZE];
-
-						for (pos += 7; pos + 1 < length; pos++) if (ptr[pos] == 0xF5 && ptr[pos + 1] != 0xF5)
-						{
-							if (ptr[pos + 1] != 0xFB || pos + SECSIZE + 3 > length || ptr[pos + 2 + SECSIZE] != 0xF7)
-							{
-								status.S5 = 1; length = 0; break;
-							}
-
-							[file writeData:[NSData dataWithBytes:ptr + pos + 2 length:SECSIZE]];
-
-							pos += SECSIZE + 3;
-							break;
-						}
-					}
-				}
-
-				status.S1 = 0;
-				status.S0 = 0;
-				started = 0;
-
-				write = nil;
-				DRQ = -1;
+					status.S2 = 1;
 			}
+			else
+			{
+				status.S6 = 1;
+			}
+		}
 
-			break;
+		else
+		{
+			status.S7 = 1;
+		}
+
+
+		write = nil; read = nil;
+		started = 0; DRQ = -1;
 	}
 }
 
 //------------------------------------------------------------------------------
-// RESET/RD/WR
+// RD/WR/RESET
 //------------------------------------------------------------------------------
 
-- (void) RESET
+- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
 {
-	self.selected = 0;
-
-	write = nil;
-	read = nil;
-
-	started = 0;
-	DRQ = -1;
-}
-
-//------------------------------------------------------------------------------
-
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)ignore
-{
-
 	[self execute:clock];
 
 	switch (addr & 3)
 	{
 		case 0:
+
+			if ((status.S0 = started != 0))
+			{
+				if ((command.code & 0x8) == 0)
+					status.S1 = clock % ms200 < ms;
+				else
+					status.S1 = DRQ < clock;
+			}
+			else
+			{
+				status.S7 = file == nil;
+			}
 
 			return status.byte;
 
@@ -585,8 +317,8 @@
 
 		case 3:
 
-			NSLog(@"ВГ93 read data: %02X", shift);
-			return shift;
+			[self RD:&data clock:clock];
+			return data;
 	}
 
 	return 0xFF;
@@ -598,39 +330,213 @@
 
 - (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
 {
-
 	[self execute:clock];
 
 	switch (addr & 3)
 	{
 		case 0:
-		{
-			[self startCommand:data clock:clock];
+
+			if ((data & 0xF0) == 0xD0)	// Принудительное прерывание
+			{
+#ifdef DEBUG
+				NSLog(@"ВГ93 Принудительное прерывание: %02X", data);
+#endif
+				if (started && command.code == 0xF)
+				{
+					length = pos; [self WR:shift clock:DRQ];
+				}
+
+				write = nil; read = nil;
+				started = 0; DRQ = -1;
+			}
+
+			else if (started == 0)
+			{
+				command.byte = data;
+				status.byte = 0;
+				started = clock;
+
+#ifdef DEBUG
+				switch (command.code)
+				{
+					case 0x0:	// Восстановление
+						NSLog(@"ВГ93 Восстановление: h=%d, V=%d, r=%d", command.h, command.V, command.r); break;
+
+					case 0x1:	// Поиск
+						NSLog(@"ВГ93 Поиск: h=%d, V=%d, r=%d", command.h, command.V, command.r); break;
+
+					case 0x2:	// Шаг
+					case 0x3:
+						NSLog(@"ВГ93 Шаг: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
+
+					case 0x4:	// Шаг вперед
+					case 0x5:
+						NSLog(@"ВГ93 Шаг вперед: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
+
+					case 0x6:	// Шаг назад
+					case 0x7:
+						NSLog(@"ВГ93 Шаг назад: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
+
+					case 0x8:	// Чтение сектора
+					case 0x9:
+						NSLog(@"ВГ93 Чтение сектора: m=%d, s=%d, E=%d, C=%d", command.m, command.s, command.E, command.C); break;
+
+					case 0xA:	// Запись сектора
+					case 0xB:
+						NSLog(@"ВГ93 Запись сектора: m=%d, s=%d, E=%d, C=%d, a=%d", command.m, command.s, command.E, command.C, command.a); break;
+
+					case 0x0C:	// Чтение адреса
+						NSLog(@"ВГ93 Чтение адреса: E=%d", command.E); break;
+
+					case 0xE:	// Чтение дорожки
+						NSLog(@"ВГ93 Чтение дорожки: E=%d", command.E); break;
+
+					case 0xF:	// Запись дорожки
+						NSLog(@"ВГ93 Запись дорожки: E=%d", command.E);	break;
+				}
+#endif
+
+				if ((command.code & 8) == 0)		// Восстановление, поиск, шаг
+				{
+					status.S5 = command.h;
+					status.S6 = readOnly;
+
+					if (command.code & 4)
+						DIRC = (command.code & 2) == 0;
+
+					else if (command.code == 0)
+						cylinder = 255, shift = 0;
+
+					[self step];
+				}
+
+				else if (file == nil)
+					status.S7 = 1;
+
+				else if ((command.code & 4) == 0)	// Чтение/запись сектора
+				{
+					if (command.E)
+						started += ms * 15;
+
+					if ((command.code & 2) == 0 || !readOnly)
+					{
+						if (cylinder == TRACK && TRACK < TRACKS && head < HEADS && sector && sector <= SECTORS)
+						{
+							[file seekToFileOffset:((cylinder * HEADS + head) * SECTORS + sector - 1) * SECSIZE];
+
+							if ((command.code & 2) == 0)
+							{
+#ifdef DEBUG
+								NSLog(@"ВГ93 Read from drive %c: track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
+#endif
+								if ((read = [file readDataOfLength:SECSIZE]).length != SECSIZE)
+									read = [[NSMutableData alloc] initWithLength:SECSIZE];
+
+								ptr = (uint8_t *) read.bytes;
+							}
+							else
+							{
+#ifdef DEBUG
+								NSLog(@"ВГ93 Write to drive %c:  track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
+#endif
+								write = [[NSMutableData alloc] initWithLength:SECSIZE];
+								ptr = write.mutableBytes;
+							}
+
+							DRQ = started + ms200 / SECTORS - started % (ms200 / SECTORS);
+							unsigned s = DRQ / (ms200 / SECTORS) % SECTORS + 1;
+							s = s > sector ? sector + SECTORS - s : sector - s;
+							DRQ += ms200 / SECTORS * s;
+
+							started = DRQ + ms200 / SECTORS;
+							length = SECSIZE; pos = 0;
+						}
+
+						else
+						{
+							started += ms200 * 5 - started % ms200;
+						}
+					}
+				}
+
+				else if (command.code == 0x0F)	// // Запись дорожки
+				{
+					if (newDisk)
+					{
+						if (head == 0)
+						{
+							if (cylinder == TRACKS)
+								TRACKS++;
+						}
+						else if (HEADS == 1)
+						{
+							if (TRACKS == 1 && SECTORS && SECSIZE)
+								HEADS++;
+						}
+					}
+
+					if (command.E)
+						started += ms * 15;
+
+					if (!readOnly)
+					{
+						if (cylinder == TRACK && TRACK < TRACKS && head < HEADS)
+						{
+#ifdef DEBUG
+							NSLog(@"ВГ93 Write track %d head %d to drive %c", cylinder, head, selected - 1 + 'A');
+#endif
+							write = [[NSMutableData alloc] initWithLength:6250];
+
+							DRQ = started; started = started + ms200 * 2 - started % ms200;
+
+							ptr = write.mutableBytes;
+							length = 6250;
+							pos = 0;
+						}
+
+						else
+						{
+							started += ms200 * 5 - started % ms200;
+						}
+					}
+				}
+
+				if (started == clock)
+					started += ms / 10;
+			}
+
 			break;
-		}
 
 		case 1:
 
-			NSLog(@"ВГ93 cylinder = %d", data);
 			cylinder = data;
 			break;
 
 		case 2:
 
-			NSLog(@"ВГ93 sector = %d", data);
 			sector = data;
 			break;
 
 		case 3:
 
-			NSLog(@"ВГ93 data: %02X", data);
-			shift = data;
+			[self WR:data clock:clock];
 			break;
 	}
 }
 
 //------------------------------------------------------------------------------
-//
+
+- (void) RESET
+{
+	self.selected = 0;
+
+	command.byte = 0x03; status.byte = 0x04;
+	TRACK = cylinder = shift = 0;
+	sector = 1;
+}
+
+//------------------------------------------------------------------------------
+// Работа с DMA
 //------------------------------------------------------------------------------
 
 - (uint64_t *) DRQ
@@ -640,84 +546,144 @@
 
 - (void) RD:(uint8_t *)data clock:(uint64_t)clock
 {
-	if (read)
+	if (read && clock > DRQ)
 	{
-		DRQ += ms200 / 6250; if (DRQ < clock)
+		DRQ += ms200 / 6250; while (DRQ < clock && pos < length)
 		{
-			status.S2 = 1; do { pos++; DRQ += ms200 / 6250; }
-			while (DRQ < clock && pos < length);
+			status.S2 = 1; shift = ptr[pos++];
+			DRQ += ms200 / 6250;
 		}
 
 		if (pos < length)
-			*data = ptr[pos++];
+			shift = ptr[pos++];
 
 		if (pos == length)
 		{
-			status.S0 = 0;
-			status.S1 = 0;
+			if (command.m)
+			{
+				sector++; if (sector <= SECTORS && (read = [file readDataOfLength:SECSIZE]).length == SECSIZE)
+				{
+#ifdef DBUG
+					NSLog(@"ВГ93 Read next sector %d", sector);
+#endif
 
-			started = 0;
-			read = nil;
-			DRQ = -1;
+					DRQ += ms200 / SECTORS - DRQ % (ms200 / SECTORS); started += ms200;
+					ptr = (uint8_t *) read.bytes; length = SECSIZE; pos = 0;
+				}
+				else
+				{
+					read = nil; started += ms200 * 4; DRQ = -1;
+				}
+			}
+			else
+			{
+				read = nil; started = 0; DRQ = -1;
+			}
 		}
 	}
-	else
-	{
-		DRQ = -1;
-	}
+
+	*data = shift;
 }
 
 - (void) WR:(uint8_t)data clock:(uint64_t)clock
 {
 	if (write)
 	{
-		if (command.code != 0x0F)
+		DRQ += ms200 / 6250; while (DRQ < clock && pos < length)
 		{
-			DRQ += ms200 / 6250; if (DRQ < clock)
+			status.S2 = 1; ptr[pos++] = shift;
+			DRQ += ms200 / 6250;
+
+			if (command.code == 0xF && pos < 4)
 			{
-				status.S2 = 1; do { pos++; DRQ += ms200 / 6250; }
-				while (DRQ < clock && pos < length);
+				started = 0;
+				write = nil;
+				DRQ = -1;
+				return;
 			}
+		}
 
-			if (pos < length)
-				ptr[pos++] = data;
+		shift = data; if (pos < length)
+		{
+			ptr[pos++] = data;
 
-			if (pos == length)
+			if (command.code == 0xF && pos == 3)
+				DRQ += ms200 - DRQ % ms200;
+		}
+
+		if (pos == length)
+		{
+			if (command.code != 0xF)
 			{
 				[file writeData:write];
 
-				status.S0 = 0;
-				status.S1 = 0;
-
-				started = 0;
-				write = nil;
-				DRQ = -1;
-			}
-		}
-		else
-		{
-			DRQ += ms200 / 6250; if (DRQ < clock)
-			{
-				status.S2 = 1;
-				status.S1 = 0;
-				status.S0 = 0;
-
 				started = 0;
 				write = nil;
 				DRQ = -1;
 			}
 
-			if (pos < length)
+			else
 			{
-				ptr[pos++] = data; if (pos == 3)
-					DRQ += ms200 - clock % ms200;
+				for (pos = 0; pos < length; pos++) if (pos + 7 <= length && ptr[pos] == 0xF5 && ptr[pos + 1] == 0xFE && ptr[pos + 6] == 0xF7)
+				{
+					if (newDisk && TRACKS == 1 && HEADS == 1)
+					{
+						if (SECTORS < ptr[pos + 4] && ptr[pos + 4] <= 32)
+							SECTORS = ptr[pos + 4];
+
+						if (SECSIZE == 0 && ptr[pos + 5] < 4)
+							SECSIZE = 128 << ptr[pos + 5];
+					}
+
+					if (ptr[pos + 2] != cylinder || ptr[pos + 3] != head || ptr[pos + 4] == 0x00 || ptr[pos + 4] > SECTORS || 128 << ptr[pos + 5] != SECSIZE)
+					{
+						status.S5 = 1; length = 0; break;
+					}
+
+					[file seekToFileOffset:((cylinder * HEADS + head) * SECTORS + ptr[pos + 4] - 1) * SECSIZE];
+
+					for (pos += 7; pos + 1 < length; pos++) if (ptr[pos] == 0xF5 && ptr[pos + 1] != 0xF5)
+					{
+						if (ptr[pos + 1] != 0xFB || pos + SECSIZE + 3 > length || ptr[pos + 2 + SECSIZE] != 0xF7)
+						{
+							status.S5 = 1; length = 0; break;
+						}
+
+						[file writeData:[NSData dataWithBytes:ptr + pos + 2 length:SECSIZE]];
+
+						pos += SECSIZE + 3;
+						break;
+					}
+				}
+				
+				started = 0;
+				write = nil;
+				DRQ = -1;
 			}
 		}
 	}
 	else
 	{
-		DRQ = -1;
+		shift = data;
 	}
+}
+
+//------------------------------------------------------------------------------
+// HLDA
+//------------------------------------------------------------------------------
+
+- (unsigned) HLDA:(uint64_t)clock
+{
+	if (HOLD)
+	{
+		HOLD = FALSE; if (DRQ == -1 || DRQ < clock)
+			return 0;
+
+		unsigned clk = (unsigned) (DRQ - clock);
+		clk += 9 - clk % 9; return clk;
+	}
+
+	return 0;
 }
 
 //------------------------------------------------------------------------------

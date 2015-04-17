@@ -82,16 +82,18 @@
 	return self;
 }
 
-- (id) initWithData:(NSData *)data
+- (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
 	if (self = [self init])
 	{
+		if (([url.pathExtension.lowercaseString isEqualToString:@"gam"] || [url.pathExtension.lowercaseString isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6)
+			data = [NSData dataWithBytes:(uint8_t *)data.bytes + 1 length:data.length - 1];
+
 		[self.inpHook setData:data];
 		[self.kbd paste:@"I\n"];
 	}
 
 	return self;
-
 }
 
 // -----------------------------------------------------------------------------

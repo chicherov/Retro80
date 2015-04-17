@@ -11,9 +11,9 @@
 	return @"Апогей БК-01";
 }
 
-+ (NSString *) ext
++ (NSArray *) extensions
 {
-	return @"rka";
+	return @[@"rka"];
 }
 
 // -----------------------------------------------------------------------------
@@ -30,7 +30,11 @@
 
 	if (menuItem.action == @selector(ROMDisk:))
 	{
-		menuItem.state = self.ext.length != 0;
+		NSURL *url = [self.ext url]; if ((menuItem.state = url != nil))
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+		else
+			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+
 		menuItem.submenu = nil;
 		return YES;
 	}

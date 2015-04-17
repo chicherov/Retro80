@@ -11,9 +11,9 @@
 	return @"Партнер 01.01";
 }
 
-+ (NSString *) ext
++ (NSArray *) extensions
 {
-	return @"rkp";
+	return @[@"rkp"];
 }
 
 // -----------------------------------------------------------------------------
@@ -29,17 +29,14 @@
 			menuItem.state = self.isFloppy;
 			return (self.sys2.slot & 0x02) == 0;
 		}
-
-		else if (self.isFloppy)
-		{
-			menuItem.state = [self.floppy getDisk:menuItem.tag] != nil;
-			return !self.floppy.busy || menuItem.tag != self.floppy.selected;
-		}
-
 		else
 		{
-			menuItem.state = FALSE;
-			return NO;
+			NSURL *url = [self.floppy getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			else
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
+
+			return self.isFloppy && (menuItem.tag != self.floppy.selected || !self.floppy.busy);
 		}
 	}
 

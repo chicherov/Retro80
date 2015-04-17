@@ -8,7 +8,6 @@
 
 	uint8_t memory[32][64];
 	uint8_t screen[32][64];
-	uint64_t CLK;
 }
 
 @synthesize WR;
@@ -37,48 +36,42 @@
 
 // -----------------------------------------------------------------------------
 
-- (unsigned) HLDA:(uint64_t)clock
+- (void) draw
 {
-	if (CLK < clock)
+	for (unsigned row = 0; row < 32; row++)
 	{
-		for (unsigned row = 0; row < 32; row++)
+		for (unsigned col = 0; col < 64; col++)
 		{
-			for (unsigned col = 0; col < 64; col++)
+			uint8_t ch =  memory[row][col];
+
+			if (screen[row][col] != ch)
 			{
-				uint8_t ch =  memory[row][col];
+				if (bitmap == NULL)
+					bitmap = [self.display setupTextWidth:64 height:32 cx:6 cy:8];
 
-				if (screen[row][col] != ch)
+				if (bitmap)
 				{
-					if (bitmap == NULL)
-						bitmap = [self.display setupTextWidth:64 height:32 cx:6 cy:8];
+					screen[row][col] = ch;
 
-					if (bitmap)
+					const uint8_t *fnt = rom.bytes + ((ch & 0x7F) << 3);
+					uint32_t *ptr = bitmap + (row * 64 * 8 + col) * 6;
+
+					for (int line = 0; line < 8; line++)
 					{
-						screen[row][col] = ch;
+						uint8_t byte = *fnt++; if (ch & 0x80)
+							byte ^= 0xFF;
 
-						const uint8_t *fnt = rom.bytes + ((ch & 0x7F) << 3);
-						uint32_t *ptr = bitmap + (row * 64 * 8 + col) * 6;
+						for (int i = 0; i < 6; i++, byte <<= 1)
+							*ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFAAAAAA;
 
-						for (int line = 0; line < 8; line++)
-						{
-							uint8_t byte = *fnt++; if (ch & 0x80)
-								byte ^= 0xFF;
-
-							for (int i = 0; i < 6; i++, byte <<= 1)
-								*ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFAAAAAA;
-
-							ptr += 63 * 6;
-						}
+						ptr += 63 * 6;
 					}
 				}
 			}
 		}
-
-		self.display.needsDisplay = TRUE;
-		CLK += 18000000/25;
 	}
 
-	return 0;
+	self.display.needsDisplay = TRUE;
 }
 
 // -----------------------------------------------------------------------------
@@ -119,7 +112,6 @@
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeValueOfObjCType:"[2048c]" at:memory];
-	[encoder encodeInt64:CLK forKey:@"CLK"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
@@ -127,7 +119,6 @@
 	if (self = [self init])
 	{
 		[decoder decodeValueOfObjCType:"[2048c]" at:memory];
-		CLK = [decoder decodeInt64ForKey:@"CLK"];
 	}
 
 	return self;

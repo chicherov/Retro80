@@ -5,7 +5,7 @@
 #import "x8080.h"
 #import "x8257.h"
 
-@interface VG93 : NSObject<RD, WR, RESET, DMA, NSCoding>
+@interface VG93 : NSObject<RD, WR, RESET, DMA, HLDA, NSCoding>
 {
 	union VG93_command		// Регистр команды
 	{
@@ -73,6 +73,7 @@
 - (BOOL) busy;
 
 @property unsigned selected;
-@property unsigned head;
+@property BOOL head;
+@property BOOL HOLD;
 
 @end

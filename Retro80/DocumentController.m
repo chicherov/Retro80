@@ -14,7 +14,7 @@
 {
 	if (index >= 100 && index / 100 <= computers.count)
 	{
-		Computer *computer = [[NSClassFromString([computers objectAtIndex:index / 100 - 1]) alloc] init:index % 100];
+		Computer *computer = [[NSClassFromString([computers objectAtIndex:index / 100 - 1]) alloc] initWithType:index % 100];
 
 		if (computer)
 			return [[Document alloc] initWithComputer:computer type:typeName error:outError];
@@ -54,21 +54,20 @@
 
 // -----------------------------------------------------------------------------
 
-- (Computer *) computerByFileExtension:(NSString *)fileExtension data:(NSData *)data
+- (Computer *) computerByFileExtension:(NSURL *)url data:(NSData *)data
 {
+	NSString *fileExtension = url.pathExtension.lowercaseString;
+
 	for (NSString *className in computers)
 	{
 		Class class; if ([(class = NSClassFromString(className)) isSubclassOfClass:[Computer class]])
 		{
-			if ([[class ext] isEqualTo:fileExtension])
-				return [[class alloc] initWithData:data];
+			if ([[class extensions] containsObject:fileExtension])
+				return [[class alloc] initWithData:data URL:url];
 		}
 	}
 
-	if (([fileExtension isEqualToString:@"gam"] || [fileExtension isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6)
-		return [[NSClassFromString(@"Radio86RK") alloc] initWithData:[NSData dataWithBytes:(uint8_t *)data.bytes + 1 length:data.length - 1]];
-
-	return [[NSClassFromString(@"Radio86RK") alloc] initWithData:data];
+	return nil;
 }
 
 // -----------------------------------------------------------------------------

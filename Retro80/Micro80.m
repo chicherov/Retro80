@@ -11,9 +11,9 @@
 	return @"Микро-80";
 }
 
-+ (NSString *) ext
++ (NSArray *) extensions
 {
-	return @"rk8";
+	return @[@"rk8"];
 }
 
 // -----------------------------------------------------------------------------
@@ -47,7 +47,6 @@
 	if ((self.snd = [[Micro80Recorder alloc] init]) == nil)
 		return FALSE;
 
-	self.cpu.HLDA = self.crt;
 	self.crt.WR = self.ram;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0xDFFF];
@@ -90,7 +89,7 @@
 	return self;
 }
 
-- (id) initWithData:(NSData *)data
+- (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
 	if (self = [self init])
 	{

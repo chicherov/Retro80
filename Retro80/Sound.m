@@ -28,11 +28,15 @@ NSRunLoop *runLoop;
 
 @synthesize snd;
 @synthesize cpu;
+@synthesize crt;
 
 // -----------------------------------------------------------------------------
 
 - (void) callback:(AudioQueueBufferRef)inBuffer
 {
+	if ([crt respondsToSelector:@selector(draw)])
+		[crt draw];
+
 	if (inAudioFile)
 	{
 		if (pause)
@@ -272,7 +276,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		{
 			AudioQueueBufferRef buffer;
 
-			if ((err = AudioQueueAllocateBuffer(audioQueue, streamFormat.mSampleRate/100 * streamFormat.mBytesPerPacket, &buffer)) == noErr)
+			if ((err = AudioQueueAllocateBuffer(audioQueue, streamFormat.mSampleRate/50 * streamFormat.mBytesPerPacket, &buffer)) == noErr)
 				OutputCallback((__bridge void *)self, audioQueue, buffer);
 
 			else

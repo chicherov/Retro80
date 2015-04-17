@@ -28,6 +28,16 @@
 			<key>NSDocumentClass</key>
 			<string>Document</string>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>ru.uart.rk.spmx</string>
+			</array>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
+		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
@@ -101,6 +111,25 @@ All rights reserved.</string>
 					<string>rkp</string>
 					<string>rks</string>
 					<string>rko</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Программа для ретрокомпьютера</string>
+			<key>UTTypeIdentifier</key>
+			<string>ru.uart.rk.spmx</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>mon</string>
+					<string>cpu</string>
+					<string>i80</string>
 				</array>
 			</dict>
 		</dict>

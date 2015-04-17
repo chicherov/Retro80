@@ -2,12 +2,14 @@
 
 @implementation Computer
 
-- (id) init:(NSInteger)variant
+- (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
-	if (variant == 0)
-		return [self init];
-	else
-		return self = nil;
+	return self = nil;
+}
+
+- (id) initWithType:(NSInteger)type
+{
+	return [self init];
 }
 
 + (NSString *) title
@@ -15,7 +17,7 @@
 	return nil;
 }
 
-+ (NSString *) ext
++ (NSArray *) extensions
 {
 	return nil;
 }
@@ -70,6 +72,13 @@
 		menuItem.state = self.kbd.qwerty;
 		return self.kbd != nil;
 	}
+
+	if (menuItem.action == @selector(floppy:) && menuItem.tag)
+		menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
+
+	if (menuItem.action == @selector(ROMDisk:))
+		menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+
 
 	menuItem.state = FALSE;
 	menuItem.submenu = nil;

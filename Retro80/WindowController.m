@@ -17,6 +17,7 @@
 
 	self.document.sound.cpu = self.document.computer.cpu;
 	self.document.sound.snd = self.document.computer.snd;
+	self.document.sound.crt = self.document.computer.crt;
 
 	self.document.computer.nextResponder = self.document.display;
 	self.nextResponder = self.document.computer;

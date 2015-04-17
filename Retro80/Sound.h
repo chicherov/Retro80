@@ -1,3 +1,4 @@
+@protocol DisplayController;
 @protocol SoundController;
 @protocol Processor;
 @class Document;
@@ -13,6 +14,8 @@
 
 @property (weak) NSObject <SoundController> *snd;
 @property (weak) NSObject <Processor> *cpu;
+
+@property (weak) NSObject <DisplayController> *crt;
 
 @property (readonly) BOOL isInput;
 @property (readonly) BOOL input;

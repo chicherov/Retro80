@@ -11,9 +11,9 @@
 	return @"Радио-86РК";
 }
 
-+ (NSString *) ext
++ (NSArray *) extensions
 {
-	return @"rkr";
+	return @[@"rkr", @"gam", @"pki"];
 }
 
 // -----------------------------------------------------------------------------
@@ -30,21 +30,30 @@
 
 	if (menuItem.action == @selector(ROMDisk:))
 	{
-		menuItem.state = self.ext.length != 0;
+		NSURL *url = [self.ext url]; if ((menuItem.state = url != nil))
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+		else
+			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+
 		menuItem.submenu = nil;
 		return YES;
 	}
 
 	if (menuItem.action == @selector(floppy:))
 	{
-		if (self.isFloppy)
+		if (menuItem.tag == 0)
 		{
-			menuItem.state = menuItem.tag == 0 || [self.floppy getDisk:menuItem.tag];
-			return menuItem.tag == 0 || menuItem.tag != [self.floppy selected];
+			menuItem.state = self.isFloppy;
+			return YES;
 		}
 		else
 		{
-			menuItem.state = FALSE; return menuItem.tag == 0;
+			NSURL *url = [self.floppy getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			else
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
+
+			return self.isFloppy && menuItem.tag != [self.floppy selected];
 		}
 	}
 
@@ -153,15 +162,6 @@ static uint32_t colors[] =
 			[self.floppy setDisk:menuItem.tag URL:nil];
 		}
 	}
-}
-
-// -----------------------------------------------------------------------------
-// В Радио-86РК на INTE сидит звук
-// -----------------------------------------------------------------------------
-
-- (void) INTE:(BOOL)IF
-{
-	self.snd.sound.beeper = IF;
 }
 
 // -----------------------------------------------------------------------------
