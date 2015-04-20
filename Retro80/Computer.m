@@ -39,9 +39,10 @@
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
 	if (menuItem.action == @selector(reset:))
-	{
 		return YES;
-	}
+
+	if (menuItem.action == @selector(debug:))
+		return [self.cpu conformsToProtocol:@protocol(Debug)];
 
 	if (menuItem.action == @selector(kbdHook:))
 	{
@@ -133,6 +134,21 @@
 	[self.snd.sound close];
 	self.cpu.RESET = TRUE;
 	[self start];
+}
+
+// -----------------------------------------------------------------------------
+// Вызов отладчика
+// -----------------------------------------------------------------------------
+
+- (IBAction) debug:(id)sender
+{
+	@synchronized(self.snd.sound)
+	{
+		self.snd.sound.debug = TRUE;
+	}
+
+	[self.document.debug run:self.cpu];
+	self.snd.sound.debug = FALSE;
 }
 
 // -----------------------------------------------------------------------------

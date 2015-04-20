@@ -137,10 +137,8 @@
 
 - (BOOL) createObjects
 {
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0xC000]) == nil)
 		return FALSE;
-
-	self.cpu.START = 0xC000;
 
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) == nil)
 		return FALSE;

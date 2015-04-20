@@ -23,6 +23,10 @@
 @property uint16_t beeper;
 @property BOOL output;
 
+@property BOOL debug;
+@property BOOL pause;
+@property BOOL mute;
+
 - (BOOL) open:(NSURL *)url;
 - (void) close;
 

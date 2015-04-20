@@ -84,17 +84,17 @@
 
 		case 0xFFFC:	// Выбрать RAM
 
-			cpu.PAGE = 1;
+			cpu.PAGE = 0;
 			break;
 
 		case 0xFFFD:	// Выбрать RAM-диск
 
-			cpu.PAGE = 2 + (data & 7);
+			cpu.PAGE = 1 + (data & 7);
 			break;
 
 		case 0xFFFE:	// Выбрать ROM-диск
 
-			cpu.PAGE = 0;
+			cpu.PAGE = 9;
 			break;
 
 		case 0xFFFF:	// Резерв для Специалист MX2
@@ -236,6 +236,9 @@
 
 - (BOOL) createObjects
 {
+	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0x90000]) == nil)
+		return FALSE;
+
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX" mask:0xFFFF]) == nil)
 		return FALSE;
 
@@ -255,8 +258,6 @@
 	self.snd.rkmode = TRUE;
 
 	self.crt.isColor = TRUE;
-
-	self.cpu.START = 0x0000;
 	return TRUE;
 }
 
@@ -266,21 +267,21 @@
 {
 	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
-	[self.cpu mapObject:self.rom atPage:0 from:0x0000 to:0xBFFF WR:nil];
+	[self.cpu mapObject:self.ram atPage:0 from:0x0000 to:0x8FFF];
+	[self.cpu mapObject:self.crt atPage:0 from:0x9000 to:0xBFFF RD:self.ram];
 	[self.cpu mapObject:self.ram atPage:0 from:0xC000 to:0xFFBF];
 
-	[self.cpu mapObject:self.ram atPage:1 from:0x0000 to:0x8FFF];
-	[self.cpu mapObject:self.crt atPage:1 from:0x9000 to:0xBFFF RD:self.ram];
-	[self.cpu mapObject:self.ram atPage:1 from:0xC000 to:0xFFBF];
+	[self.cpu mapObject:self.rom atPage:9 from:0x0000 to:0xBFFF WR:nil];
+	[self.cpu mapObject:self.ram atPage:9 from:0xC000 to:0xFFBF];
 
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF] atPage:2 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x20000 length:0x10000 mask:0xFFFF] atPage:3 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x30000 length:0x10000 mask:0xFFFF] atPage:4 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x40000 length:0x10000 mask:0xFFFF] atPage:5 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x50000 length:0x10000 mask:0xFFFF] atPage:6 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x60000 length:0x10000 mask:0xFFFF] atPage:7 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x70000 length:0x10000 mask:0xFFFF] atPage:8 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x80000 length:0x10000 mask:0xFFFF] atPage:9 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF] atPage:1 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x20000 length:0x10000 mask:0xFFFF] atPage:2 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x30000 length:0x10000 mask:0xFFFF] atPage:3 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x40000 length:0x10000 mask:0xFFFF] atPage:4 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x50000 length:0x10000 mask:0xFFFF] atPage:5 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x60000 length:0x10000 mask:0xFFFF] atPage:6 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x70000 length:0x10000 mask:0xFFFF] atPage:7 from:0x0000 to:0xFFBF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x80000 length:0x10000 mask:0xFFFF] atPage:8 from:0x0000 to:0xFFBF];
 
 	if ((self.sys = [[SpecialistMXSystem alloc] init]) == nil)
 		return FALSE;
@@ -289,14 +290,17 @@
 	self.sys.crt = self.crt;
 	self.sys.fdd = self.fdd;
 
-	[self.cpu mapObject:self.sys	from:0xFFF8 to:0xFFFF];
-	//	[self.cpu mapObject:nil       from:0xFFF4 to:0xFFF7];
-	[self.cpu mapObject:self.sys	from:0xFFF0 to:0xFFF3];
-	[self.cpu mapObject:self.snd	from:0xFFEC to:0xFFEF];
-	[self.cpu mapObject:self.fdd	from:0xFFE8 to:0xFFEB];
-	[self.cpu mapObject:self.ext	from:0xFFE4 to:0xFFE7];
-	[self.cpu mapObject:self.kbd	from:0xFFE0 to:0xFFE3];
-	[self.cpu mapObject:self.ram	from:0xFFC0 to:0xFFDF];
+	for (uint8_t page = 0; page <= 9; page++)
+	{
+		[self.cpu mapObject:self.sys	atPage:page from:0xFFF8 to:0xFFFF];
+		[self.cpu mapObject:nil			atPage:page from:0xFFF4 to:0xFFF7];
+		[self.cpu mapObject:self.sys	atPage:page from:0xFFF0 to:0xFFF3];
+		[self.cpu mapObject:self.snd	atPage:page from:0xFFEC to:0xFFEF];
+		[self.cpu mapObject:self.fdd	atPage:page from:0xFFE8 to:0xFFEB];
+		[self.cpu mapObject:self.ext	atPage:page from:0xFFE4 to:0xFFE7];
+		[self.cpu mapObject:self.kbd	atPage:page from:0xFFE0 to:0xFFE3];
+		[self.cpu mapObject:self.ram	atPage:page from:0xFFC0 to:0xFFDF];
+	}
 
 	[self.cpu addObjectToRESET:self.kbd];
 	[self.cpu addObjectToRESET:self.ext];

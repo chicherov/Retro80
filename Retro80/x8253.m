@@ -375,7 +375,7 @@ void updateTimer(struct i8253_timer *timer, uint64_t clock)
 			timer->count = value;
 			timer->clock = 0;
 
-			updateTimer(timer, clock + 18);
+			updateTimer(timer, timer->started);
 		}
 	}
 }

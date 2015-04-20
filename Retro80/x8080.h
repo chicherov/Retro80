@@ -46,7 +46,7 @@
 // X8080 - Базовый класс компьютера с процесором i8080
 // -----------------------------------------------------------------------------
 
-@interface X8080 : NSObject <Processor, NSCoding>
+@interface X8080 : NSObject <Processor, Debug, NSCoding>
 
 - (void) setHLDA:(NSObject<HLDA> *)object;
 - (void) setINTE:(NSObject<INTE> *)object;
@@ -78,7 +78,7 @@
 
 // -----------------------------------------------------------------------------
 
-- (id) initWithQuartz:(unsigned)quartz;
+- (id) initWithQuartz:(unsigned)quartz start:(unsigned)start;
 
 // -----------------------------------------------------------------------------
 
@@ -119,7 +119,6 @@
 
 - (void) addObjectToRESET:(NSObject<RESET>*)object;
 
-@property uint16_t START;
 @property BOOL RESET;
 
 @property BOOL MEMIO;
@@ -148,9 +147,5 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
 
 - (void) mapHook:(NSObject<Hook> *)object
 	   atAddress:(uint16_t)addr;
-
-// -----------------------------------------------------------------------------
-
-- (void) execute:(uint64_t)clock;
 
 @end

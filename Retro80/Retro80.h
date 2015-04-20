@@ -1,5 +1,6 @@
 #import "Display.h"
 #import "Sound.h"
+#import "Debug.h"
 
 @class Document;
 
@@ -17,7 +18,7 @@
 
 @protocol Processor
 
-- (void) execute:(uint64_t)clock;
+- (BOOL) execute:(uint64_t)clock;
 
 @property uint32_t quartz;
 @property uint64_t CLK;
@@ -98,6 +99,9 @@
 @property NSObject <Adjustment> *inpHook;
 @property NSObject <Adjustment> *outHook;
 
+- (IBAction) reset:(id)sender;
+- (IBAction) debug:(id)sender;
+
 - (IBAction) colorModule:(id)sender;
 - (IBAction) extraMemory:(id)sender;
 - (IBAction) ROMDisk:(id)sender;
@@ -115,6 +119,7 @@
 
 @property IBOutlet Display *display;
 @property IBOutlet Sound *sound;
+@property IBOutlet Debug *debug;
 
 - (void) registerUndoWitString:(NSString *)string type:(NSInteger)type;
 - (void) registerUndoWithMenuItem:(NSMenuItem *)menuItem;

@@ -17,10 +17,8 @@
 
 	if (self.cpu == nil)
 	{
-		if ((self.cpu = [[X8080 alloc] initWithQuartz:16000000]) == nil)
+		if ((self.cpu = [[X8080 alloc] initWithQuartz:16000000 start:0xF800]) == nil)
 			return FALSE;
-
-		self.cpu.START = 0xF800;
 	}
 
 	if (self.crt == nil && (self.crt = [[X8275 alloc] init]) == nil)

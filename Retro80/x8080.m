@@ -97,6 +97,7 @@
 	NSObject<RD, WR> *IO[256];
 
 	NSMutableArray *RESETLIST;
+	unsigned START;
 
 	// -------------------------------------------------------------------------
 	// Сигнал HLDA
@@ -125,6 +126,15 @@
 
 	uint8_t (*CallINTA) (id, SEL, uint64_t);
 	NSObject<INTA> *INTA;
+
+	// -------------------------------------------------------------------------
+	// Отладчик
+	// -------------------------------------------------------------------------
+
+	unsigned STOP;
+
+	unsigned lastU;
+	unsigned lastD;
 }
 
 // -----------------------------------------------------------------------------
@@ -239,20 +249,17 @@
 
 - (void) mapObject:(NSObject<RD>*)rd from:(uint16_t)from to:(uint16_t)to WR:(NSObject<WR> *)wr
 {
-	for (uint8_t page = 0; page < 16; page++)
-		[self mapObject:rd atPage:page from:from to:to WR:wr];
+	[self mapObject:rd atPage:0 from:from to:to WR:wr];
 }
 
 - (void) mapObject:(NSObject<WR>*)wr from:(uint16_t)from to:(uint16_t)to RD:(NSObject<RD> *)rd
 {
-	for (uint8_t page = 0; page < 16; page++)
-		[self mapObject:wr atPage:page from:from to:to RD:rd];
+	[self mapObject:wr atPage:0 from:from to:to RD:rd];
 }
 
 - (void) mapObject:(NSObject<RD, WR>*)object from:(uint16_t)from to:(uint16_t)to
 {
-	for (uint8_t page = 0; page < 16; page++)
-		[self mapObject:object atPage:page from:from to:to];
+	[self mapObject:object atPage:0 from:from to:to];
 }
 
 // -----------------------------------------------------------------------------
@@ -318,7 +325,6 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 // -----------------------------------------------------------------------------
 
 @synthesize RESET;
-@synthesize START;
 
 - (void) addObjectToRESET:(NSObject<RESET> *)object
 {
@@ -577,7 +583,7 @@ static bool test(uint8_t IR, uint8_t F)
 // execute
 // -----------------------------------------------------------------------------
 
-- (void) execute:(uint64_t)CLKI
+- (BOOL) execute:(uint64_t)CLKI
 {
 	while (CLK < CLKI)
 	{
@@ -588,8 +594,15 @@ static bool test(uint8_t IR, uint8_t F)
 
 			self.IF = FALSE;
 
-			PAGE = 0; PC.PC = START;
+			PAGE = (START >> 16) & 0xF;
+			PC.PC = START & 0xFFFF;
 			RESET = FALSE;
+		}
+
+		if (STOP != -1)
+		{
+			if (STOP == ((PAGE << 16) | PC.PC))
+				return FALSE;
 		}
 
 		uint8_t IR; CLK += 9; if (HALT)
@@ -602,7 +615,7 @@ static bool test(uint8_t IR, uint8_t F)
 			IR = CallINTA(INTA, @selector(INTA:), CLK);
 		}
 
-		else switch (HOOK[PC.PC] == NULL ? 2 : [HOOK[PC.PC] execute:self])
+		else switch (STOP != -1 || HOOK[PC.PC] == NULL ? 2 : [HOOK[PC.PC] execute:self])
 		{
 			default:
 			{
@@ -2137,6 +2150,8 @@ static bool test(uint8_t IR, uint8_t F)
 			}
 		}
 	}
+
+	return TRUE;
 }
 
 // -----------------------------------------------------------------------------
@@ -2151,15 +2166,19 @@ static bool test(uint8_t IR, uint8_t F)
 		RESET = TRUE;
 
 		MEMIO = TRUE;
+		STOP = -1;
 	}
 
 	return self;
 }
 
-- (id) initWithQuartz:(unsigned)freq
+- (id) initWithQuartz:(unsigned)freq start:(unsigned int)start
 {
 	if (self = [self init])
+	{
 		quartz = freq;
+		START = start;
+	}
 
 	return self;
 }
@@ -2171,12 +2190,14 @@ static bool test(uint8_t IR, uint8_t F)
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:quartz forKey:@"quartz"];
+	[encoder encodeInt:START forKey:@"START"];
+
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 	[encoder encodeBool:IF forKey:@"IF"];
 
 	[encoder encodeBool:RESET forKey:@"RESET"];
-	[encoder encodeInt:START forKey:@"START"];
 	[encoder encodeInt:PAGE forKey:@"PAGE"];
+	[encoder encodeInt:STOP forKey:@"STOP"];
 
 	[encoder encodeInt:PC.PC forKey:@"PC"];
 	[encoder encodeInt:SP.SP forKey:@"SP"];
@@ -2191,12 +2212,13 @@ static bool test(uint8_t IR, uint8_t F)
 	if (self = [self init])
 	{
 		quartz = [decoder decodeIntForKey:@"quartz"];
+		START = [decoder decodeIntForKey:@"START"];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 		IF = [decoder decodeBoolForKey:@"IF"];
 
 		RESET = [decoder decodeBoolForKey:@"RESET"];
-		START = [decoder decodeIntForKey:@"START"];
 		PAGE = [decoder decodeIntForKey:@"PAGE"];
+		STOP = [decoder decodeIntForKey:@"STOP"];
 
 		PC.PC = [decoder decodeIntForKey:@"PC"];
 		SP.SP = [decoder decodeIntForKey:@"SP"];
@@ -2207,6 +2229,501 @@ static bool test(uint8_t IR, uint8_t F)
 	}
 
 	return self;
+}
+
+// -----------------------------------------------------------------------------
+// Дисассемблер
+// -----------------------------------------------------------------------------
+
+static const char *cond[] =
+{
+	"NZ", "Z", "NC", "C", "PO", "PE", "P", "M"
+};
+
+static const char *rst[] =
+{
+	"0", "1", "2", "3", "4", "5", "6", "7"
+};
+
+static const char *reg[] =
+{
+	"B", "C", "D", "E", "H", "L", "M", "A"
+};
+
+static const char *push_rp[] =
+{
+	"B", "D", "H", "PSW"
+};
+
+static const char *rp[] =
+{
+	"B", "D", "H", "SP"
+};
+
+struct arg_t
+{
+	int type; /* 1 - next byte, 2 - next word, 3 - in opcode */
+
+	int shift;
+	int mask;
+
+	const char **fmt;
+};
+
+struct opcode_t
+{
+	uint8_t cmd;
+	uint8_t size;
+	const char *name;
+	struct arg_t arg1;
+	struct arg_t arg2;
+};
+
+static struct opcode_t opcodes[] =
+{
+	{ 0x76, 1, "HLT" },
+	{ 0x06, 2, "MVI", { 3, 3, 7, reg }, { 1 } },
+	{ 0xc3, 3, "JMP", { 2 } },
+	{ 0x40, 1, "MOV", { 3, 3, 7, reg }, { 3, 0, 7, reg } },
+	{ 0x01, 3, "LXI", { 3, 4, 3, rp }, { 2 } },
+	{ 0x32, 3, "STA", { 2 } },
+	{ 0x3a, 3, "LDA", { 2 } },
+	{ 0x2a, 3, "LHLD", { 2 } },
+	{ 0x22, 3, "SHLD", { 2 } },
+	{ 0x0a, 1, "LDAX", { 3, 4, 1, rp } },
+	{ 0x02, 1, "STAX", { 3, 4, 1, rp } },
+	{ 0xeb, 1, "XCHG" },
+	{ 0xf9, 1, "SPHL" },
+	{ 0xe3, 1, "XTHL" },
+	{ 0xc5, 1, "PUSH", { 3, 4, 3, push_rp } },
+	{ 0xc1, 1, "POP", { 3, 4, 3, push_rp } },
+	{ 0xdb, 2, "IN", { 1 } },
+	{ 0xd3, 2, "OUT", { 1 } },
+	{ 0x03, 1, "INX", { 3, 4, 3, rp } },
+	{ 0x0b, 1, "DCX", { 3, 4, 3, rp } },
+	{ 0x04, 1, "INR", { 3, 3, 7, reg } },
+	{ 0x05, 1, "DCR", { 3, 3, 7, reg } },
+	{ 0x09, 1, "DAD", { 3, 4, 3, rp } },
+	{ 0x2f, 1, "CMA" },
+	{ 0x07, 1, "RLC" },
+	{ 0x0f, 1, "RRC" },
+	{ 0x17, 1, "RAL" },
+	{ 0x1f, 1, "RAR" },
+	{ 0xfb, 1, "EI" },
+	{ 0xf3, 1, "DI" },
+	{ 0x00, 1, "NOP" },
+	{ 0x37, 1, "STC" },
+	{ 0x3f, 1, "CMC" },
+	{ 0xe9, 1, "PCHL" },
+	{ 0x27, 1, "DAA" },
+	{ 0xcd, 3, "CALL", { 2 } },
+	{ 0xc9, 1, "RET" },
+	{ 0xc7, 1, "RST", { 3, 3, 7, rst } },
+	{ 0xc0, 1, "R", { 3, 3, 7, cond } },
+	{ 0xc2, 3, "J", { 3, 3, 7, cond }, { 2 } },
+	{ 0xc4, 3, "C", { 3, 3, 7, cond }, { 2 } },
+	{ 0x80, 1, "ADD", { 3, 0, 7, reg } },
+	{ 0x80|0x46, 2, "ADI", { 1 } },
+	{ 0x88, 1, "ADC", { 3, 0, 7, reg } },
+	{ 0x88|0x46, 2, "ACI", { 1 } },
+	{ 0x90, 1, "SUB", { 3, 0, 7, reg } },
+	{ 0x90|0x46, 2, "SUI", { 1 } },
+	{ 0x98, 1, "SBB", { 3, 0, 7, reg } },
+	{ 0x98|0x46, 2, "SBI", { 1 } },
+	{ 0xa0, 1, "ANA", { 3, 0, 7, reg } },
+	{ 0xa0|0x46, 2, "ANI", { 1 } },
+	{ 0xa8, 1, "XRA", { 3, 0, 7, reg } },
+	{ 0xa8|0x46, 2, "XRI", { 1 } },
+	{ 0xb0, 1, "ORA", { 3, 0, 7, reg } },
+	{ 0xb0|0x46, 2, "ORI", { 1 } },
+	{ 0xb8, 1, "CMP", { 3, 0, 7, reg } },
+	{ 0xb8|0x46, 2, "CPI", { 1 } },
+	{ 0x00, 1, "NOP" },
+
+	{ 0x08, 1, "'NOP" },
+	{ 0x10, 1, "'NOP" },
+	{ 0x18, 1, "'NOP" },
+	{ 0x20, 1, "'NOP" },
+	{ 0x28, 1, "'NOP" },
+	{ 0x30, 1, "'NOP" },
+	{ 0x38, 1, "'NOP" },
+
+	{ 0xCB, 3, "'JMP", { 2 } },
+	{ 0xD9, 1, "'RET" },
+
+	{ 0xDD, 3, "'CALL", { 2 } },
+	{ 0xED, 3, "'CALL", { 2 } },
+	{ 0xFD, 3, "'CALL", { 2 } },
+
+	{ 0x00, 0 }
+};
+
+- (unsigned) dasm:(unsigned)addres out:(NSMutableString *)out
+{
+	NSString *unicode = @" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ";
+
+	uint8_t page = (addres >> 16) & 0x0F;
+	uint16_t addr = addres & 0xFFFF;
+
+	[out appendFormat:@"%04X:  ", addr];
+
+	const uint8_t *ptr = RDMEM[page][addr];
+
+	if (!ptr && [RD[page][addr] respondsToSelector:@selector(BYTE:)])
+		ptr = [(NSObject<BYTE>*)RD[page][addr] BYTE:addr];
+
+	addr++; if (ptr)
+	{
+		unichar chr0 = *ptr >= 0x20 && *ptr < 0x7F ? [unicode characterAtIndex:*ptr - 0x20] : '.';
+
+		uint8_t cmd = *ptr; for (struct opcode_t const *op = &opcodes[0]; op->size; op++)
+		{
+			uint8_t grp = cmd & ~((op->arg1.mask << op->arg1.shift) | (op->arg2.mask << op->arg2.shift));
+			BOOL branch = (grp == 0xC0 || grp == 0xC2 || grp == 0xC4);
+
+			if (grp == op->cmd)
+			{
+				NSString *byte1 = @"  "; unichar chr1 = ' '; if (op->size >= 2)
+				{
+					if (!(ptr = RDMEM[page][addr]) && [RD[page][addr] respondsToSelector:@selector(BYTE:)])
+						ptr = [(NSObject<BYTE>*)RD[page][addr] BYTE:addr];
+
+					addr++;
+
+					chr1 = ptr && *ptr >= 0x20 && *ptr < 0x7F ? [unicode characterAtIndex:*ptr - 0x20] : '.';
+					byte1 = ptr ? [NSString stringWithFormat:@"%02X", *ptr] : @"??";
+				}
+
+				NSString *byte2 = @"  "; unichar chr2 = ' '; if (op->size >= 3)
+				{
+					if (!(ptr = RDMEM[page][addr]) && [RD[page][addr] respondsToSelector:@selector(BYTE:)])
+						ptr = [(NSObject<BYTE>*)RD[page][addr] BYTE:addr];
+
+					addr++;
+
+					chr2= ptr && *ptr >= 0x20 && *ptr < 0x7F ? [unicode characterAtIndex:*ptr - 0x20] : '.';
+					byte2 = ptr ? [NSString stringWithFormat:@"%02X", *ptr] : @"??";
+				}
+
+				if (!branch)
+					[out appendFormat:@"%02X %@ %@  %C%C%C   %-8s", cmd, byte1, byte2, chr0, chr1, chr2, op->name];
+				else
+					[out appendFormat:@"%02X %@ %@  %C%C%C   %s", cmd, byte1, byte2, chr0, chr1, chr2, op->name];
+
+				if (op->arg1.type == 3)
+				{
+					if (branch)
+						[out appendFormat:@"%-7s", op->arg1.fmt[(cmd >> op->arg1.shift) & op->arg1.mask]];
+					else
+						[out appendFormat:@"%s", op->arg1.fmt[(cmd >> op->arg1.shift) & op->arg1.mask]];
+				}
+				else if (op->arg1.type == 2)
+					[out appendFormat:@"%@%@", byte2, byte1];
+				else if (op->arg1.type == 1)
+					[out appendString:byte1];
+
+				if (op->arg2.type == 3)
+					[out appendFormat:@", %s", op->arg2.fmt[(cmd >> op->arg2.shift) & op->arg2.mask]];
+				else if (op->arg2.type == 2)
+				{
+					if (!branch)
+						[out appendFormat:@", %@%@", byte2, byte1];
+					else
+						[out appendFormat:@"%@%@", byte2, byte1];
+				}
+				else if (op->arg2.type == 1)
+					[out appendFormat:@", %@", byte1];
+
+				break;
+			}
+		}
+	}
+	else
+	{
+		[out appendString:@"??"];
+	}
+
+	[out appendString:@"\n"];
+	return (page << 16) | addr;
+}
+
+// -----------------------------------------------------------------------------
+// dump памяти
+// -----------------------------------------------------------------------------
+
+- (unsigned) dump:(unsigned)addres end:(uint16_t)end out:(NSMutableString *)out
+{
+	NSString *unicode = @" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ";
+
+	uint8_t page = (addres >> 16) & 0x0F;
+	uint16_t addr = addres & 0xFFFF;
+
+	NSMutableString *chr = [[NSMutableString alloc] init];
+
+	if (addr & 0xF)
+	{
+		[out appendFormat:@"%04X:  %*c", addr & 0xFFF0, (addr & 0xF) * 3, ' '];
+		[chr appendFormat:@"%*c", addr & 0xF, ' '];
+	}
+	else
+	{
+		[out appendFormat:@"%04X:  ", addr];
+	}
+
+	do
+	{
+		const uint8_t *ptr = RDMEM[page][addr];
+
+		if (!ptr && [RD[page][addr] respondsToSelector:@selector(BYTE:)])
+			ptr = [(NSObject<BYTE>*)RD[page][addr] BYTE:addr];
+
+		if (ptr)
+		{
+			[out appendFormat:@"%02X ", *ptr];
+
+			if (*ptr >= 0x020 && *ptr < 0x7F)
+				[chr appendFormat:@"%C", [unicode characterAtIndex:*ptr - 0x20]];
+			else
+				[chr appendString:@"."];
+		}
+		else
+		{
+			[out appendString:@"?? "];
+			[chr appendString:@"."];
+		}
+
+	} while (addr++ != end && addr & 0xF);
+
+	if (addr & 0x0F)
+		[out appendFormat:@" %*c%@\n", (0x10 - addr & 0x0F) * 3, ' ', chr];
+	else
+		[out appendFormat:@" %@\n", chr];
+
+	return (page << 16) | addr;
+}
+
+// -----------------------------------------------------------------------------
+// Текущие регистры процессора
+// -----------------------------------------------------------------------------
+
+- (void) regs:(NSMutableString *)out
+{
+	[out appendFormat:@"A=%02X   BC=%04X DE=%04X HL=%04X SP=%04X   F=%02X (%c%c%c%c%c)   %cI",
+		AF.A, BC.BC, DE.DE, HL.HL, SP.SP, AF.F,
+		AF.F & 0x80 ? 'S' : '-',
+		AF.F & 0x40 ? 'Z' : '-',
+		AF.F & 0x10 ? 'A' : '-',
+		AF.F & 0x04 ? 'P' : '-',
+		AF.F & 0x01 ? 'C' : '-',
+		IF ? 'E' : 'D'
+	 ];
+
+	if (PAGE)
+		[out appendFormat:@"   PAGE:%X\n", PAGE];
+	else
+		[out appendString:@"\n"];
+
+	lastU = [self dasm:(PAGE << 16) | PC.PC out:out];
+}
+
+// -----------------------------------------------------------------------------
+//
+// -----------------------------------------------------------------------------
+
+- (BOOL) addr:(unsigned *)addr fromString:(NSString *)string
+{
+	NSArray *array = [string componentsSeparatedByString:@":"];
+	if (array.count > 2) return FALSE;
+
+	unsigned page = *addr >> 16; if (array.count > 1)
+	{
+		NSScanner *scaner = [NSScanner scannerWithString:array.firstObject];
+		if (![scaner scanHexInt:&page] || page > 15) return FALSE;
+	}
+
+	unsigned temp; NSScanner *scaner = [NSScanner scannerWithString:array.lastObject];
+	if (![scaner scanHexInt:&temp] || temp > 0xFFFF) return FALSE;
+
+	*addr = (page << 16) | temp;
+	return TRUE;
+}
+
+// -----------------------------------------------------------------------------
+// Отладчик
+// -----------------------------------------------------------------------------
+
+- (NSString *) debugCommand:(NSString *)command
+{
+	NSMutableString *out = [[NSMutableString alloc] init];
+
+	if (command == nil)
+	{
+		[out appendString:@"\n"];
+		[self regs:out];
+
+		lastD = PAGE << 16;
+		STOP = -1;
+	}
+
+	else if (command.length != 0)
+	{
+		NSArray *array = [command componentsSeparatedByString:@","];
+		unichar cmd = [command characterAtIndex:0];
+
+		if (cmd == 'U')
+		{
+			if (array.count > 2)
+				[out appendString:@"Неверное число аргументов\n"];
+
+			else if (((NSString *) array.firstObject).length > 1 && ![self addr:&lastU fromString:[array.firstObject substringFromIndex:1]])
+				[out appendString:@"Ошибка в стартовом адресе\n"];
+
+			else if (array.count > 1)
+			{
+				unsigned end = lastU; if (![self addr:&end fromString:[array objectAtIndex:1]] || (end & 0xF0000) != (lastU & 0xF0000))
+					[out appendString:@"Ошибка в конечном адресе\n"];
+
+				for (int i = 0; i < 100000 && lastU < end; i++)
+					lastU = [self dasm:lastU out:out];
+			}
+
+			else for (int i = 0; i < 16; i++)
+				lastU = [self dasm:lastU out:out];
+		}
+
+		else if (cmd == 'D')
+		{
+			if (array.count > 2)
+				[out appendString:@"Неверное число аргументов\n"];
+
+			else if (((NSString *) array.firstObject).length > 1 && ![self addr:&lastD fromString:[array.firstObject substringFromIndex:1]])
+				[out appendString:@"Ошибка в стартовом адресе\n"];
+
+			else if (array.count > 1)
+			{
+				unsigned end = lastD; if (![self addr:&end fromString:[array objectAtIndex:1]] || (end & 0xF0000) != (lastD & 0xF0000))
+					[out appendString:@"Ошибка в конечном адресе\n"];
+
+				while ((lastD = [self dump:lastD end:end & 0xFFFF out:out]) < end && (lastD & 0xFFFF));
+			}
+
+			else for (int i = 0; i < 16; i++)
+				lastD = [self dump:lastD end:0xFFFF out:out];
+		}
+
+		else if (cmd == 'G')
+		{
+			if (array.count > 2)
+				[out appendString:@"Неверное число аргументов\n"];
+
+			else if (((NSString *) array.firstObject).length > 1)
+			{
+				unsigned addr = PAGE << 16; if (![self addr:&addr fromString:[array.firstObject substringFromIndex:1]])
+					[out appendString:@"Ошибка в адресе останова\n"];
+
+				else
+				{
+					STOP = addr;
+					return nil;
+				}
+			}
+
+			else
+			{
+				STOP = -2;
+				return nil;
+			}
+		}
+
+		else if (cmd == 'X')
+		{
+			if (array.count > 1 || ((NSString *) array.firstObject).length > 1)
+				[out appendString:@"Неверное число аргументов\n"];
+
+			else
+			{
+				[self regs:out];
+			}
+		}
+
+		else if (cmd == 'T')
+		{
+			if (array.count > 1 || ((NSString *) array.firstObject).length > 1)
+				[out appendString:@"Неверное число аргументов\n"];
+
+			else
+			{
+				[self execute:CLK + 1];
+				[self regs:out];
+			}
+		}
+
+		else if (cmd == 'P')
+		{
+			if (array.count > 1 || ((NSString *) array.firstObject).length > 1)
+				[out appendString:@"Неверное число аргументов\n"];
+
+			else
+			{
+				const uint8_t *ptr = RDMEM[PAGE][PC.PC];
+
+				if (!ptr && [RD[PAGE][PC.PC] respondsToSelector:@selector(BYTE:)])
+					ptr = [(NSObject<BYTE>*)RD[PAGE][PC.PC] BYTE:PC.PC];
+
+				if (ptr && (((*ptr & 0xCF) == 0xCD) || ((*ptr & 0xC7) == 0xC4)|| (*ptr & 0xC7) == 0xC2))
+				{
+					STOP = (PAGE << 16) | ((PC.PC + 3) & 0xFFFF);
+					return nil;
+				}
+
+				/*else if (ptr && )
+				{
+					if (test(*ptr, AF.F))
+					{
+						STOP = (PAGE << 16) | ((PC.PC + 3) & 0xFFFF);
+						return nil;
+					}
+					else
+					{
+						const uint8_t *ptr1 = RDMEM[PAGE][PC.PC+1];
+
+						if (!ptr1 && [RD[PAGE][PC.PC+1] respondsToSelector:@selector(BYTE:)])
+							ptr1 = [(NSObject<BYTE>*)RD[PAGE][PC.PC+1] BYTE:PC.PC+1];
+
+						const uint8_t *ptr2 = RDMEM[PAGE][PC.PC+2];
+
+						if (!ptr2 && [RD[PAGE][PC.PC+2] respondsToSelector:@selector(BYTE:)])
+							ptr2 = [(NSObject<BYTE>*)RD[PAGE][PC.PC+2] BYTE:PC.PC+2];
+
+						if (ptr1 && ptr2)
+						{
+							STOP = (PAGE << 16) | (*ptr2 << 16) | *ptr1;
+							return nil;
+						}
+						else
+						{
+							[self execute:CLK + 1];
+							[self regs:out];
+						}
+
+					}
+				}*/
+				else
+				{
+					[self execute:CLK + 1];
+					[self regs:out];
+				}
+			}
+		}
+
+		else
+		{
+			[out appendString:@"Неизвестная директива\n"];
+		}
+	}
+
+	[out appendString:@"# "];
+	return out;
 }
 
 // -----------------------------------------------------------------------------

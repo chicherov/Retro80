@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="6250" systemVersion="14A389" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="7531" systemVersion="14D136" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="6250"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="7531"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="Document">
             <connections>
+                <outlet property="debug" destination="cIB-lr-ra9" id="19G-Q9-g4J"/>
                 <outlet property="display" destination="ELn-iW-TvI" id="ZFd-fu-f5l"/>
                 <outlet property="sound" destination="43H-H2-5a3" id="lGS-Fe-enX"/>
                 <outlet property="window" destination="O9k-RO-V98" id="IgL-Za-qFb"/>
@@ -14,18 +15,24 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
+        <customObject id="cIB-lr-ra9" customClass="Debug">
+            <connections>
+                <outlet property="panel" destination="01n-hT-pln" id="yQi-Nc-LMg"/>
+                <outlet property="textView" destination="FeX-Q1-ED0" id="Ri7-gq-ch2"/>
+            </connections>
+        </customObject>
         <customObject id="43H-H2-5a3" customClass="Sound">
             <connections>
                 <outlet property="document" destination="-2" id="fOa-tp-zfq"/>
                 <outlet property="textField" destination="ggy-Fu-duH" id="h4r-9z-4l3"/>
             </connections>
         </customObject>
-        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="O9k-RO-V98">
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="O9k-RO-V98" userLabel="Computer Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowCollectionBehavior key="collectionBehavior" fullScreenPrimary="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="100" y="500" width="468" height="322"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
             <value key="minSize" type="size" width="468" height="322"/>
             <view key="contentView" id="VHf-sT-NAQ">
                 <rect key="frame" x="0.0" y="0.0" width="468" height="322"/>
@@ -65,5 +72,58 @@
                 <outlet property="delegate" destination="ELn-iW-TvI" id="Zbw-gI-0q3"/>
             </connections>
         </window>
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES"/>
+            <rect key="contentRect" x="167" y="107" width="750" height="500"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
+            <view key="contentView" id="qfh-TF-8L7">
+                <rect key="frame" x="0.0" y="0.0" width="750" height="500"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <scrollView horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iyn-3Z-4XL">
+                        <rect key="frame" x="0.0" y="0.0" width="750" height="500"/>
+                        <clipView key="contentView" id="EOO-jY-kaX">
+                            <rect key="frame" x="1" y="1" width="223" height="133"/>
+                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <subviews>
+                                <textView importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" id="FeX-Q1-ED0">
+                                    <rect key="frame" x="0.0" y="0.0" width="778" height="518"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    <size key="minSize" width="748" height="498"/>
+                                    <size key="maxSize" width="1048" height="10000000"/>
+                                    <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                    <size key="minSize" width="748" height="498"/>
+                                    <size key="maxSize" width="1048" height="10000000"/>
+                                    <connections>
+                                        <outlet property="delegate" destination="cIB-lr-ra9" id="LaI-he-zOY"/>
+                                    </connections>
+                                </textView>
+                            </subviews>
+                            <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                        </clipView>
+                        <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="nBZ-0w-kKW">
+                            <rect key="frame" x="-100" y="-100" width="87" height="18"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </scroller>
+                        <scroller key="verticalScroller" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="HgN-ys-NyT">
+                            <rect key="frame" x="224" y="1" width="15" height="133"/>
+                            <autoresizingMask key="autoresizingMask"/>
+                        </scroller>
+                    </scrollView>
+                </subviews>
+                <constraints>
+                    <constraint firstAttribute="bottom" secondItem="iyn-3Z-4XL" secondAttribute="bottom" id="7qR-sf-gA1"/>
+                    <constraint firstAttribute="trailing" secondItem="iyn-3Z-4XL" secondAttribute="trailing" id="MdJ-k2-H5i"/>
+                    <constraint firstItem="iyn-3Z-4XL" firstAttribute="top" secondItem="qfh-TF-8L7" secondAttribute="top" id="dwa-hw-fsF"/>
+                    <constraint firstItem="iyn-3Z-4XL" firstAttribute="leading" secondItem="qfh-TF-8L7" secondAttribute="leading" id="n4T-LE-wL0"/>
+                </constraints>
+            </view>
+            <connections>
+                <binding destination="-2" name="title" keyPath="self.displayName" id="LhF-Tj-gx3"/>
+                <outlet property="delegate" destination="cIB-lr-ra9" id="jUe-gt-fN6"/>
+            </connections>
+        </window>
+        <userDefaultsController representsSharedInstance="YES" id="IYS-hL-LV0"/>
     </objects>
 </document>

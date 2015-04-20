@@ -62,6 +62,7 @@
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
+		D9F1C41A1AE189F900E927F7 /* Debug.m in Sources */ = {isa = PBXBuildFile; fileRef = D9F1C4191AE189F900E927F7 /* Debug.m */; };
 		D9FE179D19B9F874008EBD32 /* Computer.m in Sources */ = {isa = PBXBuildFile; fileRef = D9FE179C19B9F874008EBD32 /* Computer.m */; };
 /* End PBXBuildFile section */
 
@@ -177,6 +178,8 @@
 		D9EBB62619B47ECA00C833CA /* mem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = mem.m; sourceTree = "<group>"; };
 		D9EC82C619BEBD5800384F94 /* ru */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ru; path = ru.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		D9EC82C719BEBD5800384F94 /* ru */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ru; path = ru.lproj/Document.xib; sourceTree = "<group>"; };
+		D9F1C4181AE189F900E927F7 /* Debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Debug.h; sourceTree = "<group>"; };
+		D9F1C4191AE189F900E927F7 /* Debug.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Debug.m; sourceTree = "<group>"; };
 		D9FE179C19B9F874008EBD32 /* Computer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Computer.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -270,6 +273,8 @@
 				D974FCCB19ADEA080041DF91 /* Display.m */,
 				D91FBD7C19AE60A70002128E /* Sound.h */,
 				D91FBD7D19AE60A70002128E /* Sound.m */,
+				D9F1C4181AE189F900E927F7 /* Debug.h */,
+				D9F1C4191AE189F900E927F7 /* Debug.m */,
 				D9EBB62119B47E1A00C833CA /* X8080 */,
 				D974FCEB19AE10640041DF91 /* Radio86RK */,
 				D967B3E419B4588800C3ED9A /* Micro80 */,
@@ -515,6 +520,7 @@
 				D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */,
 				D9A4245319B8310B00DAA3E0 /* x8253.m in Sources */,
 				D982B4E719BCB62C005350CC /* Floppy.m in Sources */,
+				D9F1C41A1AE189F900E927F7 /* Debug.m in Sources */,
 				D974FCCF19ADEBF00041DF91 /* WindowController.m in Sources */,
 				D9A4245519B8310B00DAA3E0 /* x8275.m in Sources */,
 				D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */,

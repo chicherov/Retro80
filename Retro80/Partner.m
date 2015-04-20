@@ -116,7 +116,7 @@
 
 - (BOOL) createObjects
 {
-	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
+	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0x00000]) == nil)
 		return FALSE;
 
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Partner" mask:0x1FFF]) == nil)
@@ -165,50 +165,34 @@
 
 - (BOOL) mapObjects
 {
-	static uint16_t fonts[16] =
-	{
-		0x0000, 0x1000, 0x0000, 0x1000,
-		0x0400, 0x1400, 0x0400, 0x1400,
-		0x0800, 0x1800, 0x0800, 0x1800,
-		0x0C00, 0x1C00, 0x0C00, 0x1C00
-	};
-
-	[self.crt setColors:NULL attributesMask:0x3F shiftMask:0x3D];
-	[self.crt setFonts:fonts];
-
-	// Системный регистр 1
+	// Системный регистр 1 и окошки для внешних устройств
 
 	if ((self.sys1 = [[PartnerSystem1 alloc] init]) == nil)
 		return FALSE;
 
-	self.sys1.cpu = self.cpu;
-	self.sys1.crt = self.crt;
+	if ((self.win1 = [[PartnerExternal alloc] init]) == nil)
+		return FALSE;
 
-	// Окошки для внешних устройств
-
-	self.win1 = [[PartnerExternal alloc] init];
-	self.win2 = [[PartnerExternal alloc] init];
+	if ((self.win2 = [[PartnerExternal alloc] init]) == nil)
+		return FALSE;
 	
-	// Системный регистр 2
+	for (uint8_t page = 0x0; page <= 10; page++)
+	{
+		// Область D800-DFFF всегда принадлежит системным контролерам
 
-	self.sys2.partner = self;
-	self.sys2.slot = self.sys2.slot;
-	self.sys2.mcpg = self.sys2.mcpg;
+		[self.cpu mapObject:self.crt	atPage:page from:0xD800 to:0xD8FF];
+		[self.cpu mapObject:self.kbd	atPage:page from:0xD900 to:0xD9FF];
+		[self.cpu mapObject:self.sys1	atPage:page from:0xDA00 to:0xDAFF RD:nil];
+		[self.cpu mapObject:self.dma	atPage:page from:0xDB00 to:0xDBFF];
+		[self.cpu mapObject:self.sys2	atPage:page from:0xDC00 to:0xDFFF];
 
-	// Область D800-DFFF всегда принадлежит системным контролерам
+		// Страница 2 идет в виде базовой страницы
 
-	[self.cpu mapObject:self.crt	from:0xD800 to:0xD8FF];
-	[self.cpu mapObject:self.kbd	from:0xD900 to:0xD9FF];
-	[self.cpu mapObject:self.sys1	from:0xDA00 to:0xDAFF RD:nil];
-	[self.cpu mapObject:self.dma	from:0xDB00 to:0xDBFF];
-	[self.cpu mapObject:self.sys2	from:0xDC00 to:0xDFFF];
+		[self.cpu mapObject:self.ram	atPage:page from:0x0000 to:0xD7FF];
 
-	// Страница 2 идет в виде базовой страницы
-
-	[self.cpu mapObject:self.ram	from:0x0000 to:0xD7FF];
-
-	[self.cpu mapObject:self.win1	from:0xE000 to:0xE7FF];
-	[self.cpu mapObject:self.rom	from:0xE800 to:0xFFFF WR:nil];
+		[self.cpu mapObject:self.win1	atPage:page from:0xE000 to:0xE7FF];
+		[self.cpu mapObject:self.rom	atPage:page from:0xE800 to:0xFFFF WR:nil];
+	}
 
 	// Страница 0, с адреса 0000 идут первые 2К монитора
 	// Предназначена для старта по Reset
@@ -264,12 +248,43 @@
 	[self.cpu mapObject:self.win2	atPage:10 from:0x8000 to:0xBFFF];
 	[self.cpu mapObject:self.rom	atPage:10 from:0xC000 to:0xCFFF WR:nil];
 
+	// КР580ВГ75
+
+	static uint16_t fonts[16] =
+	{
+		0x0000, 0x1000, 0x0000, 0x1000,
+		0x0400, 0x1400, 0x0400, 0x1400,
+		0x0800, 0x1800, 0x0800, 0x1800,
+		0x0C00, 0x1C00, 0x0C00, 0x1C00
+	};
+
+	[self.crt setColors:NULL attributesMask:0x3F shiftMask:0x3D];
+	[self.crt setFonts:fonts];
+	
+	// Системный регистр 1
+
+	self.sys1.cpu = self.cpu;
+	self.sys1.crt = self.crt;
+
+	// Системный регистр 2
+
+	self.sys2.partner = self;
+	self.sys2.slot = self.sys2.slot;
+	self.sys2.mcpg = self.sys2.mcpg;
+
+	// Контроллер прерывания
+
 	self.cpu.INTA = self.sys1;
 	self.cpu.INTR = self.crt;
+
 	self.cpu.FF = TRUE;
+
+	// Контроллер НГМД
 
 	self.dma.DMA0 = self.floppy;
 	[self.cpu addObjectToRESET:self.floppy];
+
+	// Хуки
 
 	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
 
@@ -488,6 +503,14 @@
 {
 	if ([object conformsToProtocol:@protocol(WR)])
 		[(NSObject<WR> *)object WR:addr byte:data CLK:clock];
+}
+
+- (uint8_t *) BYTE:(uint16_t)addr
+{
+	if ([object conformsToProtocol:@protocol(BYTE)])
+		return [(NSObject<BYTE> *)object BYTE:addr];
+	else
+		return 0;
 }
 
 @end

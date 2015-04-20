@@ -166,6 +166,9 @@ static uint32_t colors[] =
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
 		return FALSE;
 
+	if ((self.ram = [[RAM alloc] initWithLength:0x8000 mask:0xFFFF]) == nil)
+		return FALSE;
+
 	if ((self.kbd = [[MicroshaKeyboard alloc] init]) == nil)
 		return FALSE;
 

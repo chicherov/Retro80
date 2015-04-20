@@ -22,10 +22,8 @@
 
 - (BOOL) createObjects
 {
-	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000]) == nil)
+	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0xF800]) == nil)
 		return FALSE;
-
-	self.cpu.START = 0xF800;
 
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
 		return FALSE;
