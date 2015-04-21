@@ -128,9 +128,14 @@
 
 - (id) initWithContentsOfResource:(NSString*)name mask:(uint16_t)msk
 {
+	return [self initWithData:[NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:name ofType:@"bin"]] mask:msk];
+}
+
+- (id) initWithData:(NSData *)data mask:(uint16_t)msk
+{
 	if (self = [super init])
 	{
-		if ((memory = [NSMutableData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:name ofType:@"bin"]]) == nil)
+		if ((memory = [NSMutableData dataWithData:data]) == nil)
 			return self = nil;
 
 		if ((length = memory.length) == 0)

@@ -12,14 +12,11 @@
 
 - (BOOL) createObjects
 {
-	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0x7FFF]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000 start:0xF800]) == nil)
 		return FALSE;
 
-	if (self.cpu == nil)
-	{
-		if ((self.cpu = [[X8080 alloc] initWithQuartz:16000000 start:0xF800]) == nil)
-			return FALSE;
-	}
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0xFFFF]) == nil)
+		return FALSE;
 
 	if (self.crt == nil && (self.crt = [[X8275 alloc] init]) == nil)
 		return FALSE;

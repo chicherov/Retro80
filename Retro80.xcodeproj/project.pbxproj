@@ -10,7 +10,6 @@
 		D91B89EF1ABC8EF8002F70DC /* SpecialistMX.bin in Resources */ = {isa = PBXBuildFile; fileRef = D91B89EE1ABC8EF8002F70DC /* SpecialistMX.bin */; };
 		D91FBD7E19AE60A70002128E /* Sound.m in Sources */ = {isa = PBXBuildFile; fileRef = D91FBD7D19AE60A70002128E /* Sound.m */; };
 		D92894F71AB2DDD50039C236 /* SpecialistSP580.bin in Resources */ = {isa = PBXBuildFile; fileRef = D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */; };
-		D929487D19B484D5009BC312 /* TextScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = D929487C19B484D5009BC312 /* TextScreen.m */; };
 		D929488219B5850C009BC312 /* RKKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D929487F19B5850C009BC312 /* RKKeyboard.m */; };
 		D929488319B5850C009BC312 /* RKRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = D929488119B5850C009BC312 /* RKRecorder.m */; };
 		D93DC7341AB2AF410005D473 /* SpecialistW.bin in Resources */ = {isa = PBXBuildFile; fileRef = D93DC7331AB2AF410005D473 /* SpecialistW.bin */; };
@@ -95,8 +94,6 @@
 		D91FBD7C19AE60A70002128E /* Sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sound.h; sourceTree = "<group>"; };
 		D91FBD7D19AE60A70002128E /* Sound.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Sound.m; sourceTree = "<group>"; };
 		D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistSP580.bin; path = Retro80/ROM/SpecialistSP580.bin; sourceTree = "<group>"; };
-		D929487B19B484D5009BC312 /* TextScreen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextScreen.h; sourceTree = "<group>"; };
-		D929487C19B484D5009BC312 /* TextScreen.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TextScreen.m; sourceTree = "<group>"; };
 		D929487E19B5850C009BC312 /* RKKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RKKeyboard.h; sourceTree = "<group>"; };
 		D929487F19B5850C009BC312 /* RKKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RKKeyboard.m; sourceTree = "<group>"; };
 		D929488019B5850C009BC312 /* RKRecorder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RKRecorder.h; sourceTree = "<group>"; };
@@ -234,8 +231,6 @@
 				D967B3DF19B457E000C3ED9A /* Micro80.m */,
 				D967B3E119B4584200C3ED9A /* UT88.h */,
 				D967B3E219B4584200C3ED9A /* UT88.m */,
-				D929487B19B484D5009BC312 /* TextScreen.h */,
-				D929487C19B484D5009BC312 /* TextScreen.m */,
 			);
 			name = Micro80;
 			sourceTree = "<group>";
@@ -536,7 +531,6 @@
 				D994F55F1ADBAB6C002408E8 /* SpecialistMX.m in Sources */,
 				D9EBB62919B47ECA00C833CA /* mem.m in Sources */,
 				D974FCA019ADE9450041DF91 /* main.m in Sources */,
-				D929487D19B484D5009BC312 /* TextScreen.m in Sources */,
 				D994F5561ADBA613002408E8 /* SpecialistScreen.m in Sources */,
 				D99121C91AB164F700A95BBB /* Specialist.m in Sources */,
 				D9FE179D19B9F874008EBD32 /* Computer.m in Sources */,

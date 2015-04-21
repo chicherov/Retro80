@@ -5,9 +5,20 @@
 #import "x8080.h"
 #import "mem.h"
 
-#import "TextScreen.h"
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
+#import "Display.h"
+
+// -----------------------------------------------------------------------------
+// Дисплей "Микро-80"
+// -----------------------------------------------------------------------------
+
+@interface Micro80Screen : NSObject <DisplayController, WR, NSCoding>
+
+@property NSObject <WR> *WR;
+@property Display *display;
+
+@end
 
 // -----------------------------------------------------------------------------
 // Интерфейс сопряжения "Микро-80"
@@ -35,7 +46,7 @@
 @property ROM *rom;
 @property RAM *ram;
 
-@property TextScreen *crt;
+@property Micro80Screen *crt;
 
 @property Micro80Recorder *snd;
 @property Micro80Keyboard *kbd;

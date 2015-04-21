@@ -33,6 +33,7 @@
 @interface ROM : NSObject <RD, BYTE, NSCoding>
 
 - (id) initWithContentsOfResource:(NSString *)name mask:(uint16_t)mask;
+- (id) initWithData:(NSData *)data mask:(uint16_t)mask;
 
 @property (readonly) uint8_t *mutableBytes;
 @property (readonly) NSUInteger length;
