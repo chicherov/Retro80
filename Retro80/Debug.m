@@ -35,27 +35,20 @@
 
 - (BOOL) textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)affectedCharRange replacementString:(NSString *)replacementString
 {
-	if (debugger != nil && replacementString != nil && affectedCharRange.location >= range.location)
-		return TRUE;
-
-//	range.length = self.textView.textStorage.length - range.location;
-//	textView.selectedRange = NSMakeRange(NSMaxRange(range), 0);
-//	[textView scrollRangeToVisible:range];
-	return FALSE;
+	return debugger != nil && replacementString != nil && affectedCharRange.location >= range.location;
 }
 
 - (void) textDidChange:(NSNotification *)notification
 {
 	range.length = self.textView.textStorage.length - range.location;
 
-	NSString *string = [self.textView.textStorage attributedSubstringFromRange:range].string.uppercaseString;
+	NSString *string = [self.textView.textStorage attributedSubstringFromRange:range].string;
 
 	NSUInteger lf = [string rangeOfString:@"\n"].location; if (lf != NSNotFound)
 	{
-		[self.textView replaceCharactersInRange:range
-									 withString:[string substringToIndex:lf + 1]];
-
-		range.location += lf + 1;
+		string = string.uppercaseString;
+		[self.textView replaceCharactersInRange:range withString:string];
+		range.location += lf + 1; range.length = 0;
 
 		if ((string = [debugger debugCommand:[string substringToIndex:lf]]) == nil)
 		{
@@ -64,22 +57,11 @@
 		}
 		else
 		{
-			range.length = 0;
-
 			[self.textView replaceCharactersInRange:range
 										 withString:string];
 
 			range.location += string.length;
 		}
-	}
-	else
-	{
-		NSRange selectedRange = self.textView.selectedRange;
-
-		[self.textView replaceCharactersInRange:range
-									 withString:string];
-
-		self.textView.selectedRange = selectedRange;
 	}
 }
 

@@ -131,11 +131,16 @@
 	// Отладчик
 	// -------------------------------------------------------------------------
 
+	NSString *unicode;
+
 	unsigned STOP;
 
 	unsigned lastU;
 	unsigned lastD;
 }
+
+NSString *koi7 = @".▘▝▀▗▚▐▜........▖▌▞▛▄▙▟█........ !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ.";
+NSString *koi8 = @".▘▝▀▗▚▐▜........▖▌▞▛▄▙▟█........ !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~.................................................................юабцдефгхийклмнопярстужвьызшэщчъЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧЪ";
 
 // -----------------------------------------------------------------------------
 // Доступ к регистрам процессора
@@ -2161,6 +2166,8 @@ static bool test(uint8_t IR, uint8_t F)
 		RESET = TRUE;
 
 		MEMIO = TRUE;
+
+		unicode = koi7;
 		STOP = -1;
 	}
 
@@ -2211,6 +2218,28 @@ static bool test(uint8_t IR, uint8_t F)
 	}
 
 	return self;
+}
+
+// -----------------------------------------------------------------------------
+// Служенные методы для отладчика
+// -----------------------------------------------------------------------------
+
+- (BOOL) addr:(unsigned *)addr fromString:(NSString *)string
+{
+	NSArray *array = [string componentsSeparatedByString:@":"];
+	if (array.count > 2) return FALSE;
+
+	unsigned page = *addr >> 16; if (array.count > 1)
+	{
+		NSScanner *scaner = [NSScanner scannerWithString:array.firstObject];
+		if (![scaner scanHexInt:&page] || page > 15) return FALSE;
+	}
+
+	unsigned temp; NSScanner *scaner = [NSScanner scannerWithString:array.lastObject];
+	if (![scaner scanHexInt:&temp] || temp > 0xFFFF) return FALSE;
+
+	*addr = (page << 16) | temp;
+	return TRUE;
 }
 
 // -----------------------------------------------------------------------------
@@ -2342,8 +2371,6 @@ static struct opcode_t opcodes[] =
 
 - (unsigned) dasm:(unsigned)addres out:(NSMutableString *)out
 {
-	NSString *unicode = @" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ";
-
 	uint8_t page = (addres >> 16) & 0x0F;
 	uint16_t addr = addres & 0xFFFF;
 
@@ -2356,7 +2383,7 @@ static struct opcode_t opcodes[] =
 
 	addr++; if (ptr)
 	{
-		unichar chr0 = *ptr >= 0x20 && *ptr < 0x7F ? [unicode characterAtIndex:*ptr - 0x20] : '.';
+		unichar chr0 = *ptr < unicode.length ? [unicode characterAtIndex:*ptr] : '.';
 
 		uint8_t cmd = *ptr; for (struct opcode_t const *op = &opcodes[0]; op->size; op++)
 		{
@@ -2372,7 +2399,7 @@ static struct opcode_t opcodes[] =
 
 					addr++;
 
-					chr1 = ptr && *ptr >= 0x20 && *ptr < 0x7F ? [unicode characterAtIndex:*ptr - 0x20] : '.';
+					chr1 = *ptr < unicode.length ? [unicode characterAtIndex:*ptr] : '.';
 					byte1 = ptr ? [NSString stringWithFormat:@"%02X", *ptr] : @"??";
 				}
 
@@ -2383,7 +2410,7 @@ static struct opcode_t opcodes[] =
 
 					addr++;
 
-					chr2= ptr && *ptr >= 0x20 && *ptr < 0x7F ? [unicode characterAtIndex:*ptr - 0x20] : '.';
+					chr2 = *ptr < unicode.length ? [unicode characterAtIndex:*ptr] : '.';
 					byte2 = ptr ? [NSString stringWithFormat:@"%02X", *ptr] : @"??";
 				}
 
@@ -2435,8 +2462,6 @@ static struct opcode_t opcodes[] =
 
 - (unsigned) dump:(unsigned)addres end:(uint16_t)end out:(NSMutableString *)out
 {
-	NSString *unicode = @" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ";
-
 	uint8_t page = (addres >> 16) & 0x0F;
 	uint16_t addr = addres & 0xFFFF;
 
@@ -2463,8 +2488,8 @@ static struct opcode_t opcodes[] =
 		{
 			[out appendFormat:@"%02X ", *ptr];
 
-			if (*ptr >= 0x020 && *ptr < 0x7F)
-				[chr appendFormat:@"%C", [unicode characterAtIndex:*ptr - 0x20]];
+			if (*ptr < unicode.length)
+				[chr appendFormat:@"%C", [unicode characterAtIndex:*ptr]];
 			else
 				[chr appendString:@"."];
 		}
@@ -2509,28 +2534,6 @@ static struct opcode_t opcodes[] =
 }
 
 // -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-
-- (BOOL) addr:(unsigned *)addr fromString:(NSString *)string
-{
-	NSArray *array = [string componentsSeparatedByString:@":"];
-	if (array.count > 2) return FALSE;
-
-	unsigned page = *addr >> 16; if (array.count > 1)
-	{
-		NSScanner *scaner = [NSScanner scannerWithString:array.firstObject];
-		if (![scaner scanHexInt:&page] || page > 15) return FALSE;
-	}
-
-	unsigned temp; NSScanner *scaner = [NSScanner scannerWithString:array.lastObject];
-	if (![scaner scanHexInt:&temp] || temp > 0xFFFF) return FALSE;
-
-	*addr = (page << 16) | temp;
-	return TRUE;
-}
-
-// -----------------------------------------------------------------------------
 // Отладчик
 // -----------------------------------------------------------------------------
 
@@ -2552,7 +2555,19 @@ static struct opcode_t opcodes[] =
 		NSArray *array = [command componentsSeparatedByString:@","];
 		unichar cmd = [command characterAtIndex:0];
 
-		if (cmd == 'U')
+		if (cmd == '8')
+		{
+			[out appendString:@"КОИ-8\n"];
+			unicode = koi8;
+		}
+
+		else if (cmd == '7')
+		{
+			[out appendString:@"КОИ-7\n"];
+			unicode = koi7;
+		}
+
+		else if (cmd == 'U')
 		{
 			if (array.count > 2)
 				[out appendString:@"Неверное число аргументов\n"];
@@ -2615,6 +2630,15 @@ static struct opcode_t opcodes[] =
 				STOP = -2;
 				return nil;
 			}
+		}
+
+		else if (cmd == 'Q')
+		{
+			if (array.count > 1 || ((NSString *) array.firstObject).length > 1)
+				[out appendString:@"Неверное число аргументов\n"];
+
+			STOP = -1;
+			return nil;
 		}
 
 		else if (cmd == 'X')
