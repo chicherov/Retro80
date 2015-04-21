@@ -148,7 +148,6 @@
 @synthesize HALT;
 
 @synthesize MEMIO;
-@synthesize FF;
 
 - (void) setPC:(uint16_t)value { PC.PC = value; }
 - (uint16_t) PC { return PC.PC; }
@@ -267,21 +266,15 @@
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
 {
 	const uint8_t *ptr = cpu->RDMEM[cpu->PAGE][addr]; if (ptr) return *ptr;
-
-	else if (cpu->RD[cpu->PAGE][addr])
-		return [cpu->RD[cpu->PAGE][addr] RD:addr CLK:clock data:cpu->FF ? 0xFF : data];
-	else
-		return cpu->FF ? 0xFF : data;
+	[cpu->RD[cpu->PAGE][addr] RD:addr data:&data CLK:clock]; return data;
 }
-
-// -----------------------------------------------------------------------------
 
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 {
 	uint8_t *ptr = cpu->WRMEM[cpu->PAGE][addr]; if (ptr) *ptr = data;
 
 	else if (cpu->WR[cpu->PAGE][addr])
-		[cpu->WR[cpu->PAGE][addr] WR:addr byte:data CLK:clock];
+		[cpu->WR[cpu->PAGE][addr] WR:addr data:data CLK:clock];
 }
 
 // -----------------------------------------------------------------------------
@@ -300,24 +293,22 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 
 // -----------------------------------------------------------------------------
 
-uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
-{
-	uint8_t page = addr >> 8; if (cpu->IO[page])
-		return [cpu->IO[page] RD:addr CLK:clock data:cpu->FF ? 0xFF : data];
-	else if (cpu->MEMIO)
-		return MEMR(cpu, addr, clock, data);
-	else
-		return cpu->FF ? 0xFF : data;
-}
-
-// -----------------------------------------------------------------------------
-
 void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 {
-	uint8_t page = addr >> 8; if (cpu->IO[page])
-		[cpu->IO[page] WR:addr byte:data CLK:clock];
+	if (cpu->IO[addr >> 8])
+		[cpu->IO[addr >> 8] WR:addr data:data CLK:clock];
 	else if (cpu->MEMIO)
 		MEMW(cpu, addr, data, clock);
+}
+
+uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
+{
+	if (cpu->IO[addr >> 8])
+		[cpu->IO[addr >> 8] RD:addr data:&data CLK:clock];
+	else if (cpu->MEMIO)
+		data = MEMR(cpu, addr, clock, data);
+
+	return data;
 }
 
 // -----------------------------------------------------------------------------
@@ -328,7 +319,8 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 
 - (void) addObjectToRESET:(NSObject<RESET> *)object
 {
-	[RESETLIST addObject:object];
+	if (![RESETLIST containsObject:object])
+		[RESETLIST addObject:object];
 }
 
 // -----------------------------------------------------------------------------
@@ -430,7 +422,7 @@ static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 	return data;
 }
 
-static void put(X8080* cpu, uint16_t addr, uint8_t data)
+static void put(X8080* cpu, uint16_t addr, uint8_t data, uint8_t status)
 {
 	cpu->CLK += 18; MEMW(cpu, addr, data, cpu->CLK);
 	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
@@ -661,7 +653,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x02:	// STAX B
 			{
-				put(self, BC.BC, AF.A);
+				put(self, BC.BC, AF.A, 0x00);
 				break;
 			}
 
@@ -785,7 +777,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x12:	// STAX D
 			{
-				put(self, DE.DE, AF.A);
+				put(self, DE.DE, AF.A, 0x00);
 				break;
 			}
 
@@ -899,8 +891,8 @@ static bool test(uint8_t IR, uint8_t F)
 			{
 				WZ.Z = get(self, PC.PC++, 0x82);
 				WZ.W = get(self, PC.PC++, 0x82);
-				put(self, WZ.WZ++, HL.L);
-				put(self, WZ.WZ, HL.H);
+				put(self, WZ.WZ++, HL.L, 0x00);
+				put(self, WZ.WZ, HL.H, 0x00);
 				break;
 			}
 
@@ -1011,7 +1003,7 @@ static bool test(uint8_t IR, uint8_t F)
 			{
 				WZ.Z = get(self, PC.PC++, 0x82);
 				WZ.W = get(self, PC.PC++, 0x82);
-				put(self, WZ.WZ, AF.A);
+				put(self, WZ.WZ, AF.A, 0x00);
 				break;
 			}
 
@@ -1024,7 +1016,7 @@ static bool test(uint8_t IR, uint8_t F)
 			case 0x34:	// INR M
 			{
 				uint8_t M = get(self, HL.HL, 0x82) + 1;
-				put(self, HL.HL, M);
+				put(self, HL.HL, M, 0x00);
 
 				AF.F = (AF.F & 0x01) | flags[M];
 				if ((M & 0x0F) == 0x00)
@@ -1036,7 +1028,7 @@ static bool test(uint8_t IR, uint8_t F)
 			case 0x35:	// DCR M
 			{
 				uint8_t M = get(self, HL.HL, 0x82) - 1;
-				put(self, HL.HL, M);
+				put(self, HL.HL, M, 0x00);
 
 				AF.F = (AF.F & 0x01) | flags[M];
 				if ((M & 0x0F) != 0x0F)
@@ -1047,7 +1039,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x36:	// MVI M
 			{
-				put(self, HL.HL, get(self, PC.PC++, 0x82));
+				put(self, HL.HL, get(self, PC.PC++, 0x82), 0x00);
 				break;
 			}
 
@@ -1402,37 +1394,37 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x70:	// MOV M, B
 			{
-				put(self, HL.HL, BC.B);
+				put(self, HL.HL, BC.B, 0x00);
 				break;
 			}
 
 			case 0x71:	// MOV M, C
 			{
-				put(self, HL.HL, BC.C);
+				put(self, HL.HL, BC.C, 0x00);
 				break;
 			}
 
 			case 0x72:	// MOV M, D
 			{
-				put(self, HL.HL, DE.D);
+				put(self, HL.HL, DE.D, 0x00);
 				break;
 			}
 
 			case 0x73:	// MOV M, E
 			{
-				put(self, HL.HL, DE.E);
+				put(self, HL.HL, DE.E, 0x00);
 				break;
 			}
 
 			case 0x74:	// MOV M, H
 			{
-				put(self, HL.HL, HL.H);
+				put(self, HL.HL, HL.H, 0x00);
 				break;
 			}
 
 			case 0x75:	// MOV M, L
 			{
-				put(self, HL.HL, HL.L);
+				put(self, HL.HL, HL.L, 0x00);
 				break;
 			}
 
@@ -1444,7 +1436,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x77:	// MOV M, A
 			{
-				put(self, HL.HL, AF.A);
+				put(self, HL.HL, AF.A, 0x00);
 				break;
 			}
 
@@ -1947,8 +1939,8 @@ static bool test(uint8_t IR, uint8_t F)
 
 				if (test(IR, AF.F))
 				{
-					put(self, --SP.SP, PC.PCH);
-					put(self, --SP.SP, PC.PCL);
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
 					PC.PC = WZ.WZ;
 				}
 
@@ -1957,8 +1949,8 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xC5:	// PUSH B
 			{
-				put(self, --SP.SP, BC.B);
-				put(self, --SP.SP, BC.C);
+				put(self, --SP.SP, BC.B, 0x04);
+				put(self, --SP.SP, BC.C, 0x04);
 				break;
 			}
 
@@ -1977,8 +1969,8 @@ static bool test(uint8_t IR, uint8_t F)
 			case 0xF7:
 			case 0xFF:
 			{
-				put(self, --SP.SP, PC.PCH);
-				put(self, --SP.SP, PC.PCL);
+				put(self, --SP.SP, PC.PCH, 0x04);
+				put(self, --SP.SP, PC.PCL, 0x04);
 				PC.PC = IR & 0x38;
 				break;
 			}
@@ -1999,8 +1991,8 @@ static bool test(uint8_t IR, uint8_t F)
 				WZ.Z = get(self, PC.PC++, 0x82);
 				WZ.W = get(self, PC.PC++, 0x82);
 
-				put(self, --SP.SP, PC.PCH);
-				put(self, --SP.SP, PC.PCL);
+				put(self, --SP.SP, PC.PCH, 0x04);
+				put(self, --SP.SP, PC.PCL, 0x04);
 				PC.PC = WZ.WZ;
 
 				break;
@@ -2028,8 +2020,8 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xD5:	// PUSH D
 			{
-				put(self, --SP.SP, DE.D);
-				put(self, --SP.SP, DE.E);
+				put(self, --SP.SP, DE.D, 0x04);
+				put(self, --SP.SP, DE.E, 0x04);
 				break;
 			}
 
@@ -2063,7 +2055,7 @@ static bool test(uint8_t IR, uint8_t F)
 			{
 				WZ.Z = get(self, SP.SP++, 0x86);
 				WZ.W = get(self, SP.SP++, 0x86);
-				put(self, --SP.SP, HL.H);
+				put(self, --SP.SP, HL.H, 0x04);
 
 				CLK += 18; MEMW(self, --SP.SP, HL.L, CLK);
 				CLK += 9; CLK += HOLD(self, 18);
@@ -2074,8 +2066,8 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xE5:	// PUSH H
 			{
-				put(self, --SP.SP, HL.H);
-				put(self, --SP.SP, HL.L);
+				put(self, --SP.SP, HL.H, 0x04);
+				put(self, --SP.SP, HL.L, 0x04);
 				break;
 			}
 
@@ -2120,8 +2112,8 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xF5:	// PUSH PSW
 			{
-				put(self, --SP.SP, AF.A);
-				put(self, --SP.SP, (AF.F & 0xD7) | 0x02);
+				put(self, --SP.SP, AF.A, 0x04);
+				put(self, --SP.SP, (AF.F & 0xD7) | 0x02, 0x04);
 				break;
 			}
 
@@ -2158,26 +2150,18 @@ static bool test(uint8_t IR, uint8_t F)
 // Инициализация
 // -----------------------------------------------------------------------------
 
-- (id) init
+- (id) initWithQuartz:(unsigned)freq start:(unsigned int)start
 {
 	if (self = [super init])
 	{
+		quartz = freq;
+		START = start;
+
 		RESETLIST = [[NSMutableArray alloc] init];
 		RESET = TRUE;
 
 		MEMIO = TRUE;
 		STOP = -1;
-	}
-
-	return self;
-}
-
-- (id) initWithQuartz:(unsigned)freq start:(unsigned int)start
-{
-	if (self = [self init])
-	{
-		quartz = freq;
-		START = start;
 	}
 
 	return self;
@@ -2209,10 +2193,8 @@ static bool test(uint8_t IR, uint8_t F)
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [self init])
+	if (self = [self initWithQuartz:[decoder decodeIntForKey:@"quartz"] start:[decoder decodeIntForKey:@"START"]])
 	{
-		quartz = [decoder decodeIntForKey:@"quartz"];
-		START = [decoder decodeIntForKey:@"START"];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 		IF = [decoder decodeBoolForKey:@"IF"];
 

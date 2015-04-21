@@ -217,21 +217,22 @@
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	@synchronized(self)
 	{
-		current = clock; return (addr & 0x07) == 0x04 ? self.D : [super RD:addr CLK:clock data:data];
+		current = clock; if ((addr & 0x07) == 0x04) *data = self.D;
+		else [super RD:addr data:data CLK:clock];
 	}
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	@synchronized(self)
 	{
-		current = clock; [super WR:addr byte:data CLK:clock];
+		current = clock; [super WR:addr data:data CLK:clock];
 	}
 }
 

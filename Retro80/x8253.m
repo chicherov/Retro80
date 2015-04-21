@@ -237,45 +237,45 @@ void updateTimer(struct i8253_timer *timer, uint64_t clock)
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	if ((addr & 3) == 3)
-		return data;
-
-	struct i8253_timer *timer = timers + (addr & 3);
-
-	uint16_t value; if (timer->bLatch)
+	if ((addr & 3) != 3)
 	{
-		value = timer->latch; timer->bLatch = timer->bRLow && timer->mode.RL == 3;
-	}
-	else
-	{
-		value = getTimerCount(timer, clock);
-	}
+		struct i8253_timer *timer = timers + (addr & 3);
 
-	if (timer->mode.BCD)
-	{
-	}
+		uint16_t value; if (timer->bLatch)
+		{
+			value = timer->latch; timer->bLatch = timer->bRLow && timer->mode.RL == 3;
+		}
+		else
+		{
+			value = getTimerCount(timer, clock);
+		}
 
-	if (timer->bRLow)
-	{
-		if (timer->mode.RL == 3)
-			timer->bRLow = FALSE;
+		if (timer->mode.BCD)
+		{
+		}
 
-		return value & 0xFF;
-	}
-	else
-	{
-		if (timer->mode.RL == 3)
-			timer->bRLow = TRUE;
+		if (timer->bRLow)
+		{
+			if (timer->mode.RL == 3)
+				timer->bRLow = FALSE;
 
-		return value >> 8;
+			*data = value & 0xFF;
+		}
+		else
+		{
+			if (timer->mode.RL == 3)
+				timer->bRLow = TRUE;
+			
+			*data = value >> 8;
+		}
 	}
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	if ((addr & 3) == 3)
 	{

@@ -4,12 +4,16 @@
 
 #import "Retro80.h"
 
+@protocol SYNC
+- (void) SYNC:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock;
+@end
+
 @protocol RD
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data;
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock;
 @end
 
 @protocol WR
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock;
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock;
 @end
 
 @protocol BYTE
@@ -87,8 +91,17 @@
 			  from:(uint16_t)from
 				to:(uint16_t)to;
 
+- (void) mapObject:(NSObject<RD, WR>*)object
+			  from:(uint16_t)from
+				to:(uint16_t)to;
+
 - (void) mapObject:(NSObject<RD>*)rd
 			atPage:(uint8_t)page
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				WR:(NSObject<WR>*)wr;
+
+- (void) mapObject:(NSObject<RD>*)rd
 			  from:(uint16_t)from
 				to:(uint16_t)to
 				WR:(NSObject<WR>*)wr;
@@ -98,17 +111,6 @@
 			  from:(uint16_t)from
 				to:(uint16_t)to
 				RD:(NSObject<RD>*)rd;
-
-// -----------------------------------------------------------------------------
-
-- (void) mapObject:(NSObject<RD, WR>*)object
-				from:(uint16_t)from
-				to:(uint16_t)to;
-
-- (void) mapObject:(NSObject<RD>*)rd
-			  from:(uint16_t)from
-				to:(uint16_t)to
-				WR:(NSObject<WR>*)wr;
 
 - (void) mapObject:(NSObject<WR>*)wr
 			  from:(uint16_t)from
@@ -120,9 +122,7 @@
 - (void) addObjectToRESET:(NSObject<RESET>*)object;
 
 @property BOOL RESET;
-
 @property BOOL MEMIO;
-@property BOOL FF;
 
 // -----------------------------------------------------------------------------
 

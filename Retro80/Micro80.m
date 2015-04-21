@@ -162,12 +162,12 @@
 	return 0;
 }
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	return sound.input;
+	*data = sound.input;
 }
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	sound.output = data != 0x00;
 }
@@ -180,14 +180,14 @@
 
 @implementation Micro80Keyboard
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	return [super RD:addr ^ 3 CLK:clock data:data];
+	[super RD:addr ^ 3 data:data CLK:clock];
 }
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	[super WR:addr ^ 3 byte:data CLK:clock];
+	[super WR:addr ^ 3 data:data CLK:clock];
 }
 
 - (id) init

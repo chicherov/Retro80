@@ -50,25 +50,23 @@
 
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	if ((addr & 0x08) == 0)
 	{
-		data = dma[(addr & 0x06) >> 1].byte[addr & 1][latch];
+		*data = dma[(addr & 0x06) >> 1].byte[addr & 1][latch];
 		latch = !latch;
 	}
 	else if ((addr & 0x0F) == 0x08)
 	{
-		data = status.byte;
+		*data = status.byte;
 		status.byte &= 0xF0;
 	}
-
-	return data;
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	if ((addr & 0x08) == 0)
 	{

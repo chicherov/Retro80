@@ -285,7 +285,7 @@
 // RD/WR/RESET
 //------------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	[self execute:clock];
 
@@ -305,30 +305,31 @@
 				status.S7 = file == nil;
 			}
 
-			return status.byte;
+			*data = status.byte;
+			break;
 
 		case 1:
 
-			return cylinder;
+			*data = cylinder;
+			break;
 
 		case 2:
 
-			return sector;
+			*data = sector;
+			break;
 
 		case 3:
 
-			[self RD:&data clock:clock];
-			return data;
+			[self RD:data clock:clock];
+			break;
 	}
-
-	return 0xFF;
 }
 
 //------------------------------------------------------------------------------
 //
 //------------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	[self execute:clock];
 

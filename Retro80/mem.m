@@ -27,15 +27,14 @@
 	return (addr & mask) >= length ? NULL : mutableBytes + (addr & mask);
 }
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	return (addr & mask) >= length ? data : mutableBytes[addr & mask];
+	if ((addr & mask) < length) *data = mutableBytes[addr & mask];
 }
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	if ((addr & mask) < length)
-		mutableBytes[addr & mask] = data;
+	if ((addr & mask) < length) mutableBytes[addr & mask] = data;
 }
 
 // -----------------------------------------------------------------------------
@@ -120,9 +119,9 @@
 	return (addr & mask) >= length ? NULL : mutableBytes + (addr & mask);
 }
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	return (addr & mask) >= length ? 0xFF : mutableBytes[addr & mask];
+	*data = (addr & mask) >= length ? 0xFF : mutableBytes[addr & mask];
 }
 
 // -----------------------------------------------------------------------------

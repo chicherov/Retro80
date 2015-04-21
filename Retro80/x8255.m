@@ -81,42 +81,49 @@
 
 //------------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	current = clock; switch (addr & 3)
 	{
 		case 0:
 
-			return mode.A ? self.A : A;
+			*data = mode.A ? self.A : A;
+			break;
 
 		case 1:
 
-			return mode.B ? self.B : B;
+			*data = mode.B ? self.B : B;
+			break;
 
 		case 2:
 
 			if (mode.H)
 			{
 				if (mode.L)
-					return self.C;
+					*data = self.C;
 				else
-					return (self.C & 0xF0) | (C & 0x0F);
+					*data = (self.C & 0xF0) | (C & 0x0F);
 			}
 			else
 			{
 				if (mode.L)
-					return (C & 0xF0) | (self.C & 0x0F);
+					*data = (C & 0xF0) | (self.C & 0x0F);
 				else
-					return C;
+					*data = C;
 			}
-	}
 
-	return 0xFF;
+			break;
+
+		case 3:
+
+			*data = 0xFF;
+			break;
+	}
 }
 
 //------------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	current = clock; switch (addr & 3)
 	{

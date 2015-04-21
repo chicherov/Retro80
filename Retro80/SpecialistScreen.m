@@ -24,7 +24,7 @@
 // @protocol WR
 // -----------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	if (screen && addr & 0x3000)
 	{

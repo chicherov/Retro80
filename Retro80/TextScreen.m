@@ -14,9 +14,9 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	[WR WR:addr byte:data CLK:clock];
+	[WR WR:addr data:data CLK:clock];
 
 	uint8_t ch; if (addr & 0x800)
 	{

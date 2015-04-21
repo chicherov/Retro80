@@ -277,8 +277,6 @@
 	self.cpu.INTA = self.sys1;
 	self.cpu.INTR = self.crt;
 
-	self.cpu.FF = TRUE;
-
 	// Контроллер НГМД
 
 	self.dma.DMA0 = self.floppy;
@@ -357,7 +355,7 @@
 @synthesize cpu;
 @synthesize crt;
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	cpu.PAGE = data >> 4;
 }
@@ -420,44 +418,41 @@
 	return mcpg;
 }
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	if ((addr & 0x200) == 0)
 	{
-		if (slot & 0x02 && partner.isFloppy)
-			return (addr & 0x100) == 0 ? [partner.floppy RD:addr CLK:clock data:data] : data;
+		if (slot & 0x02 && partner.isFloppy && (addr & 0x100) == 0)
+			[partner.floppy RD:addr data:data CLK:clock];
 
-		if (slot & 0x04 && partner.isColor)
-			return (addr & 0x100) == 0 ? data : [partner.snd RD:addr>>2 CLK:clock data:data];
-
-		return data;
+		else if (slot & 0x04 && partner.isColor && addr & 0x100)
+			[partner.snd RD:addr>>2 data:data CLK:clock];
 	}
-
-	return data;
 }
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	if ((addr & 0x200) == 0)
 	{
 		if (slot & 0x02 && partner.isFloppy)
 		{
-			if ((addr & 0x100) == 0)
-				[partner.floppy WR:addr byte:data CLK:clock];
-
-			else
+			if (addr & 0x100)
 			{
 				partner.floppy.selected = data & 0x40 ? 1 : data & 0x08 ? 2 : 0;
 				partner.floppy.head = (data & 0x80) != 0;
+			}
+			else
+			{
+				[partner.floppy WR:addr data:data CLK:clock];
 			}
 		}
 
 		else if (slot & 0x04 && partner.isColor)
 		{
-			if ((addr & 0x100) == 0)
-				self.mcpg = data != 0xFF;
+			if (addr & 0x100)
+				[partner.snd WR:addr>>2 data:data CLK:clock];
 			else
-				[partner.snd WR:addr>>2 byte:data CLK:clock];
+				self.mcpg = data != 0xFF;
 		}
 	}
 
@@ -494,15 +489,16 @@
 
 @synthesize object;
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	return object ? [object RD:addr CLK:clock data:data] : data;
+	[object RD:addr data:data CLK:clock];
 }
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	if ([object conformsToProtocol:@protocol(WR)])
-		[(NSObject<WR> *)object WR:addr byte:data CLK:clock];
+		[(NSObject<WR> *)object WR:addr data:data CLK:clock];
 }
 
 - (uint8_t *) BYTE:(uint16_t)addr

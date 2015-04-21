@@ -271,10 +271,10 @@ static uint32_t colors[] =
 
 @synthesize ext;
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	[super WR:addr byte:data CLK:clock];
-	[ext WR:addr byte:data CLK:clock];
+	[super WR:addr data:data CLK:clock];
+	[ext WR:addr data:data CLK:clock];
 }
 
 @end

@@ -173,20 +173,16 @@ CCCC[][3] =
 };
 
 // -----------------------------------------------------------------------------
-// Символы UNICODE
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
 // Чтение/запись регистров ВГ75
 // -----------------------------------------------------------------------------
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	@synchronized(self)
 	{
 		if ((addr & 1) == 1)
 		{
-			uint8_t ret = status.byte;
+			*data = status.byte;
 
 			status.IR = FALSE;
 
@@ -196,19 +192,17 @@ CCCC[][3] =
 
 			if (!rightMouse)
 				status.LP = 0;
-
-			return ret;
 		}
 		else
 		{
 			if ((cmd & 0xE0) == 0x60 && len < 2)
 			{
-				return lightPen.byte[len++];
+				*data = lightPen.byte[len++];
 			}
 			else
 			{
 				status.IC = 1;
-				return 0x00;
+				*data = 0x00;
 			}
 		}
 	}
@@ -216,7 +210,7 @@ CCCC[][3] =
 
 // -----------------------------------------------------------------------------
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	@synchronized(self)
 	{

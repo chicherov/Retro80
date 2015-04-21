@@ -39,19 +39,18 @@
 @synthesize crt;
 @synthesize fdd;
 
-- (uint8_t) RD:(uint16_t)addr CLK:(uint64_t)clock data:(uint8_t)data
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	switch (addr)
 	{
 		case 0xFFF8:
-			return crt.color;
 
-		default:
-			return data;
+			*data = crt.color;
+			break;
 	}
 }
 
-- (void) WR:(uint16_t)addr byte:(uint8_t)data CLK:(uint64_t)clock
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	switch (addr)
 	{
@@ -161,6 +160,12 @@
 		return YES;
 	}
 
+	if (menuItem.action == @selector(colorModule:))
+	{
+		menuItem.state = self.crt.isColor;
+		return YES;
+	}
+
 	if (menuItem.action == @selector(floppy:))
 	{
 		if (menuItem.tag == 0)
@@ -197,6 +202,16 @@
 		memcpy(ram.mutableBytes, self.ram.mutableBytes, size < self.ram.length ? size : self.ram.length);
 		self.ram = ram; [self mapObjects]; self.cpu.RESET = TRUE;
 	}
+}
+
+// -----------------------------------------------------------------------------
+// Модуль цветности
+// -----------------------------------------------------------------------------
+
+- (IBAction) colorModule:(NSMenuItem *)menuItem
+{
+	[self.document registerUndoWithMenuItem:menuItem];
+	self.crt.isColor = !self.crt.isColor;
 }
 
 // -----------------------------------------------------------------------------
@@ -265,6 +280,9 @@
 
 - (BOOL) mapObjects
 {
+	if ((self.sys = [[SpecialistMXSystem alloc] init]) == nil)
+		return FALSE;
+
 	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
 	[self.cpu mapObject:self.ram atPage:0 from:0x0000 to:0x8FFF];
@@ -283,24 +301,22 @@
 	[self.cpu mapObject:[self.ram memoryAtOffest:0x70000 length:0x10000 mask:0xFFFF] atPage:7 from:0x0000 to:0xFFBF];
 	[self.cpu mapObject:[self.ram memoryAtOffest:0x80000 length:0x10000 mask:0xFFFF] atPage:8 from:0x0000 to:0xFFBF];
 
-	if ((self.sys = [[SpecialistMXSystem alloc] init]) == nil)
-		return FALSE;
+	for (uint8_t page = 0; page <= 9; page++)
+	{
+		[self.cpu mapObject:self.ram	atPage:page from:0xFFC0 to:0xFFDF];
+		[self.cpu mapObject:self.kbd	atPage:page from:0xFFE0 to:0xFFE3];		// U7
+		[self.cpu mapObject:self.ext	atPage:page from:0xFFE4 to:0xFFE7];		// U6
+		[self.cpu mapObject:self.fdd	atPage:page from:0xFFE8 to:0xFFEB];		// U5
+		[self.cpu mapObject:self.snd	atPage:page from:0xFFEC to:0xFFEF];		// U4
+		[self.cpu mapObject:self.sys	atPage:page from:0xFFF0 to:0xFFF3];		// U3
+		[self.cpu mapObject:nil			atPage:page from:0xFFF4 to:0xFFF7];		// U2
+		[self.cpu mapObject:self.sys	atPage:page from:0xFFF8 to:0xFFFB];		// U1
+		[self.cpu mapObject:self.sys	atPage:page from:0xFFFC to:0xFFFF];		// U0
+	}
 
 	self.sys.cpu = self.cpu;
 	self.sys.crt = self.crt;
 	self.sys.fdd = self.fdd;
-
-	for (uint8_t page = 0; page <= 9; page++)
-	{
-		[self.cpu mapObject:self.sys	atPage:page from:0xFFF8 to:0xFFFF];
-		[self.cpu mapObject:nil			atPage:page from:0xFFF4 to:0xFFF7];
-		[self.cpu mapObject:self.sys	atPage:page from:0xFFF0 to:0xFFF3];
-		[self.cpu mapObject:self.snd	atPage:page from:0xFFEC to:0xFFEF];
-		[self.cpu mapObject:self.fdd	atPage:page from:0xFFE8 to:0xFFEB];
-		[self.cpu mapObject:self.ext	atPage:page from:0xFFE4 to:0xFFE7];
-		[self.cpu mapObject:self.kbd	atPage:page from:0xFFE0 to:0xFFE3];
-		[self.cpu mapObject:self.ram	atPage:page from:0xFFC0 to:0xFFDF];
-	}
 
 	[self.cpu addObjectToRESET:self.kbd];
 	[self.cpu addObjectToRESET:self.ext];
@@ -395,7 +411,7 @@
 {
 	if (![super decodeWithCoder:decoder])
 		return FALSE;
-	
+
 	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
 		return FALSE;
 
