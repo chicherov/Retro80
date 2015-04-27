@@ -3,7 +3,7 @@
 @implementation Debug
 {
 	NSObject<Debug> *debugger;
-	NSRange range;
+	NSUInteger fence;
 }
 
 - (void) windowWillClose:(NSNotification *)notification
@@ -15,16 +15,15 @@
 {
 	NSString *out = [debug debugCommand:nil];
 
-	range.length = self.textView.textStorage.length - range.location;
-	[self.textView replaceCharactersInRange:range withString:out];
-	range.length = out.length; [self.textView scrollRangeToVisible:range];
-	range.location += range.length;
+	[self.textView replaceCharactersInRange:NSMakeRange(fence, self.textView.textStorage.length - fence) withString:out];
+	[self.textView scrollRangeToVisible:NSMakeRange(fence, out.length)];
+	fence += out.length;
 
-	if (range.location > 2000000)
+	if (fence > 2000000)
 	{
-		NSUInteger cut = NSMaxRange([self.textView.string lineRangeForRange:NSMakeRange(range.location - 1000000, 0)]);
+		NSUInteger cut = NSMaxRange([self.textView.string lineRangeForRange:NSMakeRange(fence - 1000000, 0)]);
 		[self.textView replaceCharactersInRange:NSMakeRange(0, cut) withString:@""];
-		range.location = self.textView.textStorage.length;
+		self.textView.selectedRange = NSMakeRange(fence = self.textView.textStorage.length, 0);
 	}
 
 	debugger = debug;
@@ -35,41 +34,56 @@
 
 - (BOOL) textView:(NSTextView *)textView shouldChangeTextInRange:(NSRange)affectedCharRange replacementString:(NSString *)replacementString
 {
-	return debugger != nil && replacementString != nil && affectedCharRange.location >= range.location;
+	return debugger != nil && replacementString != nil && affectedCharRange.location >= fence;
 }
 
 - (void) textDidChange:(NSNotification *)notification
 {
-	range.length = self.textView.textStorage.length - range.location;
+	NSString *string = [self.textView.textStorage attributedSubstringFromRange:NSMakeRange(fence, self.textView.textStorage.length - fence)].string.uppercaseString;
 
-	NSString *string = [self.textView.textStorage attributedSubstringFromRange:range].string;
+	NSRange range = [string rangeOfString:@"."];
 
-	NSUInteger lf = [string rangeOfString:@"\n"].location; if (lf != NSNotFound)
+	NSArray *array = [string componentsSeparatedByString:@"\n"]; if (range.location != NSNotFound || array.count > 1)
 	{
-		string = string.uppercaseString;
-		[self.textView replaceCharactersInRange:range withString:string];
-		range.location += lf + 1; range.length = 0;
+		if (array.count == 2)
+			string = [array[0] stringByAppendingString:array[1]];
+		else
+			string = array[0];
 
-		if ((string = [debugger debugCommand:[string substringToIndex:lf]]) == nil)
+		[self.textView replaceCharactersInRange:NSMakeRange(fence, self.textView.textStorage.length - fence)
+									 withString:[string stringByAppendingString:@"\n"]];
+
+		fence += string.length + 1;
+
+		if ((string = [debugger debugCommand:range.location != NSNotFound ? @"." : string]) == nil)
 		{
 			[self.panel setIsVisible:FALSE];
 			[NSApp stopModal];
 		}
 		else
 		{
-			[self.textView replaceCharactersInRange:range
+			[self.textView replaceCharactersInRange:NSMakeRange(fence, 0)
 										 withString:string];
 
-			range.location += string.length;
+			fence += string.length;
 		}
+	}
+	else
+	{
+		NSRange selectedRange = self.textView.selectedRange;
+
+		[self.textView replaceCharactersInRange:NSMakeRange(fence, self.textView.textStorage.length - fence)
+									 withString:string];
+
+		self.textView.selectedRange = selectedRange;
 	}
 }
 
 - (NSRange) textView:(NSTextView *)textView willChangeSelectionFromCharacterRange:(NSRange)oldSelectedCharRange toCharacterRange:(NSRange)newSelectedCharRange
 {
-	if (newSelectedCharRange.location < range.location && newSelectedCharRange.length == 0)
+	if (newSelectedCharRange.location < fence && newSelectedCharRange.length == 0)
 	{
-		if (oldSelectedCharRange.location < range.location)
+		if (oldSelectedCharRange.location < fence)
 		{
 			oldSelectedCharRange.location = textView.textStorage.length;
 			oldSelectedCharRange.length = 0;

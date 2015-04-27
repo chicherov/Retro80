@@ -4,10 +4,6 @@
 
 #import "Retro80.h"
 
-@protocol SYNC
-- (void) SYNC:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock;
-@end
-
 @protocol RD
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock;
 @end

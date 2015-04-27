@@ -119,10 +119,10 @@
 
 - (IBAction) reset:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoWithMenuItem:menuItem];
-
 	@synchronized(self.snd.sound)
 	{
+		[self.document registerUndoWithMenuItem:menuItem];
+		
 		if (!self.snd.sound.isInput)
 		{
 			self.cpu.RESET = TRUE;
@@ -144,6 +144,9 @@
 {
 	@synchronized(self.snd.sound)
 	{
+		if ([sender isKindOfClass:[NSMenuItem class]])
+			[self.document registerUndoWithMenuItem:sender];
+
 		self.snd.sound.debug = TRUE;
 	}
 

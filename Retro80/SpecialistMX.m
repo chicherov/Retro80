@@ -341,6 +341,7 @@
 				return self = nil;
 
 			memcpy(self.ram.mutableBytes + addr, data.bytes, data.length);
+			self.crt.color = 0x70;
 			self.cpu.PC = addr;
 		}
 
@@ -375,7 +376,7 @@
 
 				self.cpu.RESET = FALSE;
 				self.cpu.PC = addr;
-				self.cpu.PAGE = 1;
+				self.cpu.PAGE = 0;
 			}
 
 			[self.cpu execute:self.cpu.quartz];
@@ -393,7 +394,7 @@
 		}
 
 		self.cpu.RESET = FALSE;
-		self.cpu.PAGE = 1;
+		self.cpu.PAGE = 0;
 	}
 
 	return self;
