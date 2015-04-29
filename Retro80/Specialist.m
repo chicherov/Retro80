@@ -224,23 +224,16 @@
 
 			case 3:
 
-				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistW" mask:0x3FFF]) == nil)
+				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Lik" mask:0x3FFF]) == nil)
 					return self = nil;
 
 				break;
-				
+
 			case 4:
-
-				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistL" mask:0x3FFF]) == nil)
-					return self = nil;
-
-				break;
-
-			case 5:
 
 				return self = [[SpecialistSP580 alloc] init];
 
-			case 6:
+			case 5:
 
 				return self = [[SpecialistMX alloc] init];
 		}
@@ -285,7 +278,7 @@
 			length--; ptr++;
 		}
 
-		if (length-- && *ptr++ == 0xE6 && (self = [self initWithType:4]))
+		if (length-- && *ptr++ == 0xE6 && (self = [self initWithType:3]))
 			[self.inpHook setData:[NSData dataWithBytes:ptr length:length]];
 		else
 			return self = nil;

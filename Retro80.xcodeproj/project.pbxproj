@@ -12,7 +12,6 @@
 		D92894F71AB2DDD50039C236 /* SpecialistSP580.bin in Resources */ = {isa = PBXBuildFile; fileRef = D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */; };
 		D929488219B5850C009BC312 /* RKKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D929487F19B5850C009BC312 /* RKKeyboard.m */; };
 		D929488319B5850C009BC312 /* RKRecorder.m in Sources */ = {isa = PBXBuildFile; fileRef = D929488119B5850C009BC312 /* RKRecorder.m */; };
-		D93DC7341AB2AF410005D473 /* SpecialistW.bin in Resources */ = {isa = PBXBuildFile; fileRef = D93DC7331AB2AF410005D473 /* SpecialistW.bin */; };
 		D93DC73F1AB2CE5B0005D473 /* SYMGEN.BIN in Resources */ = {isa = PBXBuildFile; fileRef = D93DC7351AB2CE5B0005D473 /* SYMGEN.BIN */; };
 		D93DC7401AB2CE5B0005D473 /* Basic.bin in Resources */ = {isa = PBXBuildFile; fileRef = D93DC7361AB2CE5B0005D473 /* Basic.bin */; };
 		D93DC7411AB2CE5B0005D473 /* Partner.bin in Resources */ = {isa = PBXBuildFile; fileRef = D93DC7371AB2CE5B0005D473 /* Partner.bin */; };
@@ -50,7 +49,7 @@
 		D994F55C1ADBA9C7002408E8 /* SpecialistSP580.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F55B1ADBA9C7002408E8 /* SpecialistSP580.m */; };
 		D994F55F1ADBAB6C002408E8 /* SpecialistMX.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F55E1ADBAB6C002408E8 /* SpecialistMX.m */; };
 		D99555061A051B2300BC4868 /* Retro80.icns in Resources */ = {isa = PBXBuildFile; fileRef = D99555051A051B2300BC4868 /* Retro80.icns */; };
-		D99ACCA61AB9824600E05074 /* SpecialistL.bin in Resources */ = {isa = PBXBuildFile; fileRef = D99ACCA51AB9824600E05074 /* SpecialistL.bin */; };
+		D99ACCA61AB9824600E05074 /* Lik.bin in Resources */ = {isa = PBXBuildFile; fileRef = D99ACCA51AB9824600E05074 /* Lik.bin */; };
 		D9A1AADB1AB1AAD400D0E5FF /* Specialist2.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A1AAD91AB1AAD400D0E5FF /* Specialist2.bin */; };
 		D9A1AADC1AB1AAD400D0E5FF /* Specialist1.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A1AADA1AB1AAD400D0E5FF /* Specialist1.bin */; };
 		D9A4245319B8310B00DAA3E0 /* x8253.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4244E19B8310B00DAA3E0 /* x8253.m */; };
@@ -98,7 +97,6 @@
 		D929487F19B5850C009BC312 /* RKKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RKKeyboard.m; sourceTree = "<group>"; };
 		D929488019B5850C009BC312 /* RKRecorder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RKRecorder.h; sourceTree = "<group>"; };
 		D929488119B5850C009BC312 /* RKRecorder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RKRecorder.m; sourceTree = "<group>"; };
-		D93DC7331AB2AF410005D473 /* SpecialistW.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistW.bin; path = Retro80/ROM/SpecialistW.bin; sourceTree = "<group>"; };
 		D93DC7351AB2CE5B0005D473 /* SYMGEN.BIN */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SYMGEN.BIN; path = Retro80/ROM/SYMGEN.BIN; sourceTree = "<group>"; };
 		D93DC7361AB2CE5B0005D473 /* Basic.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Basic.bin; path = Retro80/ROM/Basic.bin; sourceTree = "<group>"; };
 		D93DC7371AB2CE5B0005D473 /* Partner.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Partner.bin; path = Retro80/ROM/Partner.bin; sourceTree = "<group>"; };
@@ -155,7 +153,7 @@
 		D994F55D1ADBAB6C002408E8 /* SpecialistMX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMX.h; sourceTree = "<group>"; };
 		D994F55E1ADBAB6C002408E8 /* SpecialistMX.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMX.m; sourceTree = "<group>"; };
 		D99555051A051B2300BC4868 /* Retro80.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Retro80.icns; sourceTree = "<group>"; };
-		D99ACCA51AB9824600E05074 /* SpecialistL.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistL.bin; path = Retro80/ROM/SpecialistL.bin; sourceTree = "<group>"; };
+		D99ACCA51AB9824600E05074 /* Lik.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Lik.bin; path = Retro80/ROM/Lik.bin; sourceTree = "<group>"; };
 		D9A1AAD91AB1AAD400D0E5FF /* Specialist2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Specialist2.bin; path = Retro80/ROM/Specialist2.bin; sourceTree = "<group>"; };
 		D9A1AADA1AB1AAD400D0E5FF /* Specialist1.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Specialist1.bin; path = Retro80/ROM/Specialist1.bin; sourceTree = "<group>"; };
 		D9A4244D19B8310B00DAA3E0 /* x8253.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8253.h; sourceTree = "<group>"; };
@@ -215,8 +213,7 @@
 				D9A1AADA1AB1AAD400D0E5FF /* Specialist1.bin */,
 				D9A1AAD91AB1AAD400D0E5FF /* Specialist2.bin */,
 				D953B74D1AD329A900C99F05 /* Specialist2SD.bin */,
-				D93DC7331AB2AF410005D473 /* SpecialistW.bin */,
-				D99ACCA51AB9824600E05074 /* SpecialistL.bin */,
+				D99ACCA51AB9824600E05074 /* Lik.bin */,
 				D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */,
 				D91B89EE1ABC8EF8002F70DC /* SpecialistMX.bin */,
 			);
@@ -484,11 +481,10 @@
 				D93DC7441AB2CE5B0005D473 /* mcpg.bin in Resources */,
 				D93DC7401AB2CE5B0005D473 /* Basic.bin in Resources */,
 				D93DC7421AB2CE5B0005D473 /* Apogeo.bin in Resources */,
-				D99ACCA61AB9824600E05074 /* SpecialistL.bin in Resources */,
+				D99ACCA61AB9824600E05074 /* Lik.bin in Resources */,
 				D93DC7411AB2CE5B0005D473 /* Partner.bin in Resources */,
 				D93DC7461AB2CE5B0005D473 /* Microsha.bin in Resources */,
 				D93DC7471AB2CE5B0005D473 /* Radio86RK.bin in Resources */,
-				D93DC7341AB2AF410005D473 /* SpecialistW.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -120,26 +120,20 @@
                                                             <action selector="newDocument:" target="-1" id="zJ5-A0-TZq"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Оконный монитор" tag="703" id="Voe-0z-NGZ">
+                                                    <menuItem title="Монитор ПЭВМ «ЛИК»" tag="703" id="Voe-0z-NGZ">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="n8a-VL-Apa"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="ПЭВМ «ЛИК»" tag="704" id="EcL-ki-MZR">
-                                                        <modifierMask key="keyEquivalentModifierMask"/>
-                                                        <connections>
-                                                            <action selector="newDocument:" target="-1" id="aPJ-WB-Cc8"/>
-                                                        </connections>
-                                                    </menuItem>
-                                                    <menuItem isSeparatorItem="YES" id="cvM-HV-Bqh"/>
-                                                    <menuItem title="Монитор SP580" tag="705" id="35P-XU-DCq">
+                                                    <menuItem title="Монитор SP580" tag="704" id="35P-XU-DCq">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="iqF-5a-x7M"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Специалист MX" tag="706" id="zSe-XL-URC">
+                                                    <menuItem isSeparatorItem="YES" id="cvM-HV-Bqh"/>
+                                                    <menuItem title="Специалист MX" tag="705" id="zSe-XL-URC">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="94k-Bk-zxG"/>
