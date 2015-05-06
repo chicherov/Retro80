@@ -38,7 +38,7 @@
 				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 3;
 
 				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-				menuItem.state = FALSE;
+				menuItem.state = [(ROMDisk*)self.ext url] != nil;
 				return YES;
 			}
 
