@@ -175,6 +175,27 @@
 
 	if ((self.win2 = [[PartnerExternal alloc] init]) == nil)
 		return FALSE;
+
+	// Магнитофон
+	
+	if (self.inpHook == nil)
+	{
+		self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
+		self.inpHook.mem = self.rom;
+		self.inpHook.snd = self.snd;
+
+		self.inpHook.extension = @"rkp";
+		self.inpHook.type = 1;
+	}
+
+	if (self.outHook == nil)
+	{
+		self.outHook = [[F80C alloc] initWithX8080:self.cpu];
+		self.outHook.mem = self.rom;
+
+		self.outHook.extension = @"rkp";
+		self.outHook.type = 1;
+	}
 	
 	for (uint8_t page = 0x0; page <= 10; page++)
 	{
@@ -192,6 +213,9 @@
 
 		[self.cpu mapObject:self.win1	atPage:page from:0xE000 to:0xE7FF];
 		[self.cpu mapObject:self.rom	atPage:page from:0xE800 to:0xFFFF WR:nil];
+
+		[self.cpu mapObject:self.inpHook atPage:page from:0xFBA2 to:0xFBA2 WR:nil];
+		[self.cpu mapObject:self.outHook atPage:page from:0xFC55 to:0xFC55 WR:nil];
 	}
 
 	// Страница 0, с адреса 0000 идут первые 2К монитора
@@ -280,19 +304,6 @@
 	// Контроллер НГМД
 
 	self.dma.DMA0 = self.floppy;
-	[self.cpu addObjectToRESET:self.floppy];
-
-	// Хуки
-
-	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
-
-	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	self.inpHook.extension = @"rkp";
-	self.inpHook.type = 1;
-
-	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
-	self.outHook.extension = @"rkp";
-	self.outHook.type = 1;
 
 	return [super mapObjects];
 }

@@ -28,10 +28,10 @@
 @end
 
 // -----------------------------------------------------------------------------
-// FCAB - Вывод байта на магнитофон (Микроша)
+// Вывод байта на магнитофон (Микроша)
 // -----------------------------------------------------------------------------
 
-@interface FCAB : F80C
+@interface MicroshaF80C : F80C
 
 @end
 
@@ -43,6 +43,8 @@
 
 @property MicroshaKeyboard *kbd;
 @property MicroshaExt *ext;
+
+@property MicroshaF80C *outHook;
 
 @property BOOL isFloppy;
 

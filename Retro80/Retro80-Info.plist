@@ -33,6 +33,16 @@
 			<string>Viewer</string>
 			<key>LSItemContentTypes</key>
 			<array>
+				<string>ru.uart.rk.sp580</string>
+			</array>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSItemContentTypes</key>
+			<array>
 				<string>ru.uart.rk.spmx</string>
 			</array>
 			<key>NSDocumentClass</key>
@@ -52,7 +62,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.5</string>
+	<string>0.7</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>LSMinimumSystemVersion</key>
@@ -111,6 +121,23 @@ All rights reserved.</string>
 					<string>rkp</string>
 					<string>rks</string>
 					<string>rko</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Программа для ретрокомпьютера</string>
+			<key>UTTypeIdentifier</key>
+			<string>ru.uart.rk.sp580</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>sp580</string>
 				</array>
 			</dict>
 		</dict>

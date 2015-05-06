@@ -4,15 +4,26 @@
 // F806 - Ввод байта с магнитофона
 // -----------------------------------------------------------------------------
 
-@interface F806 : NSObject <Hook, Adjustment>
+@interface F806 : NSObject <Adjustment, RD>
+{
+	NSOpenPanel *panel;
+	BOOL cancel;
+}
 
-@property BOOL enabled;
+- (id) initWithX8080:(X8080 *)cpu;
 
-- (id) initWithSound:(NSObject<SoundController> *)snd;
-- (void) setData:(NSData *)data;
+- (void) openPanel;
+- (void) open;
+
+@property X8080 *cpu;
+@property NSObject<RD> *mem;
+@property NSObject<SoundController> *snd;
 
 @property NSString *extension;
 @property unsigned type;
+
+@property NSData *buffer;
+@property NSUInteger pos;
 
 @end
 
@@ -20,11 +31,21 @@
 // F80C - Вывод байта на магнитофон
 // -----------------------------------------------------------------------------
 
-@interface F80C : NSObject <Hook, Adjustment>
+@interface F80C : NSObject <Adjustment, RD>
+{
+	NSTimeInterval last;
+}
 
-@property BOOL enabled;
+- (id) initWithX8080:(X8080 *)cpu;
+
+- (void) save;
+
+@property X8080 *cpu;
+@property NSObject<RD> *mem;
 
 @property NSString *extension;
 @property unsigned type;
+
+@property NSMutableData *buffer;
 
 @end

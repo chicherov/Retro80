@@ -42,9 +42,6 @@
 
 - (BOOL) mapObjects
 {
-	[self.cpu addObjectToRESET:self.kbd];
-	[self.cpu addObjectToRESET:self.ext];
-
 	self.cpu.HLDA = self.dma;
 	self.dma.HLDA = self.crt;
 	self.dma.DMA2 = self.crt;
@@ -69,7 +66,6 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.kbdHook.enabled = TRUE;
 		self.inpHook.enabled = TRUE;
 		self.outHook.enabled = TRUE;
 	}
@@ -82,9 +78,16 @@
 	if (self = [self init])
 	{
 		if (([url.pathExtension.lowercaseString isEqualToString:@"gam"] || [url.pathExtension.lowercaseString isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6)
-			data = [NSData dataWithBytes:(uint8_t *)data.bytes + 1 length:data.length - 1];
+		{
+			self.inpHook.buffer = data;
+			self.inpHook.pos = 1;
+		}
+		else
+		{
+			self.inpHook.buffer = data;
+			self.inpHook.pos = 0;
+		}
 
-		[self.inpHook setData:data];
 		[self.kbd paste:@"I\n"];
 	}
 
@@ -110,7 +113,6 @@
 
 	[encoder encodeBool:self.isColor forKey:@"isColor"];
 
-	[encoder encodeBool:self.kbdHook.enabled forKey:@"kbdHook"];
 	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
 	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
@@ -160,7 +162,6 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
 		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
 		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
 	}

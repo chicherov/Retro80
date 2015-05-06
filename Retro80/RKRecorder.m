@@ -6,24 +6,84 @@
 // -----------------------------------------------------------------------------
 
 @implementation F806
-{
-	int panel; NSData* data;
-
-	const uint8_t* bytes;
-	NSUInteger length;
-	NSUInteger pos;
-
-	NSObject<SoundController> __weak *snd;
-}
 
 @synthesize enabled;
-
-@synthesize extension;
-@synthesize type;
+@synthesize pos;
 
 // -----------------------------------------------------------------------------
 
-uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
+- (id) initWithX8080:(X8080 *)cpu
+{
+	if (self = [self init])
+		self.cpu = cpu;
+
+	return self;
+}
+
+// -----------------------------------------------------------------------------
+
+- (uint8_t *) BYTE:(uint16_t)addr
+{
+	if ([self.mem respondsToSelector:@selector(BYTE:)])
+		return [(NSObject<BYTE> *)self.mem BYTE:addr];
+	else
+		return 0;
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
+{
+	if (*data == 0xA2 && enabled && !self.snd.sound.isInput)
+	{
+		if (panel != nil)
+		{
+			self.cpu.PC--;
+			*data = 0x00;
+			return;
+		}
+
+			if (cancel)
+			cancel = FALSE;
+
+		else
+		{
+			if (pos != 0 && self.cpu.A == 0xFF)
+				while (pos < self.buffer.length && ((const uint8_t *)self.buffer.bytes) [pos++] != 0xE6);
+
+			if (pos < self.buffer.length)
+			{
+				self.cpu.A = ((const uint8_t *)self.buffer.bytes) [pos++];
+
+				*data = 0xC9;
+				return;
+			}
+
+			if (self.cpu.A == 0xFF)
+			{
+				[self performSelectorOnMainThread:@selector(openPanel)
+									   withObject:nil
+									waitUntilDone:TRUE];
+
+				[self performSelectorOnMainThread:@selector(open)
+									   withObject:nil
+									waitUntilDone:FALSE];
+
+				self.cpu.PC--;
+				*data = 0x00;
+				return;
+			}
+		}
+	}
+
+	[self.mem RD:addr data:data CLK:clock];
+}
+
+// -----------------------------------------------------------------------------
+// Подсчет контрольной суммы для Радио86РК/Микроша
+// -----------------------------------------------------------------------------
+
+static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 {
 	uint8_t B = 0x00, C = 0x00; while (size--)
 	{
@@ -49,138 +109,69 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 }
 
 // -----------------------------------------------------------------------------
-
-- (id) initWithSound:(NSObject<SoundController> *)object
-{
-	if (self = [super init])
-	{
-		snd = object;
-	}
-
-	return self;
-}
-
-- (void) setData:(NSData *)initData
-{
-	data = initData; bytes = data.bytes;
-	length = data.length; pos = 0;
-}
-
+// Панель открытия файла
 // -----------------------------------------------------------------------------
+
+
+- (void) openPanel
+{
+	panel = [NSOpenPanel openPanel];
+}
 
 - (void) open
 {
-	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
+	panel.allowedFileTypes = [NSArray arrayWithObjects:@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension, nil];
 
-	openPanel.allowedFileTypes = [NSArray arrayWithObjects:@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", extension, nil];
-
-	if ([openPanel runModal] == NSFileHandlingPanelOKButton && openPanel.URLs.count == 1)
+	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
-		NSString *fileName = [[openPanel.URLs.firstObject path] stringByResolvingSymlinksInPath];
-		NSString *fileExt = [[fileName pathExtension]lowercaseString];
+		NSString *fileExt = [panel.URLs.firstObject pathExtension].lowercaseString;
 
 		if ([fileExt isEqualToString:@"wav"])
 		{
-			[snd.sound stop];
-
-			if ([snd.sound open:openPanel.URLs.firstObject])
-			{
-				[snd.sound start]; panel = 0; return;
-			}
-
-			[snd.sound start];
+			[self.snd.sound stop];
+			[self.snd.sound open:panel.URLs.firstObject];
+			[self.snd.sound start];
 		}
 
-		else if ((data = [NSData dataWithContentsOfFile:fileName]))
+		else if ((self.buffer = [NSData dataWithContentsOfURL:panel.URLs.firstObject]))
 		{
-			bytes = data.bytes; length = data.length; pos = 0;
-
-			if ([@[@"pki", @"gam", @"bss", @"bsm"] containsObject:fileExt])
+			pos = 0; if ([@[@"pki", @"gam", @"bss", @"bsm"] containsObject:fileExt])
 			{
-				if (length && bytes[0] == 0xE6)
+				if (self.buffer.length && *(const uint8_t *)self.buffer.bytes == 0xE6)
 					pos++;
 			}
-			else if ([fileExt isEqualToString:@"bin"] && length <= 0x10000)
+
+			else if ([fileExt isEqualToString:@"bin"] && self.buffer.length <= 0x10000)
 			{
 				uint8_t buffer[4]; buffer[0] = 0x00; buffer[1] = 0x00;
-				buffer[2] = ((length - 1) >> 8) & 0xFF;
-				buffer[3] = (length - 1) & 0xFF;
+				buffer[2] = ((self.buffer.length - 1) >> 8) & 0xFF;
+				buffer[3] = (self.buffer.length - 1) & 0xFF;
 
 				NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:4];
-				[mutableData appendData:data];
+				[mutableData appendData:self.buffer];
 
-				if (type)
+				if (self.type)
 				{
-					uint16_t cs = csum(bytes, length, type == 2);
-					buffer[2] = cs >> 8; buffer[3] = cs & 0xFF;
-					buffer[1] = 0xE6;
+					uint16_t cs = csum(self.buffer.bytes, self.buffer.length, self.type == 2);
+					buffer[2] = cs >> 8; buffer[3] = cs & 0xFF; buffer[1] = 0xE6;
 
-					if (type == 2)
+					if (self.type == 2)
 						[mutableData appendBytes:buffer + 2 length:2];
 					else
 						[mutableData appendBytes:buffer length:4];
 				}
 
-				data = mutableData; bytes = data.bytes; length = data.length;
+				self.buffer = mutableData;
 			}
 		}
 	}
 
-	panel = 2;
-}
-
-// -----------------------------------------------------------------------------
-
-- (int) execute:(X8080 *)cpu
-{
-	if (enabled && !snd.sound.isInput)
+	else
 	{
-		switch (panel)
-		{
-			case 0:
-			{
-				if (pos == length)
-				{
-					if (cpu.A == 0xFF)
-					{
-						panel = 1; [self performSelectorOnMainThread:@selector(open) withObject:nil waitUntilDone:FALSE]; return 0;
-					}
-					else
-					{
-						return 2;
-					}
-
-				}
-
-				if (cpu.A == 0xFF && pos != 0)
-					while (pos < length && bytes[pos++] != 0xE6);
-
-				if (pos == length)
-					return 2;
-
-				cpu.A = bytes[pos++];
-				return 1;
-			}
-
-			case 1:
-			{
-				return 0;
-			}
-
-			case 2:
-			{
-				panel = 0; if (pos < length)
-				{
-					cpu.A = bytes[pos++];
-					return 1;
-				}
-
-				return 2;
-			}
-		}
+		cancel = TRUE;
 	}
 
-	return 2;
+	panel = nil;
 }
 
 @end
@@ -190,15 +181,65 @@ uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 // -----------------------------------------------------------------------------
 
 @implementation F80C
-{
-	NSMutableData* data;
-	NSTimeInterval last;
-}
 
 @synthesize enabled;
 
-@synthesize extension;
-@synthesize type;
+// -----------------------------------------------------------------------------
+
+- (id) initWithX8080:(X8080 *)cpu
+{
+	if (self = [self init])
+		self.cpu = cpu;
+
+	return self;
+}
+
+// -----------------------------------------------------------------------------
+
+- (uint8_t *) BYTE:(uint16_t)addr
+{
+	if ([self.mem respondsToSelector:@selector(BYTE:)])
+		return [(NSObject<BYTE> *)self.mem BYTE:addr];
+	else
+		return 0;
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
+{
+	if (*data == 0xA2 && enabled)
+	{
+		@synchronized(self)
+		{
+			uint8_t byte = self.type && self.type != 3 ? self.cpu.C : self.cpu.A;
+
+			if (self.buffer == nil)
+			{
+				if (byte == 0xE6)
+				{
+					self.buffer = [NSMutableData dataWithBytes:&byte length:1];
+					last = [NSProcessInfo processInfo].systemUptime;
+
+					[self performSelectorOnMainThread:@selector(save)
+										   withObject:nil
+										waitUntilDone:FALSE];
+				}
+			}
+
+			else
+			{
+				last = [NSProcessInfo processInfo].systemUptime;
+				[self.buffer appendBytes:&byte length:1];
+			}
+		}
+
+		*data = 0xC9;
+		return;
+	}
+
+	[self.mem RD:addr data:data CLK:clock];
+}
 
 // -----------------------------------------------------------------------------
 
@@ -227,8 +268,8 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 	{
 		@synchronized(self)
 		{
-			const uint8_t *ptr = data.bytes;
-			NSUInteger length = data.length;
+			const uint8_t *ptr = self.buffer.bytes;
+			NSUInteger length = self.buffer.length;
 
 			if (length > 5)
 			{
@@ -270,7 +311,7 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 					}
 				}
 
-				if (type == 3 && ptr[1] == 0xD9 && ptr[2] == 0xD9 && ptr[3] == 0xD9)
+				if (self.type == 3 && ptr[1] == 0xD9 && ptr[2] == 0xD9 && ptr[3] == 0xD9)
 				{
 					int i = 4; while (i < length && ptr[i] >= 0x20 && ptr[i] < 0x7F) i++; if (i < length && (ptr[i] == 0x00 || ptr[i] == 0x0D) && i <= 20)
 					{
@@ -278,10 +319,23 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 						{
 							if (j + ((ptr[j + 4] << 8) | ptr[j + 3]) - ((ptr[j + 2] << 8) | ptr[j + 1]) + 8 == length)
 							{
-								savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
+								savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
 								savePanel.nameFieldStringValue = stringFromRK(ptr + 4, i - 4);
 								break;
 							}
+						}
+					}
+				}
+
+				else if (self.type == 4 && ptr[0] == 0x00)
+				{
+					int i = 9; while (i < length && ptr[i] >= 0x20 && ptr[i] < 0x7F) i++; if (i < length && ptr[i] == 0x00 && i <= 25)
+					{
+						if (length == ((ptr[4] << 8) | ptr[3]) - ((ptr[2] << 8) | ptr[1]) + i + 2)
+						{
+							savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
+							savePanel.nameFieldStringValue = stringFromRK(ptr + 9, i - 9);
+							break;
 						}
 					}
 				}
@@ -290,24 +344,24 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 				{
 					int i = ((ptr[3] << 8) | ptr[4]) - ((ptr[1] << 8) | ptr[2]) + 6;
 
-					if (type == 3)
+					if (self.type == 3)
 						i = ((ptr[4] << 8) | ptr[3]) - ((ptr[2] << 8) | ptr[1]) + 6;
 
-					if (length - i == (type ? 2 : 0))
+					if (length - i == (self.type ? 2 : 0))
 					{
-						savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
 						break;
 					}
 
 					if (length - i == 5 && ptr[i++] == 0x00 && ptr[i++] == 0x00 && ptr[i++] == 0xE6)
 					{
-						savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
 						break;
 					}
 
 					if (length - i == 4 && ptr[i++] == 0x00 && ptr[i++] == 0xE6)
 					{
-						savePanel.allowedFileTypes = [NSArray arrayWithObject:extension];
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
 						break;
 					}
 				}
@@ -315,61 +369,23 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 		}
 	}
 
-	if ([savePanel runModal] == NSFileHandlingPanelOKButton)
+	if ([savePanel runModal] == NSFileHandlingPanelOKButton) @synchronized(self)
 	{
-		@synchronized(self)
-		{
-			const uint8_t *ptr = data.bytes;
-			NSUInteger length = data.length;
+		const uint8_t *ptr = self.buffer.bytes;
+		NSUInteger length = self.buffer.length;
 
-			if (length-- && *ptr++ == 0xE6)
-				data = [NSMutableData dataWithBytes:ptr length:length];
+		if (length && *ptr == 0xE6)
+			self.buffer = [NSMutableData dataWithBytes:++ptr length:--length];
 
-			[data writeToURL:savePanel.URL atomically:TRUE];
+		[self.buffer writeToURL:savePanel.URL atomically:TRUE];
 
-			data = nil;
-		}
-	}
-	else
-	{
-		@synchronized(self)
-		{
-			data = nil;
-		}
-	}
-}
-
-// -----------------------------------------------------------------------------
-
-- (int) execute:(X8080 *)cpu
-{
-	if (enabled)
-	{
-		@synchronized(self)
-		{
-			uint8_t byte = type && type != 3 ? cpu.C : cpu.A;
-
-			if (data == nil)
-			{
-				if (byte != 0xE6)
-					return 1;
-
-				data = [NSMutableData dataWithBytes:&byte length:1];
-				last = [NSProcessInfo processInfo].systemUptime;
-
-				[self performSelectorOnMainThread:@selector(save) withObject:nil waitUntilDone:FALSE];
-			}
-			else
-			{
-				last = [NSProcessInfo processInfo].systemUptime;
-				[data appendBytes:&byte length:1];
-			}
-		}
-		
-		return 1;
+		self.buffer = nil;
 	}
 
-	return 2;
+	else @synchronized(self)
+	{
+		self.buffer = nil;
+	}
 }
 
 @end

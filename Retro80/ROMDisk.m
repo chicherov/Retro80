@@ -137,7 +137,10 @@
 - (void) RESET
 {
 	if (romMode > 20 && self.tapeEmulator && self.recorder.enabled)
-		[self.recorder setData:rom];
+	{
+		self.recorder.buffer = rom;
+		self.recorder.pos = 0;
+	}
 
 	[super RESET];
 }

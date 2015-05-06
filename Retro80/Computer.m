@@ -44,12 +44,6 @@
 	if (menuItem.action == @selector(debug:))
 		return [self.cpu conformsToProtocol:@protocol(Debug)];
 
-	if (menuItem.action == @selector(kbdHook:))
-	{
-		menuItem.state = self.kbdHook.enabled;
-		return self.kbdHook != nil;
-	}
-
 	if (menuItem.action == @selector(outHook:))
 	{
 		menuItem.state = self.outHook.enabled;
@@ -157,11 +151,6 @@
 // -----------------------------------------------------------------------------
 // хуки
 // -----------------------------------------------------------------------------
-
-- (IBAction) kbdHook:(NSMenuItem *)menuItem
-{
-	self.kbdHook.enabled = !self.kbdHook.enabled;
-}
 
 - (IBAction) inpHook:(NSMenuItem *)menuItem
 {

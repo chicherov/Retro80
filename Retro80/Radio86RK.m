@@ -128,10 +128,7 @@ static uint32_t colors[] =
 		{
 			if (self.dos29 != nil || (self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
 			{
-				if (self.floppy == nil && (self.floppy = [[Floppy alloc] init]) != nil)
-					[self.cpu addObjectToRESET:self.floppy];
-
-				if (self.floppy)
+				if (self.floppy != nil || (self.floppy = [[Floppy alloc] init]) != nil)
 				{
 					[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
 					[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
@@ -235,28 +232,39 @@ static uint32_t colors[] =
 	self.cpu.INTE = self.snd;
 	self.snd.ext = self.ext;
 
+	if (self.inpHook == nil)
+	{
+		self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
+		self.inpHook.mem = self.rom;
+		self.inpHook.snd = self.snd;
+
+		self.inpHook.extension = @"rkr";
+		self.inpHook.type = 1;
+	}
+
+	if (self.outHook == nil)
+	{
+		self.outHook = [[F80C alloc] initWithX8080:self.cpu];
+		self.outHook.mem = self.rom;
+
+		self.outHook.extension = @"rkr";
+		self.outHook.type = 1;
+	}
+	
 	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];
 	[self.cpu mapObject:self.kbd from:0x8000 to:0x9FFF];
 	[self.cpu mapObject:self.snd from:0xA000 to:0xBFFF RD:self.ext];
 	[self.cpu mapObject:self.crt from:0xC000 to:0xDFFF];
 	[self.cpu mapObject:self.rom from:0xE000 to:0xFFFF WR:self.dma];
 
+	[self.cpu mapObject:self.inpHook from:0xFB98 to:0xFB98 WR:self.dma];
+	[self.cpu mapObject:self.outHook from:0xFC46 to:0xFC46 WR:self.dma];
+
 	if (self.isFloppy)
 	{
 		[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
 		[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
-		[self.cpu addObjectToRESET:self.floppy];
 	}
-
-	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
-
-	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	self.inpHook.extension = @"rkr";
-	self.inpHook.type = 1;
-
-	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
-	self.outHook.extension = @"rkr";
-	self.outHook.type = 1;
 
 	return [super mapObjects];
 }

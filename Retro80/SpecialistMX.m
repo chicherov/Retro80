@@ -22,6 +22,11 @@
 				   @6,   @7,   @8,   @9,   @11,  @45,  @46,  @43,  @47,  @44,  @50,  @117,
 				   @999, @115, @126, @125, @999, @999, @49,  @123, @48,  @124, @76,  @36
 				   ];
+
+		chr1Map = @"\x1B\x7F;1234567890-jcukeng[]zh:fywaproldv\\.q^smitxb@,/_\0\0\0 \t\x03\r";
+		chr2Map = @"\x1B\x7F+!\"#$%&'() =JCUKENG{}ZH*FYWAPROLDV|>Q~SMITXB`<?\0\0\0\0 \t\x03\r";
+		upperCase = FALSE;
+
 	}
 
 	return self;
@@ -317,11 +322,6 @@
 	self.sys.cpu = self.cpu;
 	self.sys.crt = self.crt;
 	self.sys.fdd = self.fdd;
-
-	[self.cpu addObjectToRESET:self.kbd];
-	[self.cpu addObjectToRESET:self.ext];
-	[self.cpu addObjectToRESET:self.fdd];
-	[self.cpu addObjectToRESET:self.sys];
 
 	self.cpu.HLDA = self.fdd;
 	self.kbd.snd = self.snd;

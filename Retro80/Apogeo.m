@@ -130,6 +130,25 @@ static uint32_t colors[] =
 
 	self.cpu.INTE = self.crt;
 
+	if (self.inpHook == nil)
+	{
+		self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
+		self.inpHook.mem = self.rom;
+		self.inpHook.snd = self.snd;
+
+		self.inpHook.extension = @"rka";
+		self.inpHook.type = 1;
+	}
+
+	if (self.outHook == nil)
+	{
+		self.outHook = [[F80C alloc] initWithX8080:self.cpu];
+		self.outHook.mem = self.rom;
+
+		self.outHook.extension = @"rka";
+		self.outHook.type = 1;
+	}
+
 	[self.cpu mapObject:self.ram from:0x0000 to:0xEBFF];
 	[self.cpu mapObject:self.snd from:0xEC00 to:0xECFF];
 	[self.cpu mapObject:self.kbd from:0xED00 to:0xEDFF];
@@ -139,15 +158,8 @@ static uint32_t colors[] =
 	[self.cpu mapObject:self.rom from:0xF000 to:0xF7FF WR:self.dma];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
-	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xF81B];
-
-	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	self.inpHook.extension = @"rka";
-	self.inpHook.type = 1;
-
-	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
-	self.outHook.extension = @"rka";
-	self.outHook.type = 1;
+	[self.cpu mapObject:self.inpHook from:0xFB98 to:0xFB98 WR:nil];
+	[self.cpu mapObject:self.outHook from:0xFC46 to:0xFC46 WR:nil];
 
 	return [super mapObjects];
 }

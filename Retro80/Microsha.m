@@ -119,17 +119,16 @@ static uint32_t colors[] =
 
 		if ((self.isFloppy = !self.isFloppy))
 		{
-			if (self.dos29 == nil && (self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
+			if (self.dos29 != nil || (self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
+			{
 				if (self.dos29.length > 0xDBF && self.dos29.mutableBytes[0xDBF] == 0xC1)
 					self.dos29.mutableBytes[0xDBF] = 0xD1;
 
-			if (self.floppy == nil && (self.floppy = [[Floppy alloc] init]) != nil)
-				[self.cpu addObjectToRESET:self.floppy];
-
-			if (self.dos29 && self.floppy)
-			{
-				[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
-				[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+				if (self.floppy != nil || (self.floppy = [[Floppy alloc] init]) != nil)
+				{
+					[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
+					[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+				}
 			}
 		}
 		else
@@ -225,6 +224,25 @@ static uint32_t colors[] =
 
 	self.ext.crt = self.crt;
 
+	if (self.inpHook == nil)
+	{
+		self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
+		self.inpHook.mem = self.rom;
+		self.inpHook.snd = self.snd;
+
+		self.inpHook.extension = @"rkm";
+		self.inpHook.type = 2;
+	}
+
+	if (self.outHook == nil)
+	{
+		self.outHook = [[MicroshaF80C alloc] initWithX8080:self.cpu];
+		self.outHook.mem = self.rom;
+
+		self.outHook.extension = @"rkm";
+		self.outHook.type = 2;
+	}
+
 	[self.cpu mapObject:self.ram from:0x0000 to:0xBFFF];
 	[self.cpu mapObject:self.kbd from:0xC000 to:0xC7FF];
 	[self.cpu mapObject:self.ext from:0xC800 to:0xCFFF];
@@ -232,22 +250,15 @@ static uint32_t colors[] =
 	[self.cpu mapObject:self.snd from:0xD800 to:0xDFFF];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:self.dma];
 
+	[self.cpu mapObject:self.inpHook from:0xFC0D to:0xFC0D WR:self.dma];
+	[self.cpu mapObject:self.outHook from:0xFCAB to:0xFCAB WR:self.dma];
+	[self.cpu mapObject:self.outHook from:0xF89A to:0xF89A WR:self.dma];
+
 	if (self.isFloppy)
 	{
 		[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
 		[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
-		[self.cpu addObjectToRESET:self.floppy];
 	}
-
-	[self.cpu mapHook:self.kbdHook = [[F81B alloc] initWithRKKeyboard:self.kbd] atAddress:0xFEEA];
-
-	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	self.inpHook.extension = @"rkm";
-	self.inpHook.type = 2;
-
-	[self.cpu mapHook:self.outHook = [[FCAB alloc] init] atAddress:0xFCAB];
-	self.outHook.extension = @"rkm";
-	self.outHook.type = 2;
 
 	return [super mapObjects];
 }
@@ -282,6 +293,9 @@ static uint32_t colors[] =
 				   // 20 1B    09    0A    0D    1F    08    18
 				   @49,  @53,  @48,  @76,  @36,  @117, @123, @124
 				   ];
+
+		chr1Map = @"XYZ[\\]^_PQRSTUVWHIJKLMNO@ABCDEFG89:;,-./01234567 \x1B\t\x03\r";
+		chr2Map = @"ЬЫЗШЭЩЧ\x7FПЯРСТУЖВХИЙКЛМНОЮАБЦДЕФГ()*+<=>? !\"#$%&' \x1B\t\x03\r";
 
 		RUSLAT = 0x20;
 		SHIFT = 0x80;
@@ -335,17 +349,25 @@ static uint32_t colors[] =
 @end
 
 // -----------------------------------------------------------------------------
-// FCAB - Вывод байта на магнитофон (Микроша)
+// Вывод байта на магнитофон (Микроша)
 // -----------------------------------------------------------------------------
 
-@implementation FCAB
-
-- (int) execute:(X8080 *)cpu
+@implementation MicroshaF80C
 {
-	if (cpu.SP == 0x76CD && MEMR(cpu, 0x76CD, cpu.CLK, 0) == 0x9D && MEMR(cpu, 0x76CE, cpu.CLK, 0) == 0xF8)
-		return 2;
+	BOOL disable;
+}
 
-	return [super execute:cpu];
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
+{
+	if (addr == 0xF89A || disable)
+	{
+		disable = addr == 0xF89A; [self.mem RD:addr data:data CLK:clock];
+	}
+
+	else
+	{
+		[super RD:addr data:data CLK:clock];
+	}
 }
 
 @end

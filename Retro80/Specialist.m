@@ -15,7 +15,7 @@
 
 + (NSArray *) extensions
 {
-	return [@[@"rks"] arrayByAddingObjectsFromArray:[SpecialistMX extensions]];
+	return [[@[@"rks"] arrayByAddingObjectsFromArray:[SpecialistSP580 extensions]] arrayByAddingObjectsFromArray:[SpecialistMX extensions]];
 }
 
 // -----------------------------------------------------------------------------
@@ -30,26 +30,35 @@
 		{
 			case 0:
 			{
-
 				menuItem.submenu = [[NSMenu alloc] init];
-				[menuItem.submenu addItemWithTitle:@"SD STARTER ROM" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 1;
-				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 2;
+				[menuItem.submenu addItemWithTitle:menuItem.title action:@selector(ROMDisk:) keyEquivalent:@""].tag = 1;
+				[menuItem.submenu addItem:[NSMenuItem separatorItem]];
 
-				NSURL *url = [(ROMDisk*)self.ext url]; if ((menuItem.state = url != nil))
-					menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
-				else
-					menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+				[menuItem.submenu addItemWithTitle:@"SD STARTER ROM" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 2;
+				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 3;
 
+				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+				menuItem.state = FALSE;
 				return YES;
 			}
 
 			case 1:
-				menuItem.state = self.rom.length == 8192;
+			{
+				NSURL *url = [(ROMDisk*)self.ext url]; if ((menuItem.state = url != nil))
+					menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+				else
+					menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+
 				return YES;
+			}
 
 			case 2:
+				menuItem.state = memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) == 0;
+				return YES;
+
+			case 3:
 				menuItem.state = [(ROMDisk*)self.ext tapeEmulator];
-				return [(ROMDisk*)self.ext length] != 0 && self.rom.length != 8192 && self.inpHook.enabled;
+				return [(ROMDisk*)self.ext length] != 0 && memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) != 0 && self.inpHook.enabled;
 		}
 	}
 
@@ -84,6 +93,7 @@
 		switch (menuItem.tag)
 		{
 			case 0:
+			case 1:
 			{
 				NSOpenPanel *panel = [NSOpenPanel openPanel];
 				panel.canChooseDirectories = TRUE;
@@ -105,23 +115,33 @@
 				break;
 			}
 
-			case 1:
+			case 2:
 			{
 				@synchronized(self.snd.sound)
 				{
-					ROM *rom; if ((rom = [[ROM alloc] initWithContentsOfResource:self.rom.length == 8192 ? @"Specialist2" : @"Specialist2SD" mask:0x3FFF]) != nil)
-					{
-						[self.document registerUndoWithMenuItem:menuItem];
+					[self.document registerUndoWithMenuItem:menuItem];
 
-						[self.cpu mapObject:self.rom = rom from:0xC000 to:0xEFFF WR:nil];
-						if (rom.length == 8192) romdisk.tapeEmulator = FALSE;
+					ROM *rom = nil; if (memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) != 0)
+					{
+						if ((rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2SD" mask:0x3FFF]) != nil)
+							romdisk.tapeEmulator = FALSE;
+					}
+					else
+					{
+						if ((rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) != nil)
+							romdisk.tapeEmulator = TRUE;
+					}
+
+					if (rom)
+					{
+						self.rom = rom; [self mapObjects];
 					}
 				}
 
 				break;
 			}
 
-			case 2:
+			case 3:
 			{
 				romdisk.tapeEmulator = !romdisk.tapeEmulator;
 				break;
@@ -167,28 +187,36 @@
 {
 	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
+	if (self.inpHook == nil)
+	{
+		self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
+		self.inpHook.mem = self.rom;
+		self.inpHook.snd = self.snd;
+
+		self.inpHook.extension = @"rks";
+		self.inpHook.type = 3;
+
+		if ([self.ext isKindOfClass:[ROMDisk class]])
+			[(ROMDisk *)self.ext setRecorder:self.inpHook];
+	}
+
+	if (self.outHook == nil)
+	{
+		self.outHook = [[F80C alloc] initWithX8080:self.cpu];
+		self.outHook.mem = self.rom;
+
+		self.outHook.extension = @"rks";
+		self.outHook.type = 3;
+	}
+	
 	[self.cpu mapObject:self.ram from:0x0000 to:0x8FFF];
 	[self.cpu mapObject:self.crt from:0x9000 to:0xBFFF RD:self.ram];
 	[self.cpu mapObject:self.rom from:0xC000 to:0xEFFF WR:nil];
 	[self.cpu mapObject:self.ext from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.kbd from:0xF800 to:0xFFFF];
 
-	[self.cpu addObjectToRESET:self.kbd];
-	[self.cpu addObjectToRESET:self.ext];
-
-	self.kbdHook = [[F812 alloc] initWithRKKeyboard:self.kbd];
-	[self.cpu mapHook:[[F803 alloc] initWithF812:(F812 *)self.kbdHook] atAddress:0xC337];
-
-	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xC377];
-	self.inpHook.extension = @"rks";
-	self.inpHook.type = 3;
-
-	if ([self.ext isKindOfClass:[ROMDisk class]])
-		[(ROMDisk *)self.ext setRecorder:self.inpHook];
-
-	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xC3D0];
-	self.outHook.extension = @"rks";
-	self.outHook.type = 3;
+	[self.cpu mapObject:self.inpHook from:0xC377 to:0xC377 WR:nil];
+	[self.cpu mapObject:self.outHook from:0xC3D0 to:0xC3D0 WR:nil];
 
 	self.kbd.crt = self.crt;
 	self.kbd.snd = self.snd;
@@ -244,9 +272,6 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.kbdHook.enabled = FALSE;
-		self.kbd.qwerty = TRUE;
-
 		self.inpHook.enabled = TRUE;
 		self.outHook.enabled = TRUE;
 	}
@@ -265,6 +290,9 @@
 
 - (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
+	if ([[SpecialistSP580 extensions] containsObject:url.pathExtension.lowercaseString])
+		return self = [[SpecialistSP580 alloc] initWithData:data URL:url];
+
 	if ([[SpecialistMX extensions] containsObject:url.pathExtension.lowercaseString])
 		return self = [[SpecialistMX alloc] initWithData:data URL:url];
 
@@ -279,7 +307,7 @@
 		}
 
 		if (length-- && *ptr++ == 0xE6 && (self = [self initWithType:3]))
-			[self.inpHook setData:[NSData dataWithBytes:ptr length:length]];
+			self.inpHook.buffer = [NSData dataWithBytes:ptr length:length];
 		else
 			return self = nil;
 	}
@@ -297,14 +325,14 @@
 		}
 
 		if (length-- && *ptr++ == 0xE6 && (self = [self initWithType:2]))
-			[self.inpHook setData:[NSData dataWithBytes:ptr length:length]];
+			self.inpHook.buffer = [NSData dataWithBytes:ptr length:length];
 		else
 			return self = nil;
 	}
 
 	else if (self = [self initWithType:2])
 	{
-		[self.inpHook setData:data];
+		self.inpHook.buffer = data;
 	}
 
 	return self;
@@ -326,7 +354,6 @@
 	[encoder encodeObject:self.ext forKey:@"ext"];
 	[encoder encodeObject:self.snd forKey:@"snd"];
 
-	[encoder encodeBool:self.kbdHook.enabled forKey:@"kbdHook"];
 	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
 	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
@@ -367,7 +394,6 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
 		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
 		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
 	}

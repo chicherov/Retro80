@@ -86,8 +86,6 @@
 	// Адресная шина
 	// -------------------------------------------------------------------------
 
-	NSObject<Hook> *HOOK[0x10000];
-
 	NSObject<RD> *RD[16][0x10000];
 	NSObject<WR> *WR[16][0x10000];
 
@@ -151,6 +149,8 @@
 
 @synthesize quartz;
 @synthesize CLK;
+
+@synthesize RESET;
 
 @synthesize PAGE;
 @synthesize HALT;
@@ -223,6 +223,9 @@
 
 	}
 
+	if ([rd conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:rd])
+		[RESETLIST addObject:rd];
+
 	if ([wr conformsToProtocol:@protocol(BYTE)])
 	{
 		for (unsigned address = from; address <= to; address++)
@@ -240,6 +243,9 @@
 		}
 
 	}
+
+	if ([wr conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:wr])
+		[RESETLIST addObject:wr];
 }
 
 - (void) mapObject:(NSObject<WR> *)wr atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to RD:(NSObject<RD> *)rd
@@ -320,30 +326,6 @@ uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
 }
 
 // -----------------------------------------------------------------------------
-// RESET
-// -----------------------------------------------------------------------------
-
-@synthesize RESET;
-
-- (void) addObjectToRESET:(NSObject<RESET> *)object
-{
-	if (![RESETLIST containsObject:object])
-		[RESETLIST addObject:object];
-}
-
-// -----------------------------------------------------------------------------
-// Служебные адреса
-// -----------------------------------------------------------------------------
-
-- (void) mapHook:(NSObject<Hook> *)object atAddress:(uint16_t)addr
-{
-	while (RDMEM[0][addr] && RDMEM[0][addr+1] && RDMEM[0][addr+2] && *RDMEM[0][addr] == 0xC3)
-		addr = *RDMEM[0][addr + 1] | (*RDMEM[0][addr + 2] << 8);
-
-	HOOK[addr] = object;
-}
-
-// -----------------------------------------------------------------------------
 // Работа с сигналом HLDA
 // -----------------------------------------------------------------------------
 
@@ -402,25 +384,25 @@ static unsigned HOLD(X8080* cpu, unsigned clk)
 
 static unsigned timings[256] =
 {
-	 9,  9,  9, 18, 18, 18,  9,  9,  9,  9,  9, 18, 18, 18,  9,  9,
-	 9,  9,  9, 18, 18, 18,  9,  9,  9,  9,  9, 18, 18, 18,  9,  9,
-	 9,  9,  9, 18, 18, 18,  9,  9,  9,  9,  9, 18, 18, 18,  9,  9,
-	 9,  9,  9, 18,  9,  9,  9,  9,  9,  9,  9, 18, 18, 18,  9,  9,
+	18, 18, 18, 27, 27, 27, 18, 18, 18, 18, 18, 27, 27, 27, 18, 18,
+	18, 18, 18, 27, 27, 27, 18, 18, 18, 18, 18, 27, 27, 27, 18, 18,
+	18, 18, 18, 27, 27, 27, 18, 18, 18, 18, 18, 27, 27, 27, 18, 18,
+	18, 18, 18, 27, 18, 18, 18, 18, 18, 18, 18, 27, 27, 27, 18, 18,
 
-	18, 18, 18, 18, 18, 18,  9, 18, 18, 18, 18, 18, 18, 18,  9, 18,
-	18, 18, 18, 18, 18, 18,  9, 18, 18, 18, 18, 18, 18, 18,  9, 18,
-	18, 18, 18, 18, 18, 18,  9, 18, 18, 18, 18, 18, 18, 18,  9, 18,
-	 9,  9,  9,  9,  9,  9,  9,  9, 18, 18, 18, 18, 18, 18,  9, 18,
+	27, 27, 27, 27, 27, 27, 18, 27, 27, 27, 27, 27, 27, 27, 18, 27,
+	27, 27, 27, 27, 27, 27, 18, 27, 27, 27, 27, 27, 27, 27, 18, 27,
+	27, 27, 27, 27, 27, 27, 18, 27, 27, 27, 27, 27, 27, 27, 18, 27,
+	18, 18, 18, 18, 18, 18, 18, 18, 27, 27, 27, 27, 27, 27, 18, 27,
 
-	 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,
-	 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,
-	 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,
-	 9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,  9,
+	18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+	18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+	18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+	18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
 
-	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
-	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
-	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18,
-	18,  9,  9,  9, 18, 18,  9, 18, 18,  9,  9,  9, 18, 18,  9, 18
+	27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
+	27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
+	27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
+	27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27
 };
 
 static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
@@ -585,7 +567,12 @@ static bool test(uint8_t IR, uint8_t F)
 
 - (BOOL) execute:(uint64_t)CLKI
 {
-	while (CLK < CLKI)
+	if (HALT) while (CLK < CLKI)
+	{
+		CLK += 18; CLK+= HOLD(self, 18);
+	}
+
+	else while (CLK < CLKI)
 	{
 		if (RESET)
 		{
@@ -603,38 +590,14 @@ static bool test(uint8_t IR, uint8_t F)
 		if (addr == STOP1 || addr == STOP2)
 			return FALSE;
 
-		uint8_t IR; CLK += 9; if (HALT)
-		{
-			IR = 0x00;
-		}
+		uint8_t IR; CLK += 9;
 
-		else if (IF && INTR && CallINTR(INTR, @selector(INTR:), CLK) && INTA)
-		{
+		if (IF && INTR && CallINTR(INTR, @selector(INTR:), CLK) && INTA)
 			IR = CallINTA(INTA, @selector(INTA:), CLK);
-		}
+		else
+			IR = MEMR(self, PC.PC++, CLK, 0xA2);
 
-		else switch (HOOK[PC.PC] == NULL ? 2 : [HOOK[PC.PC] execute:self])
-		{
-			default:
-			{
-				IR = MEMR(self, PC.PC++, CLK, 0xA2);
-				break;
-			}
-
-			case 0:
-			{
-				IR = 0x00;
-				break;
-			}
-
-			case 1:
-			{
-				IR = 0xC9;
-				break;
-			}
-		}
-
-		CLK += 9; CLK += HOLD(self, timings[IR] + 9);
+		CLK += 9; CLK += HOLD(self, timings[IR]);
 
 		switch (IR)
 		{

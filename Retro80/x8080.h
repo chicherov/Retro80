@@ -22,10 +22,6 @@
 
 @class X8080;
 
-@protocol Hook
-- (int) execute:(X8080*)cpu;
-@end
-
 @protocol HLDA
 - (unsigned) HLDA:(uint64_t)clock;
 @end
@@ -115,8 +111,6 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) addObjectToRESET:(NSObject<RESET>*)object;
-
 @property BOOL RESET;
 @property BOOL MEMIO;
 
@@ -138,10 +132,5 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
 
 uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data);
 void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
-
-// -----------------------------------------------------------------------------
-
-- (void) mapHook:(NSObject<Hook> *)object
-	   atAddress:(uint16_t)addr;
 
 @end

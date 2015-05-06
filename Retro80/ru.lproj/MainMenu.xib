@@ -214,11 +214,6 @@
                                     <action selector="qwerty:" target="-1" id="vq2-rF-akY"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Перехват ввода с клавиатуры" keyEquivalent="K" id="tWu-be-OoA">
-                                <connections>
-                                    <action selector="kbdHook:" target="-1" id="R0k-ck-vea"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Перехват вывода на ленту" id="YDb-Gz-iEX">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>

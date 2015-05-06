@@ -11,10 +11,15 @@
 
 	NSArray* kbdmap;
 
+	NSString* chr1Map;
+	NSString* chr2Map;
+	BOOL upperCase;
+
 	// Нажатые кнопки
 
+	unsigned short keyboard[72];
 	NSUInteger modifierFlags;
-	BOOL keyboard[72];
+	BOOL ignoreShift;
 
 	// Маски служебных клавиш
 
@@ -28,46 +33,10 @@
 	uint8_t TAPEO;
 }
 
-// Последняя нажатая кнопка
-
-@property uint8_t key;
-- (BOOL) isPaste;
+- (void) scan:(uint64_t)clock;
 
 // Для интерфейса магнитофона
 
 @property (weak) NSObject <SoundController> *snd;
-
-@end
-
-// -----------------------------------------------------------------------------
-// F81B - Ввод символа с клавиатуры без ожидания
-// -----------------------------------------------------------------------------
-
-@interface F81B : NSObject <Hook, Adjustment>
-
-- (id) initWithRKKeyboard:(RKKeyboard *)kbd;
-@property BOOL enabled;
-
-@end
-
-// -----------------------------------------------------------------------------
-// F812 - Опрос состояния клавиатуры
-// -----------------------------------------------------------------------------
-
-@interface F812 : NSObject <Hook, Adjustment>
-
-- (id) initWithRKKeyboard:(RKKeyboard *)kbd;
-@property BOOL enabled;
-@property uint8_t key;
-
-@end
-
-// -----------------------------------------------------------------------------
-// F803 - Ввод символа с клавиатуры с ожиданием ввода
-// -----------------------------------------------------------------------------
-
-@interface F803 : NSObject <Hook>
-
-- (id) initWithF812:(F812 *)F812;
 
 @end

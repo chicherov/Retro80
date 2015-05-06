@@ -31,7 +31,6 @@
 - (BOOL) createObjects;
 - (BOOL) mapObjects;
 
-@property F81B *kbdHook;
 @property F806 *inpHook;
 @property F80C *outHook;
 

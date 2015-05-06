@@ -95,7 +95,6 @@
 - (void) start;
 - (void) stop;
 
-@property NSObject <Adjustment> *kbdHook;
 @property NSObject <Adjustment> *inpHook;
 @property NSObject <Adjustment> *outHook;
 

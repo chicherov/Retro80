@@ -6,18 +6,11 @@
 
 @implementation RKKeyboard
 {
-	NSDictionary *kbdCode;
+	NSString *paste;
+	NSUInteger pos;
 
-	uint8_t key;
-
-	NSData *clipboard;
-	const char *paste;
-	NSUInteger length;
-
-	unsigned count;
-
-	NSDictionary *qwertyAlpha;
-	NSDictionary *qwertyShift;
+	uint64_t pasteClock;
+	NSUInteger pasteKey;
 }
 
 @synthesize qwerty;
@@ -29,7 +22,14 @@
 
 - (void) flagsChanged:(NSEvent*)theEvent
 {
-	modifierFlags = [theEvent modifierFlags];
+	if (ignoreShift)
+	{
+		modifierFlags = (theEvent.modifierFlags & ~NSShiftKeyMask) | (modifierFlags & NSShiftKeyMask);
+	}
+	else
+	{
+		modifierFlags = theEvent.modifierFlags;
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -38,48 +38,57 @@
 
 - (void) keyDown:(NSEvent*)theEvent
 {
-	if (((modifierFlags = theEvent.modifierFlags) & NSCommandKeyMask) == 0)
+	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0) @synchronized(self)
 	{
-		NSNumber *keyCode = [NSNumber numberWithShort:theEvent.keyCode];
+		paste = nil;
 
-		if (qwerty)
+		unsigned short keyCode = theEvent.keyCode + 1; if (qwerty)
 		{
-			NSNumber* object; if (theEvent.modifierFlags & NSShiftKeyMask)
+			if (theEvent.charactersIgnoringModifiers.length)
 			{
-				if ((object = qwertyShift[keyCode]))
-					keyCode = object;
+				NSString *chr = upperCase ? theEvent.charactersIgnoringModifiers.uppercaseString : theEvent.charactersIgnoringModifiers;
+
+				NSUInteger index = [chr1Map rangeOfString:chr].location;
+
+				if (index != NSNotFound && index < 72)
+				{
+					if (chr2Map.length <= index || [chr2Map characterAtIndex:index] != [chr1Map characterAtIndex:index])
+					{
+						modifierFlags = theEvent.modifierFlags & ~NSShiftKeyMask; ignoreShift = TRUE;
+					}
+					else if (ignoreShift)
+					{
+						modifierFlags = (theEvent.modifierFlags & ~NSShiftKeyMask) | (modifierFlags & NSShiftKeyMask);
+					}
+					else
+					{
+						modifierFlags = theEvent.modifierFlags;
+					}
+
+					keyboard[index] = keyCode;
+					return;
+				}
+
+				index = [chr2Map rangeOfString:chr].location;
+
+				if (index != NSNotFound && index < 72)
+				{
+					modifierFlags = theEvent.modifierFlags | NSShiftKeyMask; ignoreShift = TRUE;
+					keyboard[index] = keyCode;
+					return;
+				}
 			}
-			else
-			{
-				if ((object = qwertyAlpha[keyCode]))
-					keyCode = object;
-			}
-		}
-
-		NSUInteger index = [kbdmap indexOfObject:keyCode];
-
-		if (index != NSNotFound && index < 72)
-			keyboard[index] = TRUE;
-
-		NSNumber* fkey = [kbdCode objectForKey:keyCode];
-
-		if (fkey != nil)
-		{
-			if (index != NSNotFound)
-				key = [fkey charValue];
 		}
 
 		else
 		{
-			const uint8_t *ptr = (const uint8_t *)[theEvent.characters.uppercaseString cStringUsingEncoding:(NSStringEncoding) 0x80000A02];
+			NSUInteger index = [kbdmap indexOfObject:[NSNumber numberWithShort:keyCode - 1]];
 
-			if (ptr && (*ptr <= 0x5F || *ptr >= 0xE0))
-				key = *ptr & 0x7F;
-		}
-
-		@synchronized(self)
-		{
-			length = 0;
+			if (index != NSNotFound && index < 72)
+			{
+				modifierFlags = theEvent.modifierFlags;
+				keyboard[index] = keyCode;
+			}
 		}
 	}
 }
@@ -92,34 +101,25 @@
 {
 	if (theEvent)
 	{
-		NSNumber *keyCode = [NSNumber numberWithShort:theEvent.keyCode];
-
-		if (qwerty)
+		if ((theEvent.modifierFlags & NSCommandKeyMask) == 0) @synchronized(self)
 		{
-			NSNumber* object; if (theEvent.modifierFlags & NSShiftKeyMask)
+			unsigned short keyCode = theEvent.keyCode + 1; for (int i = 0; i < 72; i++)
 			{
-				if ((object = qwertyShift[keyCode]))
-					keyCode = object;
-			}
-			else
-			{
-				if ((object = qwertyAlpha[keyCode]))
-					keyCode = object;
+				if (keyboard[i] == keyCode)
+				{
+					ignoreShift = FALSE;
+					keyboard[i] = 0;
+				}
 			}
 		}
-
-		NSUInteger index = [kbdmap indexOfObject:keyCode];
-		
-		if (index != NSNotFound && index < 72)
-			keyboard[index] = FALSE;
 	}
+
 	else
 	{
-		for (int i = 0; i < 72; i++)
-			keyboard[i] = FALSE;
+		modifierFlags = theEvent.modifierFlags;
+		memset(keyboard, 0, sizeof(keyboard));
+		ignoreShift = FALSE;
 	}
-
-	key = 0xFF;
 }
 
 // -----------------------------------------------------------------------------
@@ -130,49 +130,54 @@
 {
 	@synchronized(self)
 	{
-		clipboard = [[string uppercaseString] dataUsingEncoding:(NSStringEncoding) 0x80000A02];
-		paste = clipboard.bytes; length = clipboard.length; count = 0;
+		paste = upperCase ? string.uppercaseString : string;
+		pos = 0; pasteClock = 0; pasteKey = NSNotFound;
 	}
 }
 
 // -----------------------------------------------------------------------------
-// Текущая нажатая клавиша для хука
+//
 // -----------------------------------------------------------------------------
 
-- (uint8_t) key
+- (void) scan:(uint64_t)clock
 {
 	@synchronized(self)
 	{
-		if (length)
+		if (pasteKey != NSNotFound && pasteKey < 72 && clock - pasteClock > 1000000)
 		{
-			if ((key = *paste & 0x7F) == '\n')
-				key = 0x0D;
+			modifierFlags &= !NSShiftKeyMask;
+			keyboard[pasteKey] = FALSE;
+			pasteKey = NSNotFound;
+		}
 
-			if (++count < 51)
-				return key;
+		if (paste != nil && clock - pasteClock > 2000000)
+		{
+			if (pos == paste.length)
+				paste = nil;
 
-			if (count < 60)
-				return 0xFF;
+			else
+			{
+				NSString *chr = [paste substringWithRange:NSMakeRange(pos++, 1)];
 
-			count = 0; length--; paste++;
-			return key = 0xFF;
+				if ([chr isEqualToString:@"\n"])
+					chr = @"\r";
+
+				if ((pasteKey = [chr1Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
+				{
+					modifierFlags &= !NSShiftKeyMask;
+					keyboard[pasteKey] = TRUE;
+				}
+
+				else if ((pasteKey = [chr2Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
+				{
+					modifierFlags |= NSShiftKeyMask;
+					keyboard[pasteKey] = TRUE;
+				}
+
+				pasteClock = clock;
+			}
 		}
 	}
-
-	if ((modifierFlags & (RUSLAT >= 0x10 ? NSAlternateKeyMask : NSAlphaShiftKeyMask)))
-		return 0xFE;
-
-	return key;
-}
-
-- (void) setKey:(uint8_t)data
-{
-	key = data;
-}
-
-- (BOOL) isPaste
-{
-	return length != 0;
 }
 
 // -----------------------------------------------------------------------------
@@ -181,6 +186,8 @@
 
 - (uint8_t) A
 {
+	[self scan:current];
+
 	uint8_t data = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 	{
 		if ((B & (0x01 << (i & 0x07))) == 0)
@@ -196,6 +203,8 @@
 
 - (uint8_t) B
 {
+	[self scan:current];
+
 	uint8_t data = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 	{
 		if ((A & (0x80 >> (i >> 3))) == 0)
@@ -211,9 +220,11 @@
 
 - (uint8_t) C
 {
+	[self scan:current];
+
 	uint8_t data = 0xFF & ~(RUSLAT | CTRL | SHIFT | TAPEI);
 
-	if (!(modifierFlags & (RUSLAT >= 0x10 ? NSAlternateKeyMask : NSAlphaShiftKeyMask)))
+	if (!(modifierFlags & NSAlternateKeyMask))
 		data |= RUSLAT;
 
 	if (!(modifierFlags & NSControlKeyMask))
@@ -222,7 +233,7 @@
 	if (!(modifierFlags & NSShiftKeyMask))
 		data |= SHIFT;
 
-	if (TAPEI && snd.sound.input)
+	if (snd.sound.input)
 		data |= TAPEI;
 
 	return data;
@@ -232,7 +243,6 @@
 {
 	if (TAPEO)
 		snd.sound.output = data & TAPEO ? TRUE : FALSE;
-
 }
 
 // -----------------------------------------------------------------------------
@@ -245,7 +255,6 @@
 		keyboard[i] = FALSE;
 
 	modifierFlags = 0;
-	key = 0xFF;
 
 	[super RESET];
 }
@@ -258,13 +267,6 @@
 {
 	if (self = [super init])
 	{
-		kbdCode = @{
-					@123: @0x08, @124: @0x18, @126: @0x19, @125: @0x1A, @115: @0x0C,
-					@36:  @0x0D, @76:  @0x0A, @53:  @0x1B, @48:  @0x09, @117: @0x1F,
-					@122: @0x00, @120: @0x01, @99:  @0x02, @118: @0x03, @96:  @0x04,
-					@51:  @0x7F
-					};
-
 		kbdmap = @[
 				   // 58 59    5A    5B    5C    5D    5E    20
 				   @46,  @1,   @35,  @34,  @39,  @31,  @7,   @49,
@@ -284,15 +286,11 @@
 				   @115, @117, @53,  @122, @120, @99,  @118, @96
 				   ];
 
-		qwertyAlpha = @{
-						@10:@47, @12:@6, @13:@2, @14:@17, @15:@4, @17:@45, @16:@1, @32:@14, @34:@11, @31:@38, @35:@5, @33:@34, @30:@31,
-						@0:@3, @1:@8, @2:@37, @3:@0, @5:@32, @4:@33, @38:@12, @40:@15, @37:@40, @41:@30, @39:@10, @42:@39,
-						@50:@999, @6:@35, @7:@46, @8:@13, @9:@41, @11:@43, @45:@16, @46:@9, @43:@44, @47:@42, @44:@50
-						};
+		chr1Map = @"XYZ[\\]^ PQRSTUVWHIJKLMNO@ABCDEFG89:;,-./01234567\t\x03\r\x7F\x1B";
+		chr2Map = @"ЬЫЗШЭЩЧ ПЯРСТУЖВХИЙКЛМНОЮАБЦДЕФГ()*+<=>? !\"#$%&'\t\x03\r\x7F\x1B";
+		upperCase = TRUE;
 
-		qwertyShift = @{
-						@10:@44, @22:@999, @26:@22,  @28:@30, @25:@28, @29:@25, @24:@10, @30:@26, @44:@50, @50:@999
-						};
+		qwerty = TRUE;
 
 		RUSLAT = 0x80;
 		SHIFT = 0x20;
@@ -301,7 +299,7 @@
 		TAPEI = 0x10;
 		TAPEO = 0x01;
 	}
-	
+
 	return self;
 }
 
@@ -319,152 +317,6 @@
 	}
 
 	return self;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// F81B - Ввод символа с клавиатуры без ожидания
-// -----------------------------------------------------------------------------
-
-@implementation F81B
-{
-	RKKeyboard* keyboard;
-	unsigned count;
-}
-
-@synthesize enabled;
-
-- (id) initWithRKKeyboard:(RKKeyboard *)kbd
-{
-	if (self = [super init])
-		keyboard = kbd;
-
-	return self;
-}
-
-- (int) execute:(X8080 *)cpu
-{
-	if (enabled)
-	{
-		if (count--)
-			return 0;
-
-		uint8_t key = keyboard.key;
-
-		if (key == 0xFE)
-		{
-			count = 1;
-			return 0;
-		}
-
-		count = keyboard.isPaste ? 1 : key == 0xFF ? 35 : 450;
-
-		cpu.A = key;
-		return 1;
-	}
-
-	return 2;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// F812 - Опрос состояния клавиатуры
-// -----------------------------------------------------------------------------
-
-@implementation F812
-{
-	RKKeyboard* keyboard;
-	unsigned count;
-	uint8_t key;
-}
-
-@synthesize enabled;
-
-- (id) initWithRKKeyboard:(RKKeyboard *)kbd
-{
-	if (self = [super init])
-	{
-		keyboard = kbd;
-		key = 0xFF;
-	}
-
-	return self;
-}
-
-- (int) execute:(X8080 *)cpu
-{
-	if (enabled)
-	{
-		if (count--)
-			return 0;
-
-		if (self.key != 0xFF)
-		{
-			cpu.AF = 0xFF86;
-			count = 10;
-		}
-		else
-		{
-			cpu.AF = 0x0046;
-			count = 80;
-		}
-
-		return 1;
-	}
-
-	return 2;
-}
-
-- (void) setKey:(uint8_t)data
-{
-	while (keyboard.isPaste && key == keyboard.key);
-	keyboard.key = key = data;
-}
-
-- (uint8_t) key
-{
-	key = keyboard.key;
-	return key;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-// F803 - Ввод символа с клавиатуры с ожиданием ввода
-// -----------------------------------------------------------------------------
-
-@implementation F803
-{
-	F812 *keyboard;
-}
-
-- (id) initWithF812:(F812 *)kbd
-{
-	if (self = [super init])
-	{
-		keyboard = kbd;
-	}
-
-	return self;
-}
-
-- (int) execute:(X8080 *)cpu
-{
-	if (keyboard && keyboard.enabled)
-	{
-		uint8_t key = keyboard.key;
-
-		if (key >= 0xFE)
-			return 0;
-
-		keyboard.key = 0xFF;
-		cpu.A = key;
-		return 1;
-	}
-
-	return 2;
 }
 
 @end

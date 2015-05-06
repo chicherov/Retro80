@@ -12,6 +12,8 @@
 
 - (uint8_t) A
 {
+	[self scan:current];
+
 	keyboard[60] = (modifierFlags & NSAlternateKeyMask) != 0;
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++) if (keyboard[i])
@@ -30,6 +32,8 @@
 
 - (uint8_t) B
 {
+	[self scan:current];
+
 	keyboard[60] = (modifierFlags & NSAlternateKeyMask) != 0;
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++) if (keyboard[i])
@@ -64,6 +68,8 @@
 
 - (uint8_t) C
 {
+	[self scan:current];
+
 	keyboard[60] = (modifierFlags & NSAlternateKeyMask) != 0;
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++) if (keyboard[i])
@@ -91,6 +97,9 @@
 				   @6,   @7,   @8,   @9,   @11,  @45,  @46,  @43,  @47,  @44,  @50,  @51,
 				   @999, @115, @126, @125, @48,  @53,  @49,  @123, @111, @124, @76,  @36
 				   ];
+
+		chr1Map = @";1234567890=JCUKENG[]ZH:FYWAPROLDV\\.Q^SMITXB@,/_\0\t\x1B \x03\r";
+		chr2Map = @"+!\"#$%&'()\0-ЙЦУКЕНГШЩЗХ*ФЫВАПРОЛДЖЭ>ЯЧСМИТЬБЮ<?\0\0\t\x1B \x03\r";
 	}
 
 	return self;

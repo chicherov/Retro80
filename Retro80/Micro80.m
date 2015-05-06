@@ -47,22 +47,33 @@
 
 	self.crt.WR = self.ram;
 
+	if (self.inpHook == nil)
+	{
+		self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
+		self.inpHook.mem = self.rom;
+		self.inpHook.snd = self.snd;
+
+		self.inpHook.extension = @"rk8";
+	}
+
+	if (self.outHook == nil)
+	{
+		self.outHook = [[F80C alloc] initWithX8080:self.cpu];
+		self.outHook.mem = self.rom;
+
+		self.outHook.extension = @"rk8";
+	}
+
 	[self.cpu mapObject:self.ram from:0x0000 to:0xDFFF];
 	[self.cpu mapObject:self.crt from:0xE000 to:0xEFFF RD:self.ram];
 	[self.cpu mapObject:self.ram from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
+	[self.cpu mapObject:self.inpHook from:0xFD95 to:0xFD95 WR:nil];
+	[self.cpu mapObject:self.outHook from:0xFDE6 to:0xFDE6 WR:nil];
+
 	[self.cpu mapObject:self.snd atPort:0x00 count:0x02];
 	[self.cpu mapObject:self.kbd atPort:0x04 count:0x04];
-
-	[self.cpu mapHook:self.kbdHook = [[F812 alloc] initWithRKKeyboard:self.kbd] atAddress:0xF812];
-	[self.cpu mapHook:[[F803 alloc] initWithF812:self.kbdHook] atAddress:0xF803];
-
-	[self.cpu mapHook:self.inpHook = [[F806 alloc] initWithSound:self.snd] atAddress:0xF806];
-	self.inpHook.extension = @"rk8";
-
-	[self.cpu mapHook:self.outHook = [[F80C alloc] init] atAddress:0xF80C];
-	self.outHook.extension = @"rk8";
 
 	return TRUE;
 }
@@ -77,7 +88,6 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.kbdHook.enabled = TRUE;
 		self.inpHook.enabled = TRUE;
 		self.outHook.enabled = TRUE;
 	}
@@ -89,7 +99,7 @@
 {
 	if (self = [self init])
 	{
-		[self.inpHook setData:data];
+		self.inpHook.buffer = data;
 		[self.kbd paste:@"I\n"];
 	}
 
@@ -110,7 +120,6 @@
 	[encoder encodeObject:self.crt forKey:@"crt"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 
-	[encoder encodeBool:self.kbdHook.enabled forKey:@"kbdHook"];
 	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
 	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
@@ -137,7 +146,6 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.kbdHook.enabled = [decoder decodeBoolForKey:@"kbdHook"];
 		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
 		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
 	}
@@ -318,6 +326,41 @@
 	[super WR:addr ^ 3 data:data CLK:clock];
 }
 
+// -----------------------------------------------------------------------------
+// Порт C
+// -----------------------------------------------------------------------------
+
+- (uint8_t) C
+{
+	[self scan:current];
+
+	uint8_t data = 0xFF & ~(RUSLAT | CTRL | SHIFT);
+
+	if (!(modifierFlags & NSAlphaShiftKeyMask))
+		data |= RUSLAT;
+
+	if (!(modifierFlags & NSControlKeyMask))
+		data |= CTRL;
+
+	if (!(modifierFlags & NSShiftKeyMask))
+		data |= SHIFT;
+
+	else if (self.qwerty) for (int i = 8; i < 48; i++)
+	{
+		if (i != 40 && i != 41 && keyboard[i])
+		{
+			data &= ~RUSLAT; data |= SHIFT; break;
+		}
+	}
+
+	memset(keyboard, 0x00, sizeof(keyboard));
+	return data;
+}
+
+- (void) setC:(uint8_t)data
+{
+}
+
 - (id) init
 {
 	if (self = [super init])
@@ -341,12 +384,12 @@
 				   @29,  @18,  @19,  @20,  @21,  @23,  @22,  @-1
 				   ];
 
+		chr1Map =  @"\r\0Z[\\]^_ \0STUVWXY\0LMNOPQR\0EFGHIJK\0./@ABCD\0""789:;,-\0""0123456\0";
+		chr2Map =  @"\r\0ЗШЭЩЧ\0 \0СТУЖВЬЫ\0ЛМНОПЯР\0ЕФГХИЙК\0>?ЮАБЦД\0'()*+<=\0""0!\"#$%&\0";
+
 		RUSLAT = 0x01;
 		SHIFT = 0x04;
 		CTRL = 0x02;
-
-		TAPEI = 0x00;
-		TAPEO = 0x00;
 	}
 
 	return self;

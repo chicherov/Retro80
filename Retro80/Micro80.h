@@ -51,7 +51,6 @@
 @property Micro80Recorder *snd;
 @property Micro80Keyboard *kbd;
 
-@property F812 *kbdHook;
 @property F806 *inpHook;
 @property F80C *outHook;
 
