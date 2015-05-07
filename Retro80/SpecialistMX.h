@@ -3,6 +3,7 @@
  ******************************************************************************/
 
 #import "Specialist.h"
+#import "ROMDisk.h"
 #import "vg93.h"
 
 // -----------------------------------------------------------------------------
@@ -33,6 +34,7 @@
 
 @property SpecialistMXKeyboard *kbd;
 @property SpecialistMXSystem *sys;
+@property ROMDisk *ext;
 @property VG93 *fdd;
 
 @end

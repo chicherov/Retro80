@@ -18,7 +18,7 @@
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++) if (keyboard[i])
 	{
-		if (i % 12 > 3 && (B & (0x80 >> (i / 12))) == 0)
+		if (i % 12 > 3 && ((mode.B ? 0xFF : B) & (0x80 >> (i / 12))) == 0)
 			data &= (0x80 >> (i % 12 - 4)) ^ 0xFF;
 	}
 
@@ -38,7 +38,7 @@
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++) if (keyboard[i])
 	{
-		if (((((C & 0x0F) << 8) | A) & (0x800 >> (i % 12))) == 0)
+		if (((((mode.L ? 0x0F : C & 0x0F) << 8) | (mode.A ? 0xFF : A)) & (0x800 >> (i % 12))) == 0)
 			data &= (0x80 >> (i / 12)) ^ 0xFF;
 	}
 
@@ -74,7 +74,7 @@
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++) if (keyboard[i])
 	{
-		if (i % 12 < 4 && (B & (0x80 >> (i / 12))) == 0)
+		if (i % 12 < 4 && ((mode.B ? 0xFF : B) & (0x80 >> (i / 12))) == 0)
 			data &= (0x08 >> (i % 12)) ^ 0xFF;
 	}
 

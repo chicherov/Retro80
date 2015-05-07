@@ -188,6 +188,17 @@
 		}
 	}
 
+	if (menuItem.action == @selector(ROMDisk:))
+	{
+		NSURL *url = [self.ext url]; if ((menuItem.state = url != nil))
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+		else
+			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+
+		menuItem.submenu = nil;
+		return YES;
+	}
+
 	return [super validateMenuItem:menuItem];
 }
 
@@ -251,6 +262,30 @@
 }
 
 // -----------------------------------------------------------------------------
+// Внешний ROM-диск
+// -----------------------------------------------------------------------------
+
+- (IBAction) ROMDisk:(NSMenuItem *)menuItem;
+{
+	NSOpenPanel *panel = [NSOpenPanel openPanel];
+	panel.allowedFileTypes = @[@"rom", @"bin"];
+	panel.canChooseDirectories = FALSE;
+	panel.title = menuItem.title;
+	panel.delegate = self.ext;
+
+	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+	{
+		[self.document registerUndoWithMenuItem:menuItem];
+		self.ext.url = panel.URLs.firstObject;
+	}
+	else if (self.ext.url != nil)
+	{
+		[self.document registerUndoWithMenuItem:menuItem];
+		self.ext.url = nil;
+	}
+}
+
+// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
@@ -266,6 +301,9 @@
 		return FALSE;
 
 	if ((self.kbd = [[SpecialistMXKeyboard alloc] init]) == nil)
+		return FALSE;
+
+	if ((self.ext = [[ROMDisk alloc] init]) == nil)
 		return FALSE;
 
 	if ([super createObjects] == FALSE)
@@ -297,14 +335,24 @@
 	[self.cpu mapObject:self.rom atPage:9 from:0x0000 to:0xBFFF WR:nil];
 	[self.cpu mapObject:self.ram atPage:9 from:0xC000 to:0xFFBF];
 
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF] atPage:1 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x20000 length:0x10000 mask:0xFFFF] atPage:2 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x30000 length:0x10000 mask:0xFFFF] atPage:3 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x40000 length:0x10000 mask:0xFFFF] atPage:4 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x50000 length:0x10000 mask:0xFFFF] atPage:5 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x60000 length:0x10000 mask:0xFFFF] atPage:6 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x70000 length:0x10000 mask:0xFFFF] atPage:7 from:0x0000 to:0xFFBF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x80000 length:0x10000 mask:0xFFFF] atPage:8 from:0x0000 to:0xFFBF];
+	if (self.ram.length != 0x20000)
+	{
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF] atPage:1 from:0x0000 to:0xFFBF];
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x20000 length:0x10000 mask:0xFFFF] atPage:2 from:0x0000 to:0xFFBF];
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x30000 length:0x10000 mask:0xFFFF] atPage:3 from:0x0000 to:0xFFBF];
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x40000 length:0x10000 mask:0xFFFF] atPage:4 from:0x0000 to:0xFFBF];
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x50000 length:0x10000 mask:0xFFFF] atPage:5 from:0x0000 to:0xFFBF];
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x60000 length:0x10000 mask:0xFFFF] atPage:6 from:0x0000 to:0xFFBF];
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x70000 length:0x10000 mask:0xFFFF] atPage:7 from:0x0000 to:0xFFBF];
+		[self.cpu mapObject:[self.ram memoryAtOffest:0x80000 length:0x10000 mask:0xFFFF] atPage:8 from:0x0000 to:0xFFBF];
+	}
+	else
+	{
+		MEM* mem = [self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF];
+
+		for (uint8_t page = 1; page <= 8; page++)
+			[self.cpu mapObject:mem atPage:page from:0x0000 to:0xFFBF];
+	}
 
 	for (uint8_t page = 0; page <= 9; page++)
 	{
