@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D91B89EF1ABC8EF8002F70DC /* SpecialistMX.bin in Resources */ = {isa = PBXBuildFile; fileRef = D91B89EE1ABC8EF8002F70DC /* SpecialistMX.bin */; };
+		D91B89EF1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin in Resources */ = {isa = PBXBuildFile; fileRef = D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */; };
 		D91FBD7E19AE60A70002128E /* Sound.m in Sources */ = {isa = PBXBuildFile; fileRef = D91FBD7D19AE60A70002128E /* Sound.m */; };
 		D92894F71AB2DDD50039C236 /* SpecialistSP580.bin in Resources */ = {isa = PBXBuildFile; fileRef = D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */; };
 		D929488219B5850C009BC312 /* RKKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D929487F19B5850C009BC312 /* RKKeyboard.m */; };
@@ -56,6 +56,7 @@
 		D9A4245419B8310B00DAA3E0 /* x8257.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4245019B8310B00DAA3E0 /* x8257.m */; };
 		D9A4245519B8310B00DAA3E0 /* x8275.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4245219B8310B00DAA3E0 /* x8275.m */; };
 		D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */ = {isa = PBXBuildFile; fileRef = D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */; };
+		D9B6E5ED1AFBDAF300175E50 /* SpecialistMX_Commander.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */; };
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
@@ -89,7 +90,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		D91B89EE1ABC8EF8002F70DC /* SpecialistMX.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX.bin; path = Retro80/ROM/SpecialistMX.bin; sourceTree = "<group>"; };
+		D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_RAMFOS.bin; path = Retro80/ROM/SpecialistMX_RAMFOS.bin; sourceTree = "<group>"; };
 		D91FBD7C19AE60A70002128E /* Sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sound.h; sourceTree = "<group>"; };
 		D91FBD7D19AE60A70002128E /* Sound.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Sound.m; sourceTree = "<group>"; };
 		D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistSP580.bin; path = Retro80/ROM/SpecialistSP580.bin; sourceTree = "<group>"; };
@@ -164,6 +165,7 @@
 		D9A4245219B8310B00DAA3E0 /* x8275.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8275.m; sourceTree = "<group>"; };
 		D9A4245E19B8974A00DAA3E0 /* ROMDisk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ROMDisk.h; sourceTree = "<group>"; };
 		D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ROMDisk.m; sourceTree = "<group>"; };
+		D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_Commander.bin; path = Retro80/ROM/SpecialistMX_Commander.bin; sourceTree = "<group>"; };
 		D9CC91F419BEF8840038106A /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Retro80/ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
 		D9EBB61F19B47E1300C833CA /* x8080.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8080.m; sourceTree = "<group>"; };
@@ -215,7 +217,8 @@
 				D953B74D1AD329A900C99F05 /* Specialist2SD.bin */,
 				D99ACCA51AB9824600E05074 /* Lik.bin */,
 				D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */,
-				D91B89EE1ABC8EF8002F70DC /* SpecialistMX.bin */,
+				D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */,
+				D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */,
 			);
 			name = Resources;
 			path = ..;
@@ -472,10 +475,11 @@
 				D974FCAA19ADE9450041DF91 /* Document.xib in Resources */,
 				D974FCAD19ADE9450041DF91 /* MainMenu.xib in Resources */,
 				D93DC7451AB2CE5B0005D473 /* Micro80.bin in Resources */,
+				D9B6E5ED1AFBDAF300175E50 /* SpecialistMX_Commander.bin in Resources */,
 				D94E03AB1AD835E000C1FFBC /* fdd.bin in Resources */,
 				D99555061A051B2300BC4868 /* Retro80.icns in Resources */,
 				D93DC73F1AB2CE5B0005D473 /* SYMGEN.BIN in Resources */,
-				D91B89EF1ABC8EF8002F70DC /* SpecialistMX.bin in Resources */,
+				D91B89EF1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin in Resources */,
 				D9A1AADB1AB1AAD400D0E5FF /* Specialist2.bin in Resources */,
 				D9A1AADC1AB1AAD400D0E5FF /* Specialist1.bin in Resources */,
 				D93DC7441AB2CE5B0005D473 /* mcpg.bin in Resources */,

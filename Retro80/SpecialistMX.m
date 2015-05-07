@@ -97,11 +97,9 @@
 			break;
 
 		case 0xFFFE:	// Выбрать ROM-диск
+		case 0xFFFF:
 
 			cpu.PAGE = 9;
-			break;
-
-		case 0xFFFF:	// Резерв для Специалист MX2
 			break;
 	}
 }
@@ -114,19 +112,14 @@
 @end
 
 // =============================================================================
-// ПЭВМ "Специалист MX"
+// ПЭВМ "Специалист MX" с MXOS (Commander)
 // =============================================================================
 
-@implementation SpecialistMX
+@implementation SpecialistMX_Commander
 
 + (NSString *) title
 {
 	return @"Специалист MX";
-}
-
-+ (NSArray *) extensions
-{
-	return @[@"mon", @"cpu", @"i80"];
 }
 
 // -----------------------------------------------------------------------------
@@ -291,31 +284,26 @@
 
 - (BOOL) createObjects
 {
-	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0x90000]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0x90000]) == nil)
 		return FALSE;
 
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX" mask:0xFFFF]) == nil)
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX_Commander" mask:0xFFFF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
 		return FALSE;
 
-	if ((self.kbd = [[SpecialistMXKeyboard alloc] init]) == nil)
-		return FALSE;
-
-	if ((self.ext = [[ROMDisk alloc] init]) == nil)
+	if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
 		return FALSE;
 
 	if ([super createObjects] == FALSE)
 		return FALSE;
 
-	if ((self.fdd = [[VG93 alloc] initWithQuartz:self.cpu.quartz]) == nil)
+	if (self.fdd == nil && (self.fdd = [[VG93 alloc] initWithQuartz:self.cpu.quartz]) == nil)
 		return FALSE;
 
 	self.snd.channel0 = TRUE;
 	self.snd.rkmode = TRUE;
-
-	self.crt.isColor = TRUE;
 	return TRUE;
 }
 
@@ -373,6 +361,55 @@
 
 	self.cpu.HLDA = self.fdd;
 	self.kbd.snd = self.snd;
+	return TRUE;
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) encodeWithCoder:(NSCoder *)encoder
+{
+	[super encodeWithCoder:encoder];
+	[encoder encodeObject:self.fdd forKey:@"fdd"];
+}
+
+- (BOOL) decodeWithCoder:(NSCoder *)decoder
+{
+	if (![super decodeWithCoder:decoder])
+		return FALSE;
+
+	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
+		return FALSE;
+
+	return TRUE;
+}
+
+@end
+
+// =============================================================================
+// ПЭВМ "Специалист MX" с RAMFOS
+// =============================================================================
+
+@implementation SpecialistMX_RAMFOS
+
++ (NSArray *) extensions
+{
+	return @[@"mon", @"cpu", @"i80"];
+}
+
+// -----------------------------------------------------------------------------
+
+- (BOOL) createObjects
+{
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX_RAMFOS" mask:0xFFFF]) == nil)
+		return FALSE;
+
+	if (self.kbd == nil && (self.kbd = [[SpecialistMXKeyboard alloc] init]) == nil)
+		return FALSE;
+
+	if ([super createObjects] == FALSE)
+		return FALSE;
+
+	self.crt.isColor = TRUE;
 	return TRUE;
 }
 
@@ -444,27 +481,10 @@
 		self.cpu.RESET = FALSE;
 		self.cpu.PAGE = 0;
 	}
-
+	
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[super encodeWithCoder:encoder];
-	[encoder encodeObject:self.fdd forKey:@"fdd"];
-}
-
-- (BOOL) decodeWithCoder:(NSCoder *)decoder
-{
-	if (![super decodeWithCoder:decoder])
-		return FALSE;
-
-	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
-		return FALSE;
-
-	return TRUE;
-}
 
 @end
+

@@ -133,10 +133,16 @@
                                                         </connections>
                                                     </menuItem>
                                                     <menuItem isSeparatorItem="YES" id="cvM-HV-Bqh"/>
-                                                    <menuItem title="Специалист MX" tag="705" id="zSe-XL-URC">
+                                                    <menuItem title="Специалист MX (Commander)" tag="705" id="zSe-XL-URC">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="94k-Bk-zxG"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Специалист MX (RAMFOS)" tag="706" id="0Qe-Zh-4W1">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="pj3-0h-ect"/>
                                                         </connections>
                                                     </menuItem>
                                                 </items>

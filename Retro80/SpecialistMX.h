@@ -27,14 +27,23 @@
 @end
 
 // -----------------------------------------------------------------------------
-// ПЭВМ "Специалист MX"
+// ПЭВМ "Специалист MX" с MXOS (Commander)
 // -----------------------------------------------------------------------------
 
-@interface SpecialistMX : Specialist
+@interface SpecialistMX_Commander : Specialist
 
-@property SpecialistMXKeyboard *kbd;
 @property SpecialistMXSystem *sys;
 @property ROMDisk *ext;
 @property VG93 *fdd;
+
+@end
+
+// -----------------------------------------------------------------------------
+// ПЭВМ "Специалист MX" с MXOS (RAMFOS)
+// -----------------------------------------------------------------------------
+
+@interface SpecialistMX_RAMFOS : SpecialistMX_Commander
+
+@property SpecialistMXKeyboard *kbd;
 
 @end

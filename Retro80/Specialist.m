@@ -15,7 +15,7 @@
 
 + (NSArray *) extensions
 {
-	return [[@[@"rks"] arrayByAddingObjectsFromArray:[SpecialistSP580 extensions]] arrayByAddingObjectsFromArray:[SpecialistMX extensions]];
+	return [[@[@"rks"] arrayByAddingObjectsFromArray:[SpecialistSP580 extensions]] arrayByAddingObjectsFromArray:[SpecialistMX_RAMFOS extensions]];
 }
 
 // -----------------------------------------------------------------------------
@@ -263,7 +263,11 @@
 
 			case 5:
 
-				return self = [[SpecialistMX alloc] init];
+				return self = [[SpecialistMX_Commander alloc] init];
+
+			case 6:
+
+				return self = [[SpecialistMX_RAMFOS alloc] init];
 		}
 
 		if (![self createObjects])
@@ -293,8 +297,8 @@
 	if ([[SpecialistSP580 extensions] containsObject:url.pathExtension.lowercaseString])
 		return self = [[SpecialistSP580 alloc] initWithData:data URL:url];
 
-	if ([[SpecialistMX extensions] containsObject:url.pathExtension.lowercaseString])
-		return self = [[SpecialistMX alloc] initWithData:data URL:url];
+	if ([[SpecialistMX_RAMFOS extensions] containsObject:url.pathExtension.lowercaseString])
+		return self = [[SpecialistMX_RAMFOS alloc] initWithData:data URL:url];
 
 	const uint8_t* ptr = data.bytes;
 	NSUInteger length = data.length;
