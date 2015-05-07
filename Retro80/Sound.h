@@ -25,7 +25,6 @@
 
 @property BOOL debug;
 @property BOOL pause;
-@property BOOL mute;
 
 - (BOOL) open:(NSURL *)url;
 - (void) close;

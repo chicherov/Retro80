@@ -16,6 +16,9 @@
 
 	BOOL (*execute)(id, SEL, uint64_t);
 	SInt8 (*sample)(id, SEL, uint64_t);
+
+	NSTimer *timer;
+	BOOL mute;
 }
 
 NSRunLoop *runLoop;
@@ -26,7 +29,6 @@ NSRunLoop *runLoop;
 
 @synthesize debug;
 @synthesize pause;
-@synthesize mute;
 
 @synthesize snd;
 @synthesize cpu;
@@ -116,7 +118,7 @@ NSRunLoop *runLoop;
 				debug = TRUE; break;
 			}
 
-			*ptr = mute ? 0 : (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(snd, @selector(sample:), CLK);
+			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(snd, @selector(sample:), CLK);
 
 			if (streamFormat.mBitsPerChannel == 16)
 			{
@@ -138,6 +140,27 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		if (sound->CLK != (uint64_t) -1)
 		{
 			[sound callback:inBuffer];
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) timer
+{
+	@synchronized(self)
+	{
+		if (CLK != -1)
+		{
+			if ([crt respondsToSelector:@selector(draw)])
+				[crt draw];
+
+			if (!debug && (debug = ![self.cpu execute:CLK += self.cpu.quartz * timer.timeInterval]))
+			{
+				[self.document.computer performSelectorOnMainThread:@selector(debug:)
+														 withObject:self
+													  waitUntilDone:FALSE];
+			}
 		}
 	}
 }
@@ -270,16 +293,30 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		self.textField.stringValue = @"--:--";
 		[self.textField setHidden:TRUE];
 	}
+	
+	execute = (BOOL (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
+	sample = (SInt8 (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
+
+	CLK = [self.cpu CLK]; clk = [self.cpu quartz] / streamFormat.mSampleRate;
+
+	if (inAudioFile == 0 && ((self.cpu.HALT = self.document.inViewingMode) || mute))
+	{
+		timer = [NSTimer scheduledTimerWithTimeInterval:0.02
+												 target:self
+											   selector:@selector(timer)
+											   userInfo:nil
+												repeats:YES];
+
+		[runLoop addTimer:timer forMode:NSDefaultRunLoopMode];
+
+#ifdef DEBUG
+		NSLog(@"Timer start");
+#endif
+		return;
+	}
 
 	OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, [runLoop getCFRunLoop], NULL, 0, &audioQueue)) == noErr)
 	{
-		execute = (BOOL (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
-		sample = (SInt8 (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
-
-		CLK = [self.cpu CLK]; clk = [self.cpu quartz] / streamFormat.mSampleRate;
-
-		mute = self.cpu.HALT = self.document.inViewingMode;
-
 		for (int i = 0; i < 3; i++)
 		{
 			AudioQueueBufferRef buffer;
@@ -342,8 +379,6 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (void) start
 {
-//	[self performSelectorInBackground:@selector(thread) withObject:nil];
-
 	if (runLoop == nil)
 		[NSThread detachNewThreadSelector:@selector(thread) toTarget:self withObject:nil];
 	else
@@ -360,15 +395,28 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		CLK = (uint64_t) -1;
 	}
 
+	if (timer)
+	{
+		[timer invalidate];
+		timer = nil;
+
 #ifdef DEBUG
-	NSLog(@"Sound stop");
+		NSLog(@"Timer stop");
 #endif
+	}
 
-	OSStatus err; if ((err = AudioQueueStop(audioQueue, TRUE)) != noErr)
-		NSLog(@"AudioQueueStop error: %d", err);
+	else
+	{
+		OSStatus err; if ((err = AudioQueueStop(audioQueue, TRUE)) != noErr)
+			NSLog(@"AudioQueueStop error: %d", err);
 
-	if ((err = AudioQueueDispose(audioQueue, TRUE)) != noErr)
-		NSLog(@"AudioQueueDispose error: %d", err);
+		if ((err = AudioQueueDispose(audioQueue, TRUE)) != noErr)
+			NSLog(@"AudioQueueDispose error: %d", err);
+
+#ifdef DEBUG
+		NSLog(@"Sound stop");
+#endif
+	}
 
 	[[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
 }
@@ -474,6 +522,18 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 			inAudioFilePos += streamFormat.mSampleRate;
 	}
 }
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+
+- (void) awakeFromNib
+{
+	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+	[defaults setBool:mute = [defaults boolForKey:@"mute"]
+			   forKey:@"mute"];
+}
+
 
 // -----------------------------------------------------------------------------
 // DEBUG: dealloc
