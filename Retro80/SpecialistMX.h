@@ -34,6 +34,8 @@
 
 @property SpecialistMXSystem *sys;
 @property ROMDisk *ext;
+
+@property BOOL isFloppy;
 @property VG93 *fdd;
 
 @end

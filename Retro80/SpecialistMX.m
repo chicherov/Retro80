@@ -168,16 +168,22 @@
 	{
 		if (menuItem.tag == 0)
 		{
-			menuItem.state = TRUE; return NO;
+			menuItem.state = self.isFloppy ; return YES;
+		}
+		else if (self.isFloppy)
+		{
+			NSURL *url = [self.fdd getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			else
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
+
+			return menuItem.tag != self.fdd.selected || !self.fdd.busy;
 		}
 		else
 		{
-			NSURL *url = [self.fdd getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
-			else
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
-
-			return menuItem.tag != self.fdd.selected || !self.fdd.busy;
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
+			menuItem.state = FALSE;
+			return NO;
 		}
 	}
 
@@ -231,26 +237,41 @@
 {
 	if (menuItem.tag)
 	{
-		NSOpenPanel *panel = [NSOpenPanel openPanel];
-		panel.allowedFileTypes = @[@"odi", @"cpm"];
-		panel.title = menuItem.title;
+		if (self.isFloppy)
+		{
+			NSOpenPanel *panel = [NSOpenPanel openPanel];
+			panel.allowedFileTypes = @[@"odi", @"cpm"];
+			panel.title = menuItem.title;
 
-		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
-		{
-			@synchronized(self.snd.sound)
+			if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 			{
-				[self.document registerUndoWithMenuItem:menuItem];
-				[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
+				@synchronized(self.snd.sound)
+				{
+					[self.document registerUndoWithMenuItem:menuItem];
+					[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
+				}
+			}
+			else if ([self.fdd getDisk:menuItem.tag] != nil)
+			{
+				@synchronized(self.snd.sound)
+				{
+					[self.document registerUndoWithMenuItem:menuItem];
+					[self.fdd setDisk:menuItem.tag URL:nil];
+				}
 			}
 		}
-		else if ([self.fdd getDisk:menuItem.tag] != nil)
-		{
-			@synchronized(self.snd.sound)
-			{
-				[self.document registerUndoWithMenuItem:menuItem];
-				[self.fdd setDisk:menuItem.tag URL:nil];
-			}
-		}
+	}
+
+	else
+	{
+		[self.document registerUndoWithMenuItem:menuItem];
+
+		if ((self.isFloppy = !self.isFloppy))
+			self.isFloppy = (self.fdd = [[VG93 alloc] initWithQuartz:self.cpu.quartz]) != nil;
+		else
+			self.fdd = nil;
+
+		[self mapObjects];
 	}
 }
 
@@ -297,9 +318,6 @@
 		return FALSE;
 
 	if ([super createObjects] == FALSE)
-		return FALSE;
-
-	if (self.fdd == nil && (self.fdd = [[VG93 alloc] initWithQuartz:self.cpu.quartz]) == nil)
 		return FALSE;
 
 	self.snd.channel0 = TRUE;
@@ -369,7 +387,11 @@
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[super encodeWithCoder:encoder];
-	[encoder encodeObject:self.fdd forKey:@"fdd"];
+
+	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
+
+	if (self.isFloppy)
+		[encoder encodeObject:self.fdd forKey:@"fdd"];
 }
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
@@ -377,8 +399,11 @@
 	if (![super decodeWithCoder:decoder])
 		return FALSE;
 
-	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
-		return FALSE;
+	if ((self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"]))
+	{
+		if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
+			return FALSE;
+	}
 
 	return TRUE;
 }
