@@ -15,7 +15,7 @@
 - (void) openPanel;
 - (void) open;
 
-@property X8080 *cpu;
+@property (weak) X8080 *cpu;
 @property NSObject<RD> *mem;
 @property NSObject<SoundController> *snd;
 
@@ -40,7 +40,7 @@
 
 - (void) save;
 
-@property X8080 *cpu;
+@property (weak) X8080 *cpu;
 @property NSObject<RD> *mem;
 
 @property NSString *extension;

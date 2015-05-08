@@ -8,7 +8,7 @@
 @property (readonly) NSUInteger length;
 @property NSURL* url;
 
+@property (weak) F806 *recorder;
 @property BOOL tapeEmulator;
-@property F806 *recorder;
 
 @end

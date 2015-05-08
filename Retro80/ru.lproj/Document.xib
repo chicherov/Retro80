@@ -72,7 +72,7 @@
                 <outlet property="delegate" destination="ELn-iW-TvI" id="Zbw-gI-0q3"/>
             </connections>
         </window>
-        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
+        <window title="Ретро КР580: Отладчик" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES"/>
             <rect key="contentRect" x="167" y="107" width="783" height="522"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
@@ -120,7 +120,6 @@
                 </constraints>
             </view>
             <connections>
-                <binding destination="-2" name="title" keyPath="self.displayName" id="LhF-Tj-gx3"/>
                 <outlet property="delegate" destination="cIB-lr-ra9" id="jUe-gt-fN6"/>
             </connections>
         </window>
