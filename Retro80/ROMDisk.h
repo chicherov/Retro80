@@ -4,11 +4,13 @@
 
 @interface ROMDisk : X8255 <NSOpenSavePanelDelegate>
 
-@property (readonly) const uint8_t* bytes;
-@property (readonly) NSUInteger length;
-@property NSURL* url;
+@property NSData* ROM;
+@property NSURL* URL;
 
 @property (weak) F806 *recorder;
 @property BOOL tapeEmulator;
+
+@property BOOL specialist;
+@property BOOL flashDisk;
 
 @end

@@ -145,6 +145,13 @@
                                                             <action selector="newDocument:" target="-1" id="pj3-0h-ect"/>
                                                         </connections>
                                                     </menuItem>
+                                                    <menuItem isSeparatorItem="YES" id="Ccr-Xy-O3v"/>
+                                                    <menuItem title="Специалист MX2" tag="707" id="5Go-Iz-ulo">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="WIy-G3-ITx"/>
+                                                        </connections>
+                                                    </menuItem>
                                                 </items>
                                             </menu>
                                             <connections>

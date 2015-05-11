@@ -61,7 +61,37 @@
 	self.snd.sound.beeper = data & 0x20;
 
 	if (self.crt)
-		self.crt.color = ~(((data >> 1) & 0x60) | (data & 0x10) | 0x07);
+	{
+		if (self.four)
+		{
+			switch (data & 0xC0)
+			{
+				case 0x00:
+
+					self.crt.color = 0x70;
+					break;
+
+				case 0x40:
+
+					self.crt.color = 0x40;
+					break;
+
+				case 0x80:
+
+					self.crt.color = 0x20;
+					break;
+
+				case 0xC0:
+
+					self.crt.color = 0x10;
+					break;
+			}
+		}
+		else
+		{
+			self.crt.color = ~(((data >> 1) & 0x60) | (data & 0x10) | 0x8F);
+		}
+	}
 }
 
 // -----------------------------------------------------------------------------

@@ -46,58 +46,51 @@
 
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	switch (addr)
-	{
-		case 0xFFF8:
-
-			*data = crt.color;
-			break;
-	}
 }
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	switch (addr)
+	switch (addr & 0x1F)
 	{
-		case 0xFFF0:	// D3.1 (pF0 - захват)
+		case 0x10:	// D3.1 (pF0 - захват)
 
 			fdd.HOLD = TRUE;
 			break;
 
-		case 0xFFF1:	// D3.2	(pF1 - мотор)
+		case 0x11:	// D3.2	(pF1 - мотор)
 
 			break;
 			
-		case 0xFFF2:	// D4.2	(pF2 - сторона)
+		case 0x12:	// D4.2	(pF2 - сторона)
 
 			fdd.head = data & 1;
 			break;
 
-		case 0xFFF3:	// D4.1	(pF3 - дисковод)
+		case 0x13:	// D4.1	(pF3 - дисковод)
 
 			fdd.selected = (data & 1) + 1;
 			break;
 
-		case 0xFFF8:	// Регистр цвета
-		case 0xFFF9:
-		case 0xFFFA:
-		case 0xFFFB:
+		case 0x18:	// Регистр цвета
+		case 0x19:
+		case 0x1A:
+		case 0x1B:
 
 			crt.color = data;
 			break;
 
-		case 0xFFFC:	// Выбрать RAM
+		case 0x1C:	// Выбрать RAM
 
 			cpu.PAGE = 0;
 			break;
 
-		case 0xFFFD:	// Выбрать RAM-диск
+		case 0x1D:	// Выбрать RAM-диск
 
 			cpu.PAGE = 1 + (data & 7);
 			break;
 
-		case 0xFFFE:	// Выбрать ROM-диск
-		case 0xFFFF:
+		case 0x1E:	// Выбрать ROM-диск
+		case 0x1F:
 
 			cpu.PAGE = 9;
 			break;
@@ -108,6 +101,17 @@
 {
 	fdd.selected = 1;
 }
+
+// -----------------------------------------------------------------------------
+// DEBUG: dealloc
+// -----------------------------------------------------------------------------
+
+#ifdef DEBUG
+- (void) dealloc
+{
+	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
+}
+#endif
 
 @end
 
@@ -189,7 +193,7 @@
 
 	if (menuItem.action == @selector(ROMDisk:))
 	{
-		NSURL *url = [self.ext url]; if ((menuItem.state = url != nil))
+		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
 			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
 		else
 			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
@@ -262,7 +266,7 @@
 		}
 	}
 
-	else
+	else @synchronized(self.snd.sound)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -283,19 +287,19 @@
 {
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 	panel.allowedFileTypes = @[@"rom", @"bin"];
-	panel.canChooseDirectories = FALSE;
+	panel.canChooseDirectories = TRUE;
 	panel.title = menuItem.title;
 	panel.delegate = self.ext;
 
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.url = panel.URLs.firstObject;
+		self.ext.URL = panel.URLs.firstObject;
 	}
-	else if (self.ext.url != nil)
+	else if (self.ext.URL != nil)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.url = nil;
+		self.ext.URL = nil;
 	}
 }
 
@@ -317,6 +321,8 @@
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
 		return FALSE;
 
+	self.ext.specialist = TRUE;
+
 	if ([super createObjects] == FALSE)
 		return FALSE;
 
@@ -329,9 +335,6 @@
 
 - (BOOL) mapObjects
 {
-	if ((self.sys = [[SpecialistMXSystem alloc] init]) == nil)
-		return FALSE;
-
 	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
 	[self.cpu mapObject:self.ram atPage:0 from:0x0000 to:0x8FFF];
@@ -359,6 +362,9 @@
 		for (uint8_t page = 1; page <= 8; page++)
 			[self.cpu mapObject:mem atPage:page from:0x0000 to:0xFFBF];
 	}
+
+	if (self.sys == nil && (self.sys = [[SpecialistMXSystem alloc] init]) == nil)
+		return FALSE;
 
 	for (uint8_t page = 0; page <= 9; page++)
 	{
@@ -434,7 +440,11 @@
 	if ([super createObjects] == FALSE)
 		return FALSE;
 
+	if (self.fdd == nil && (self.fdd = [[VG93 alloc] initWithQuartz:self.cpu.quartz]) == nil)
+		return FALSE;
+
 	self.crt.isColor = TRUE;
+	self.isFloppy = TRUE;
 	return TRUE;
 }
 
@@ -510,6 +520,146 @@
 	return self;
 }
 
+@end
+
+// =============================================================================
+// Системный регистр ПЭВМ "Специалист MX2"
+// =============================================================================
+
+@implementation SpecialistMX2System
+
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
+{
+	switch (addr & 0x1F)
+	{
+		case 0x18:
+		case 0x19:
+		case 0x1A:
+		case 0x1B:
+
+			if ((self.cpu.PAGE & ~1) == 0xA)
+			{
+				self.cpu.PAGE = 0xA | (data & 1);
+				self.kbd.four = (data & 2) == 0;
+			}
+			else
+			{
+				self.crt.color = data;
+			}
+
+			break;
+
+		case 0x1C:	// Выбрать RAM
+
+			self.cpu.PAGE = 0;
+			self.kbd.crt = nil;
+			break;
+
+		case 0x1D:	// Выбрать RAM-диск
+
+			self.cpu.PAGE = 1 + (data & 7);
+			self.kbd.crt = nil;
+			break;
+
+		case 0x1E:	// Выбрать ROM-диск
+
+			self.cpu.PAGE = 9;
+			self.kbd.crt = nil;
+			break;
+
+		case 0x1F:	// Выбрать STD
+
+			self.kbd.crt = self.crt;
+			self.cpu.PAGE = 0xA;
+			break;
+
+		default:
+
+			[super WR:addr data:data CLK:clock];
+
+	}
+}
+
+- (void) RESET
+{
+	self.kbd.crt = self.crt;
+	[super RESET];
+}
 
 @end
 
+// =============================================================================
+// ПЭВМ "Специалист MX2"
+// =============================================================================
+
+@implementation SpecialistMX2
+
+- (BOOL) mapObjects
+{
+	if (self.sys == nil && (self.sys = [[SpecialistMX2System alloc] init]) == nil)
+		return FALSE;
+
+	if (![super mapObjects])
+		return FALSE;
+
+	if (self.rom.length <= 0x8000)
+		return FALSE;
+
+	MEM *mem = [[MEM alloc] initWithMemory:self.rom.mutableBytes + 0x8000
+									length:self.rom.length - 0x8000
+									  mask:0x7FFF];
+
+	[self.cpu mapObject:mem			atPage:9 from:0x0000 to:0x7FFF WR:nil];
+	[self.cpu mapObject:self.ram	atPage:9 from:0x8000 to:0x8FFF];
+	[self.cpu mapObject:self.crt	atPage:9 from:0x9000 to:0xBFFF RD:self.ram];
+
+	[self.cpu mapObject:self.rom	atPage:0xA from:0x0000 to:0x7FFF WR:nil];
+	[self.cpu mapObject:self.ram	atPage:0xB from:0x0000 to:0x7FFF];
+
+	for (uint8_t page = 0xA; page <= 0xB; page++)
+	{
+		[self.cpu mapObject:self.ram atPage:page from:0x8000 to:0x8FFF];
+		[self.cpu mapObject:self.crt atPage:page from:0x9000 to:0xBFFF RD:self.ram];
+		[self.cpu mapObject:self.ram atPage:page from:0xC000 to:0xEFFF];
+
+		for (uint16_t addr = 0xF000; addr < 0xF800; addr += 32)
+		{
+			[self.cpu mapObject:self.kbd	atPage:page from:addr + 0x00 to:addr + 0x03];		// U7
+			[self.cpu mapObject:self.ext	atPage:page from:addr + 0x04 to:addr + 0x07];		// U6
+			[self.cpu mapObject:self.fdd	atPage:page from:addr + 0x08 to:addr + 0x0B];		// U5
+			[self.cpu mapObject:self.snd	atPage:page from:addr + 0x0C to:addr + 0x0F];		// U4
+			[self.cpu mapObject:self.sys	atPage:page from:addr + 0x10 to:addr + 0x13];		// U3
+			[self.cpu mapObject:nil			atPage:page from:addr + 0x14 to:addr + 0x17];		// U2
+			[self.cpu mapObject:self.sys	atPage:page from:addr + 0x18 to:addr + 0x1B];		// U1
+			[self.cpu mapObject:self.sys	atPage:page from:addr + 0x1C to:addr + 0x1F];		// U0
+		}
+
+		[self.cpu mapObject:self.kbd atPage:page from:0xF800 to:0xFFFF];
+	}
+
+	if ((self.cpu.PAGE & ~1) == 0xA)
+		self.kbd.crt = self.crt;
+	else
+		self.kbd.crt = nil;
+
+	self.sys.kbd = self.kbd;
+
+	return TRUE;
+}
+
+- (BOOL) createObjects
+{
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX2" mask:0x7FFF]) == nil)
+		return FALSE;
+
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0xA0000]) == nil)
+		return FALSE;
+
+	if (![super createObjects])
+		return FALSE;
+
+	self.ext.flashDisk = TRUE;
+	return TRUE;
+}
+
+@end

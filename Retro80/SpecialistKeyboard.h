@@ -8,5 +8,6 @@
 @interface SpecialistKeyboard : RKKeyboard
 
 @property SpecialistScreen *crt;
+@property BOOL four;
 
 @end

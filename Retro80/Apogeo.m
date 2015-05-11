@@ -30,7 +30,7 @@
 
 	if (menuItem.action == @selector(ROMDisk:))
 	{
-		NSURL *url = [self.ext url]; if ((menuItem.state = url != nil))
+		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
 			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
 		else
 			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
@@ -79,12 +79,12 @@ static uint32_t colors[] =
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.url = panel.URLs.firstObject;
+		self.ext.URL = panel.URLs.firstObject;
 	}
-	else if (self.ext.url != nil)
+	else if (self.ext.URL != nil)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.url = nil;
+		self.ext.URL = nil;
 	}
 }
 

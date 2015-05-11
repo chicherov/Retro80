@@ -98,12 +98,12 @@
 	color = setColor; if (isColor)
 	{
 		if (color & 0x80)
-			color1 = 0xFF000000 | (color & 0x40 ? 0x000000FF : 0) | (color & 0x20 ? 0x0000FF00 : 0) | (color & 0x10 ? 0x00FF0000 : 0);
+			color1 = 0xFF555555 | (color & 0x40 ? 0x000000FF : 0) | (color & 0x20 ? 0x0000FF00 : 0) | (color & 0x10 ? 0x00FF0000 : 0);
 		else
 			color1 = 0xFF000000 | (color & 0x40 ? 0x000000AA : 0) | (color & 0x20 ? 0x0000AA00 : 0) | (color & 0x10 ? 0x00AA0000 : 0);
 
 		if (color & 0x08)
-			color0 = 0xFF000000 | (color & 0x04 ? 0x000000FF : 0) | (color & 0x02 ? 0x0000FF00 : 0) | (color & 0x01 ? 0x00FF0000 : 0);
+			color0 = 0xFF555555 | (color & 0x04 ? 0x000000FF : 0) | (color & 0x02 ? 0x0000FF00 : 0) | (color & 0x01 ? 0x00FF0000 : 0);
 		else
 			color0 = 0xFF000000 | (color & 0x04 ? 0x000000AA : 0) | (color & 0x02 ? 0x0000AA00 : 0) | (color & 0x01 ? 0x00AA0000 : 0);
 	}

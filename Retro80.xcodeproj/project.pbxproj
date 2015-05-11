@@ -43,6 +43,7 @@
 		D988F7C01A091D5A00079E0A /* GeneratePreviewForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BF1A091D5A00079E0A /* GeneratePreviewForURL.m */; };
 		D988F7C21A091D5A00079E0A /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D988F7C11A091D5A00079E0A /* main.c */; };
 		D98BEB4A19F2A2DC008E4EC4 /* Partner.m in Sources */ = {isa = PBXBuildFile; fileRef = D98BEB4919F2A2DC008E4EC4 /* Partner.m */; };
+		D98CD8CA1AFCC9E10009C7B3 /* SpecialistMX2.bin in Resources */ = {isa = PBXBuildFile; fileRef = D98CD8C91AFCC9E10009C7B3 /* SpecialistMX2.bin */; };
 		D99121C91AB164F700A95BBB /* Specialist.m in Sources */ = {isa = PBXBuildFile; fileRef = D99121C81AB164F700A95BBB /* Specialist.m */; };
 		D994F5561ADBA613002408E8 /* SpecialistScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F5551ADBA613002408E8 /* SpecialistScreen.m */; };
 		D994F5591ADBA7D7002408E8 /* SpecialistKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F5581ADBA7D7002408E8 /* SpecialistKeyboard.m */; };
@@ -143,6 +144,7 @@
 		D988F7C11A091D5A00079E0A /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		D98BEB4819F2A2DC008E4EC4 /* Partner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Partner.h; sourceTree = "<group>"; };
 		D98BEB4919F2A2DC008E4EC4 /* Partner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Partner.m; sourceTree = "<group>"; };
+		D98CD8C91AFCC9E10009C7B3 /* SpecialistMX2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX2.bin; path = Retro80/ROM/SpecialistMX2.bin; sourceTree = "<group>"; };
 		D99121C71AB164F700A95BBB /* Specialist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Specialist.h; sourceTree = "<group>"; };
 		D99121C81AB164F700A95BBB /* Specialist.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Specialist.m; sourceTree = "<group>"; };
 		D994F5541ADBA613002408E8 /* SpecialistScreen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistScreen.h; sourceTree = "<group>"; };
@@ -219,6 +221,7 @@
 				D92894F61AB2DDD50039C236 /* SpecialistSP580.bin */,
 				D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */,
 				D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */,
+				D98CD8C91AFCC9E10009C7B3 /* SpecialistMX2.bin */,
 			);
 			name = Resources;
 			path = ..;
@@ -476,6 +479,7 @@
 				D974FCAD19ADE9450041DF91 /* MainMenu.xib in Resources */,
 				D93DC7451AB2CE5B0005D473 /* Micro80.bin in Resources */,
 				D9B6E5ED1AFBDAF300175E50 /* SpecialistMX_Commander.bin in Resources */,
+				D98CD8CA1AFCC9E10009C7B3 /* SpecialistMX2.bin in Resources */,
 				D94E03AB1AD835E000C1FFBC /* fdd.bin in Resources */,
 				D99555061A051B2300BC4868 /* Retro80.icns in Resources */,
 				D93DC73F1AB2CE5B0005D473 /* SYMGEN.BIN in Resources */,

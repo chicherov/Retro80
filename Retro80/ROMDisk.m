@@ -3,8 +3,6 @@
 
 @implementation ROMDisk
 {
-	NSURL* _url;
-	NSData *rom;
 	int romMode;
 
 	uint16_t latch;
@@ -18,22 +16,32 @@
 	unsigned bpos, blen;
 }
 
+@synthesize ROM;
+@synthesize URL;
+
+@synthesize specialist;
+@synthesize flashDisk;
+
 // -----------------------------------------------------------------------------
 // encodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeObject:self.url forKey:@"url"];
+	[encoder encodeObject:self.URL forKey:@"URL"];
 	[encoder encodeBool:self.tapeEmulator forKey:@"tapeEmulator"];
+	[encoder encodeBool:self.specialist forKey:@"specialist"];
+	[encoder encodeBool:self.flashDisk forKey:@"flashDisk"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [super initWithCoder:decoder])
 	{
-		self.url = [decoder decodeObjectForKey:@"url"];
+		self.URL = [decoder decodeObjectForKey:@"URL"];
 		self.tapeEmulator = [decoder decodeBoolForKey:@"tapeEmulator"];
+		self.specialist = [decoder decodeBoolForKey:@"specialist"];
+		self.flashDisk = [decoder decodeBoolForKey:@"flashDisk"];
 	}
 
 	return self;
@@ -51,7 +59,14 @@
 		{
 			NSError* outError; NSNumber *fileSize = nil; if ([url getResourceValue:&fileSize forKey:NSURLFileSizeKey error:&outError])
 			{
-				NSUInteger size = fileSize.unsignedIntegerValue; return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+				NSUInteger size = fileSize.unsignedIntegerValue; if (!specialist)
+				{
+					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+				}
+				else
+				{
+					return size && size <= (flashDisk ? 0x200000 : 0x10000) && (size & 0x03FF) == 0x0000;
+				}
 			}
 		}
 		else
@@ -75,12 +90,19 @@
 		{
 			NSNumber *fileSize = nil; if ([url getResourceValue:&fileSize forKey:NSURLFileSizeKey error:outError])
 			{
-				NSUInteger size = fileSize.unsignedIntegerValue; return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+				NSUInteger size = fileSize.unsignedIntegerValue; if (!specialist)
+				{
+					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+				}
+				else
+				{
+					return size && size <= (flashDisk ? 0x200000 : 0x10000) && (size & 0x03FF) == 0x0000;
+				}
 			}
 		}
 		else if ([sender isKindOfClass:[NSOpenPanel class]] && [(NSOpenPanel *)sender canChooseDirectories])
 		{
-			return [[NSFileManager defaultManager] fileExistsAtPath:[[NSURL URLWithString:[(NSOpenPanel *)sender canChooseFiles] ? @"boot/boot.rk" : @"boot/boot.rks" relativeToURL:url] path]];
+			return [[NSFileManager defaultManager] fileExistsAtPath:[[NSURL URLWithString:specialist ? @"boot/boot.rks" :  @"boot/boot.rk" relativeToURL:url] path]];
 		}
 	}
 
@@ -91,7 +113,7 @@
 // @property NSURL* url;
 // -----------------------------------------------------------------------------
 
-- (void) setUrl:(NSURL *)url
+- (void) setURL:(NSURL *)url
 {
 	if (url)
 	{
@@ -99,35 +121,37 @@
 		{
 			if (isDirectory)
 			{
-				if ((rom = [NSData dataWithContentsOfFile:[[[NSURL URLWithString:@"boot/boot.rk" relativeToURL:url] path] stringByResolvingSymlinksInPath]]) != nil)
+				if (specialist)
 				{
-					_length = rom.length; _bytes = rom.bytes;
-					_url = url; romMode = 11;
-					return;
+					if ((ROM = [NSData dataWithContentsOfFile:[[[NSURL URLWithString:@"boot/boot.rks" relativeToURL:url] path] stringByResolvingSymlinksInPath]]) != nil)
+					{
+						URL = url; romMode = 21; return;
+					}
 				}
-				else if ((rom = [NSData dataWithContentsOfFile:[[[NSURL URLWithString:@"boot/boot.rks" relativeToURL:url] path] stringByResolvingSymlinksInPath]]) != nil)
+				else
 				{
-					_length = rom.length; _bytes = rom.bytes;
-					_url = url; romMode = 21;
-					return;
+					if ((ROM = [NSData dataWithContentsOfFile:[[[NSURL URLWithString:@"boot/boot.rk" relativeToURL:url] path] stringByResolvingSymlinksInPath]]) != nil)
+					{
+						URL = url; romMode = 11; return;
+					}
 				}
 			}
-			else if ((rom = [NSData dataWithContentsOfFile:[[url path] stringByResolvingSymlinksInPath]]) != nil)
+
+			else if ((ROM = [NSData dataWithContentsOfFile:[[url path] stringByResolvingSymlinksInPath]]) != nil)
 			{
-				_length = rom.length; _bytes = rom.bytes;
-				_url = url; romMode = 0;
-				return;
+				URL = url; romMode = 0; return;
 			}
 		}
 	}
 
-	rom = nil; _length = 0; _bytes = 0;
-	_url = nil; romMode = 0;
+	romMode = 0;
+	ROM = nil;
+	URL = nil;
 }
 
-- (NSURL *) url
+- (NSURL *) URL
 {
-	return _url;
+	return URL;
 }
 
 // -----------------------------------------------------------------------------
@@ -138,7 +162,7 @@
 {
 	if (romMode > 20 && self.tapeEmulator && self.recorder.enabled)
 	{
-		self.recorder.buffer = rom;
+		self.recorder.buffer = ROM;
 		self.recorder.pos = 0;
 	}
 
@@ -152,11 +176,14 @@
 	if (romMode)
 		return romMode < 20 ? out : 0xFF;
 
-	if (_length <= 0x10000)
+	if (flashDisk)
+		addr = ((C & 0x1F) << 16) | (addr & 0xFF00) | B;
+
+	else if (ROM.length <= 0x10000)
 		addr = (C << 8) | B;
 
-	if (addr < _length)
-		return _bytes[addr];
+	if (addr < ROM.length)
+		return ((const uint8_t *)ROM.bytes)[addr];
 	else
 		return 0xFF;
 }
@@ -168,6 +195,14 @@
 	return romMode < 20 ? 0xFF : out;
 }
 
+- (void) setC:(uint8_t)data
+{
+	if (flashDisk && (data ^ C) & 0x20)
+		addr = (addr & ~0xFF00) | (B << 8);
+
+	C = data;
+}
+
 // -----------------------------------------------------------------------------
 
 - (void) setB:(uint8_t)data
@@ -176,7 +211,7 @@
 	{
 		case 0:
 		{
-			if ((data ^ B) & 0x01)
+			if (!flashDisk && (data ^ B) & 0x01)
 			{
 				if (data & 0x01)
 					addr = (((C & 0x0F) << 7 | (data >> 1)) << 11) | latch;
@@ -189,7 +224,7 @@
 
 		case 11:
 		{
-			out = (data & 0x7F) < _length ? _bytes[data & 0x7F] : 0xFF;
+			out = (data & 0x7F) < ROM.length ? ((const uint8_t *)ROM.bytes)[data & 0x7F] : 0xFF;
 
 			if (B == 0x44 && data == 0x40)
 				romMode++;
@@ -440,7 +475,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 {
 	blen = 0;
 
-	if ((file = [NSFileHandle fileHandleForReadingAtPath:[[NSURL URLWithString:romMode < 20 ? @"boot/sdbios.rk" : @"boot/sdbios.rks" relativeToURL:_url] path]]) == nil)
+	if ((file = [NSFileHandle fileHandleForReadingAtPath:[[NSURL URLWithString:romMode < 20 ? @"boot/sdbios.rk" : @"boot/sdbios.rks" relativeToURL:URL] path]]) == nil)
 	{
 		buffer[blen++] = 4;
 		return TRUE;
@@ -476,7 +511,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 	blen = 0;
 
-	if ((file = [NSFileHandle fileHandleForReadingAtPath:[[NSURL URLWithString:stringFromPointer(buffer+1) relativeToURL:_url] path]]) == nil)
+	if ((file = [NSFileHandle fileHandleForReadingAtPath:[[NSURL URLWithString:stringFromPointer(buffer+1) relativeToURL:URL] path]]) == nil)
 	{
 		buffer[blen++] = 4;
 		return TRUE;
@@ -507,11 +542,11 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 	blen = 0; if (buffer[1] != ':')
 	{
-		dir = nil; BOOL isDirectory; if ([[NSFileManager defaultManager] fileExistsAtPath:[[NSURL URLWithString:path relativeToURL:_url] path] isDirectory:&isDirectory])
+		dir = nil; BOOL isDirectory; if ([[NSFileManager defaultManager] fileExistsAtPath:[[NSURL URLWithString:path relativeToURL:URL] path] isDirectory:&isDirectory])
 		{
 			if (isDirectory)
 			{
-				dir = [[NSFileManager defaultManager] enumeratorAtURL:[NSURL URLWithString:path relativeToURL:_url] includingPropertiesForKeys:@[NSURLIsDirectoryKey, NSURLFileSizeKey, NSURLAttributeModificationDateKey] options:NSDirectoryEnumerationSkipsSubdirectoryDescendants errorHandler:nil];
+				dir = [[NSFileManager defaultManager] enumeratorAtURL:[NSURL URLWithString:path relativeToURL:URL] includingPropertiesForKeys:@[NSURLIsDirectoryKey, NSURLFileSizeKey, NSURLAttributeModificationDateKey] options:NSDirectoryEnumerationSkipsSubdirectoryDescendants errorHandler:nil];
 			}
 		}
 	}
@@ -604,7 +639,7 @@ NSString* stringFromPointer(uint8_t *ptr)
 	if (blen < 3 || buffer[blen-1])
 		return FALSE;
 
-	NSString* path = [[NSURL URLWithString:stringFromPointer(buffer + 2) relativeToURL:_url] path];
+	NSString* path = [[NSURL URLWithString:stringFromPointer(buffer + 2) relativeToURL:URL] path];
 
 	blen = 0; switch (buffer[1])
 	{
@@ -719,14 +754,14 @@ NSString* stringFromPointer(uint8_t *ptr)
 
 		case 101:	// fs_gettotal()
 		{
-			NSError *error = nil; NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[self.url path] error: &error];
+			NSError *error = nil; NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[URL path] error: &error];
 			offset = dictionary ? (uint32_t) ([(NSNumber *)dictionary[NSFileSystemSize] unsignedIntegerValue] / 1000000) : 0;
 			break;
 		}
 
 		case 102:	// fs_free()
 		{
-			NSError *error = nil; NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[self.url path] error: &error];
+			NSError *error = nil; NSDictionary *dictionary = [[NSFileManager defaultManager] attributesOfFileSystemForPath:[URL path] error: &error];
 			offset = dictionary ? (uint32_t) ([(NSNumber *)dictionary[NSFileSystemFreeSize] unsignedIntegerValue] / 1000000) : 0;
 			break;
 		}
@@ -871,8 +906,9 @@ NSString* stringFromPointer(uint8_t *ptr)
 		return FALSE;
 	}
 
-	NSString *from = [[NSURL URLWithString:stringFromPointer(buffer + 1) relativeToURL:_url] path];
-	NSString *to = [[NSURL URLWithString:stringFromPointer(buffer + bpos + 2) relativeToURL:_url] path];
+	NSString *from = [[NSURL URLWithString:stringFromPointer(buffer + 1) relativeToURL:URL] path];
+
+	NSString *to = [[NSURL URLWithString:stringFromPointer(buffer + bpos + 2) relativeToURL:URL] path];
 
 	blen = 0; if (![[NSFileManager defaultManager] fileExistsAtPath:from])
 		buffer[blen++] = 4;

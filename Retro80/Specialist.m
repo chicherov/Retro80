@@ -38,13 +38,13 @@
 				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 3;
 
 				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-				menuItem.state = [(ROMDisk*)self.ext url] != nil;
+				menuItem.state = [(ROMDisk*)self.ext URL] != nil;
 				return YES;
 			}
 
 			case 1:
 			{
-				NSURL *url = [(ROMDisk*)self.ext url]; if ((menuItem.state = url != nil))
+				NSURL *url = [(ROMDisk*)self.ext URL]; if ((menuItem.state = url != nil))
 					menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
 				else
 					menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
@@ -58,7 +58,7 @@
 
 			case 3:
 				menuItem.state = [(ROMDisk*)self.ext tapeEmulator];
-				return [(ROMDisk*)self.ext length] != 0 && memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) != 0 && self.inpHook.enabled;
+				return [[(ROMDisk*)self.ext ROM] length] != 0 && memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) != 0 && self.inpHook.enabled;
 		}
 	}
 
@@ -104,12 +104,12 @@
 				if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 				{
 					[self.document registerUndoWithMenuItem:menuItem];
-					romdisk.url = panel.URLs.firstObject;
+					romdisk.URL = panel.URLs.firstObject;
 				}
-				else if (romdisk.url != nil)
+				else if (romdisk.URL != nil)
 				{
 					[self.document registerUndoWithMenuItem:menuItem];
-					romdisk.url = nil;
+					romdisk.URL = nil;
 				}
 
 				break;
@@ -247,6 +247,7 @@
 					return self = nil;
 
 				[(ROMDisk *)self.ext setTapeEmulator:TRUE];
+				[(ROMDisk *)self.ext setSpecialist:TRUE];
 
 				break;
 
@@ -268,6 +269,10 @@
 			case 6:
 
 				return self = [[SpecialistMX_RAMFOS alloc] init];
+
+			case 7:
+
+				return self = [[SpecialistMX2 alloc] init];
 		}
 
 		if (![self createObjects])
