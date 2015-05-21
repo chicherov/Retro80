@@ -158,8 +158,30 @@
                                                 <action selector="newDocument:" target="-1" id="maO-WM-l8u"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Орион-128" tag="800" enabled="NO" id="Ccq-IT-d59">
+                                        <menuItem title="Орион-128" tag="801" id="Ccq-IT-d59">
                                             <modifierMask key="keyEquivalentModifierMask"/>
+                                            <menu key="submenu" id="3x4-G2-qWR">
+                                                <items>
+                                                    <menuItem title="Монитор-1 (Отладочный)" tag="801" id="r0P-gK-ggw">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="zbg-Y1-wxT"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Монитор-2 (Основной)" tag="802" id="g34-yW-Xs8">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="bVC-mN-f86"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Монитор 3.1" tag="803" id="q5j-k5-nIg">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="nCL-0I-0yA"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                </items>
+                                            </menu>
                                             <connections>
                                                 <action selector="newDocument:" target="-1" id="zgs-iA-dj4"/>
                                             </connections>

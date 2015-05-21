@@ -120,7 +120,10 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 - (void) open
 {
-	panel.allowedFileTypes = [NSArray arrayWithObjects:@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension, nil];
+	panel.allowedFileTypes = @[@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension];
+
+	if ([self.extension isEqualToString:@"rko"])
+		panel.allowedFileTypes = [panel.allowedFileTypes arrayByAddingObjectsFromArray:@[@"ord", @"bru"]];
 
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
@@ -141,28 +144,78 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 					pos++;
 			}
 
-			else if ([fileExt isEqualToString:@"bin"] && self.buffer.length <= 0x10000)
+			else if ([@[@"ord", @"bru"] containsObject:fileExt])
 			{
-				uint8_t buffer[4]; buffer[0] = 0x00; buffer[1] = 0x00;
-				buffer[2] = ((self.buffer.length - 1) >> 8) & 0xFF;
-				buffer[3] = (self.buffer.length - 1) & 0xFF;
-
-				NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:4];
-				[mutableData appendData:self.buffer];
-
-				if (self.type)
+				if (self.buffer.length >= 16)
 				{
-					uint16_t cs = csum(self.buffer.bytes, self.buffer.length, self.type == 2);
-					buffer[2] = cs >> 8; buffer[3] = cs & 0xFF; buffer[1] = 0xE6;
+					const uint8_t *ptr = self.buffer.bytes;
 
-					if (self.type == 2)
-						[mutableData appendBytes:buffer + 2 length:2];
+					uint16_t len = (ptr[0x0A] | (ptr[0x0B] << 8)) + 0x10;
+					if ((len & 0xF) == 0 && self.buffer.length >= len)
+					{
+						uint8_t buffer[0x4D]; memset(buffer, 0x00, 0x4D);
+						memcpy(buffer, self.buffer.bytes, 8);
+
+						buffer[0x48] = 0xE6;
+						buffer[0x4B] = (len - 1) >> 8;
+						buffer[0x4C] = (len - 1) & 0xFF;
+
+						NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:0x4D];
+						[mutableData appendBytes:ptr length:len];
+
+						uint16_t cs = csum(ptr, len, FALSE);
+						buffer[0x49] = cs >> 8; buffer[0x4A] = cs & 0xFF;
+						[mutableData appendBytes:buffer + 0x46 length:5];
+
+						self.buffer = mutableData;
+					}
+
 					else
-						[mutableData appendBytes:buffer length:4];
+					{
+						self.buffer = nil;
+						cancel = TRUE;
+					}
 				}
 
-				self.buffer = mutableData;
+				else
+				{
+					self.buffer = nil;
+					cancel = TRUE;
+				}
 			}
+
+			else if ([fileExt isEqualToString:@"bin"])
+			{
+				if (self.buffer.length && self.buffer.length <= 0x10000)
+				{
+					uint8_t buffer[4]; buffer[0] = 0x00; buffer[1] = 0x00;
+					buffer[2] = ((self.buffer.length - 1) >> 8) & 0xFF;
+					buffer[3] = (self.buffer.length - 1) & 0xFF;
+
+					NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:4];
+					[mutableData appendData:self.buffer];
+
+					if (self.type)
+					{
+						uint16_t cs = csum(self.buffer.bytes, self.buffer.length, self.type == 2);
+						buffer[2] = cs >> 8; buffer[3] = cs & 0xFF; buffer[1] = 0xE6;
+
+						if (self.type == 2)
+							[mutableData appendBytes:buffer + 2 length:2];
+						else
+							[mutableData appendBytes:buffer length:4];
+					}
+
+					self.buffer = mutableData;
+				}
+
+				else
+				{
+					self.buffer = nil;
+					cancel = TRUE;
+				}
+			}
+
 		}
 	}
 
@@ -337,6 +390,18 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 							savePanel.nameFieldStringValue = stringFromRK(ptr + 9, i - 9);
 							break;
 						}
+					}
+				}
+
+				else if (length > 0x5E && ptr[0x49] == 0xE6 && ptr[0x4A] == 0x00 && ptr[0x4B] == 0x00 && memcmp(ptr + 1, ptr + 0x4E, 8) == 0)
+				{
+					if (length == ((ptr[0x4C] << 8) | ptr[0x4D]) + 0x54)
+					{
+						const uint8_t *p = memchr(ptr + 1, 0x20, 8);
+
+						savePanel.nameFieldStringValue = stringFromRK(ptr + 1, p ? p - ptr - 1 : 8);
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
+						break;
 					}
 				}
 

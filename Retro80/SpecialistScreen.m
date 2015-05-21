@@ -9,8 +9,6 @@
 	uint8_t colors[0x3000];
 
 	uint32_t* bitmap;
-	uint32_t color0;
-	uint32_t color1;
 }
 
 @synthesize display;
@@ -18,7 +16,6 @@
 
 @synthesize isColor;
 @synthesize color;
-
 
 // -----------------------------------------------------------------------------
 // @protocol WR
@@ -28,13 +25,9 @@
 {
 	if (screen && addr & 0x3000)
 	{
-		addr = (addr & 0x3FFF) - 0x1000; screen[addr] = data; colors[addr] = color; if (bitmap)
-		{
-			uint32_t* ptr = bitmap + ((addr & 0x3F00) >> 5) + (addr & 0xFF) * 384;
-
-			for (int i = 0; i < 8; i++)
-				*ptr++ = data & (0x80 >> i) ? color1 : color0;
-		}
+		addr = (addr & 0x3FFF) - 0x1000;
+		colors[addr] = color;
+		screen[addr] = data;
 	}
 }
 
@@ -44,86 +37,39 @@
 
 - (void) draw
 {
-	if (bitmap == NULL)
+	if (screen)
 	{
-		if ((bitmap = [self.display setupGraphicsWidth:384 height:256]))
+		if (bitmap == NULL)
+			bitmap = [self.display setupGraphicsWidth:384 height:256];
+
+		uint32_t c0 = 0xFF000000;
+		uint32_t c1 = 0xFFAAAAAA;
+
+		for (uint16_t addr = 0x0000; addr < 0x3000; addr++)
 		{
-			uint8_t c = color; for (uint16_t addr = 0x0000; addr < 0x3000; addr++)
+			uint32_t* ptr = bitmap + (addr >> 5) + (addr & 0xFF) * 384;
+
+			if (isColor)
 			{
-				uint32_t* ptr = bitmap + ((addr & 0x3F00) >> 5) + (addr & 0xFF) * 384;
+				uint8_t c = colors[addr];
 
-				[self setColor:colors[addr]];
+				if (c & 0x80)
+					c1 = 0xFF555555 | (c & 0x40 ? 0x000000FF : 0) | (c & 0x20 ? 0x0000FF00 : 0) | (c & 0x10 ? 0x00FF0000 : 0);
+				else
+					c1 = 0xFF000000 | (c & 0x40 ? 0x000000AA : 0) | (c & 0x20 ? 0x0000AA00 : 0) | (c & 0x10 ? 0x00AA0000 : 0);
 
-				for (int i = 0; i < 8; i++)
-					*ptr++ = screen[addr] & (0x80 >> i) ? color1 : color0;
+				if (c & 0x08)
+					c0 = 0xFF555555 | (c & 0x04 ? 0x000000FF : 0) | (c & 0x02 ? 0x0000FF00 : 0) | (c & 0x01 ? 0x00FF0000 : 0);
+				else
+					c0 = 0xFF000000 | (c & 0x04 ? 0x000000AA : 0) | (c & 0x02 ? 0x0000AA00 : 0) | (c & 0x01 ? 0x00AA0000 : 0);
 			}
 
-			[self setColor:c];
+			for (int i = 0; i < 8; i++)
+				*ptr++ = screen[addr] & (0x80 >> i) ? c1 : c0;
 		}
+		
+		self.display.needsDisplay = TRUE;
 	}
-
-	self.display.needsDisplay = TRUE;
-}
-
-// -----------------------------------------------------------------------------
-// @property BOOL isColor;
-// -----------------------------------------------------------------------------
-
-- (void) setIsColor:(BOOL)setIsColor
-{
-	if (!(isColor = setIsColor))
-	{
-		color0 = 0xFF000000;
-		color1 = 0xFFAAAAAA;
-	}
-	else
-	{
-		self.color = color;
-	}
-
-	bitmap = NULL;
-}
-
-- (BOOL) isColor
-{
-	return isColor;
-}
-
-// -----------------------------------------------------------------------------
-// @property uint8_t color;
-// -----------------------------------------------------------------------------
-
-- (void) setColor:(uint8_t)setColor
-{
-	color = setColor; if (isColor)
-	{
-		if (color & 0x80)
-			color1 = 0xFF555555 | (color & 0x40 ? 0x000000FF : 0) | (color & 0x20 ? 0x0000FF00 : 0) | (color & 0x10 ? 0x00FF0000 : 0);
-		else
-			color1 = 0xFF000000 | (color & 0x40 ? 0x000000AA : 0) | (color & 0x20 ? 0x0000AA00 : 0) | (color & 0x10 ? 0x00AA0000 : 0);
-
-		if (color & 0x08)
-			color0 = 0xFF555555 | (color & 0x04 ? 0x000000FF : 0) | (color & 0x02 ? 0x0000FF00 : 0) | (color & 0x01 ? 0x00FF0000 : 0);
-		else
-			color0 = 0xFF000000 | (color & 0x04 ? 0x000000AA : 0) | (color & 0x02 ? 0x0000AA00 : 0) | (color & 0x01 ? 0x00AA0000 : 0);
-	}
-}
-
-- (uint8_t) color
-{
-	return color;
-}
-
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-
-- (id) init
-{
-	if (self = [super init])
-		self.isColor = FALSE;
-
-	return self;
 }
 
 // -----------------------------------------------------------------------------
@@ -148,7 +94,7 @@
 		{
 			memcpy(colors, ptr, sizeof(colors));
 
-			self.isColor = [decoder decodeBoolForKey:@"isColor"];
+			isColor = [decoder decodeBoolForKey:@"isColor"];
 			color = [decoder decodeIntForKey:@"color"];
 		}
 		else
@@ -172,4 +118,3 @@
 #endif
 
 @end
-

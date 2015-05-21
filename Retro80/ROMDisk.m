@@ -61,11 +61,11 @@
 			{
 				NSUInteger size = fileSize.unsignedIntegerValue; if (!specialist)
 				{
-					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000);
 				}
 				else
 				{
-					return size && size <= (flashDisk ? 0x200000 : 0x10000) && (size & 0x03FF) == 0x0000;
+					return size && size <= (flashDisk ? 0x200000 : 0x10000);
 				}
 			}
 		}
@@ -92,11 +92,11 @@
 			{
 				NSUInteger size = fileSize.unsignedIntegerValue; if (!specialist)
 				{
-					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000 && (size & 0x07FF) == 0x0000);
+					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000);
 				}
 				else
 				{
-					return size && size <= (flashDisk ? 0x200000 : 0x10000) && (size & 0x03FF) == 0x0000;
+					return size && size <= (flashDisk ? 0x200000 : 0x10000);
 				}
 			}
 		}
@@ -186,7 +186,7 @@
 		return ((const uint8_t *)ROM.bytes)[addr];
 	else
 		return 0xFF;
-}
+	}
 
 // -----------------------------------------------------------------------------
 

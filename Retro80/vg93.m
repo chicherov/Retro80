@@ -106,34 +106,21 @@
 					TRACKS = 0; HEADS = 1; SECTORS = 0; SECSIZE = 0;
 				}
 
-				else if (fileSize % 5120 == 0)
+				else switch (fileSize)
 				{
-					HEADS = 1; SECTORS = 5; SECSIZE = 1024;
-					TRACKS = (unsigned) fileSize / 5120;
+					case 819200:
 
-					if (TRACKS >= 160 && TRACKS <= 166 && (TRACKS & 1) == 0)
-					{
-						TRACKS >>= 1; HEADS = 2;
-					}
+						TRACKS = 80; HEADS = 2; SECTORS = 5; SECSIZE = 1024;
+						break;
 
-					else if (TRACKS >= 80 && TRACK <= 83)
-					{
-					}
+					case 737280:
 
-					else if (TRACKS >= 40 && TRACK <= 43)
-					{
-					}
+						TRACKS = 80; HEADS = 2; SECTORS = 9; SECSIZE = 512;
+						break;
 
-					else
-					{
+					default:
 						file = nil;
-					}
-
-				}
-
-				else
-				{
-					file = nil;
+						break;
 				}
 			}
 		}
@@ -303,6 +290,7 @@
 			else
 			{
 				status.S7 = file == nil;
+				status.S1 = 0;
 			}
 
 			*data = status.byte;

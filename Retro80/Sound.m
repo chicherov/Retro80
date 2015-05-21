@@ -118,7 +118,7 @@ NSRunLoop *runLoop;
 				debug = TRUE; break;
 			}
 
-			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + sample(snd, @selector(sample:), CLK);
+			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + (sample ? sample(snd, @selector(sample:), CLK) : 0);
 
 			if (streamFormat.mBitsPerChannel == 16)
 			{
@@ -295,7 +295,11 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	}
 	
 	execute = (BOOL (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
-	sample = (SInt8 (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
+
+	if ([self.snd respondsToSelector:@selector(sample:)])
+		sample = (SInt8 (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
+	else
+		sample = 0;
 
 	CLK = [self.cpu CLK]; clk = [self.cpu quartz] / streamFormat.mSampleRate;
 

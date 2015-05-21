@@ -51,6 +51,8 @@
 
 @property Sound* sound;
 
+@optional
+
 - (SInt8) sample:(uint64_t)clock;
 
 @end
