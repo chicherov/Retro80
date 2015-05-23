@@ -88,11 +88,10 @@
 
 	NSObject<RD> *RD[16][0x10000];
 	NSObject<WR> *WR[16][0x10000];
-
-	const uint8* RDMEM[16][0x10000];
-	uint8* WRMEM[16][0x10000];
-
 	NSObject<RD, WR> *IO[256];
+
+	void (*CallRD [16][0x10000]) (id, SEL, uint16_t, uint8_t *, uint64_t);
+	void (*CallWR [16][0x10000]) (id, SEL, uint16_t, uint8_t, uint64_t);
 
 	NSMutableArray *RESETLIST;
 	unsigned START;
@@ -205,44 +204,14 @@
 
 - (void) mapObject:(NSObject<RD> *)rd atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to WR:(NSObject<WR> *)wr
 {
-	if ([rd conformsToProtocol:@protocol(BYTE)])
-	{
-		for (unsigned address = from; address <= to; address++)
-		{
-			RDMEM[page][address] = [(NSObject<BYTE>*)rd BYTE:address];
-			RD[page][address] = rd;
-		}
-	}
-	else
-	{
-		for (unsigned address = from; address <= to; address++)
-		{
-			RDMEM[page][address] = NULL;
-			RD[page][address] = rd;
-		}
-
-	}
+	for (unsigned address = from; address <= to; address++)
+		CallRD[page][address] = (void (*) (id, SEL, uint16_t, uint8_t *, uint64_t)) [RD[page][address] = rd methodForSelector:@selector(RD:data:CLK:)];
 
 	if ([rd conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:rd])
 		[RESETLIST addObject:rd];
 
-	if ([wr conformsToProtocol:@protocol(BYTE)])
-	{
-		for (unsigned address = from; address <= to; address++)
-		{
-			WRMEM[page][address] = [(NSObject<BYTE>*)wr BYTE:address];
-			WR[page][address] = wr;
-		}
-	}
-	else
-	{
-		for (unsigned address = from; address <= to; address++)
-		{
-			WRMEM[page][address] = NULL;
-			WR[page][address] = wr;
-		}
-
-	}
+	for (unsigned address = from; address <= to; address++)
+		CallWR[page][address] = (void (*) (id, SEL, uint16_t, uint8_t, uint64_t)) [WR[page][address] = wr methodForSelector:@selector(WR:data:CLK:)];
 
 	if ([wr conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:wr])
 		[RESETLIST addObject:wr];
@@ -279,16 +248,16 @@
 
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
 {
-	const uint8_t *ptr = cpu->RDMEM[cpu->PAGE][addr]; if (ptr) return *ptr;
-	[cpu->RD[cpu->PAGE][addr] RD:addr data:&data CLK:clock]; return data;
+	if (cpu->RD[cpu->PAGE][addr])
+		cpu->CallRD[cpu->PAGE][addr](cpu->RD[cpu->PAGE][addr], @selector(RD:data:CLK:), addr, &data, clock);
+
+	return data;
 }
 
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 {
-	uint8_t *ptr = cpu->WRMEM[cpu->PAGE][addr]; if (ptr) *ptr = data;
-
-	else if (cpu->WR[cpu->PAGE][addr])
-		[cpu->WR[cpu->PAGE][addr] WR:addr data:data CLK:clock];
+	if (cpu->WR[cpu->PAGE][addr])
+		cpu->CallWR[cpu->PAGE][addr](cpu->WR[cpu->PAGE][addr], @selector(WR:data:CLK:), addr, data, clock);
 }
 
 // -----------------------------------------------------------------------------
@@ -455,110 +424,68 @@ static uint8_t flags[256] =
 	0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86
 };
 
-static void add(X8080* cpu, uint8_t data)
+static uint8_t INR[0x100];
+static uint8_t DCR[0x100];
+
+static uint16_t RLC[0x10000];
+static uint16_t RRC[0x10000];
+static uint16_t RAL[0x10000];
+static uint16_t RAR[0x10000];
+static uint16_t DAA[0x10000];
+
+static uint16_t ADD[0x100][0x100];
+static uint16_t ADC[0x100][0x100];
+static uint16_t SUB[0x100][0x100];
+static uint16_t SBB[0x100][0x100];
+static uint16_t AND[0x100][0x100];
+
++ (void) ALU
 {
-	bool ac = (cpu->AF.A & 0x0F) + (data & 0x0F) > 0x0F;
-	bool cy = (cpu->AF.A + data > 0xFF);
-
-	cpu->AF.A += data; cpu->AF.F = flags[cpu->AF.A];
-
-	if (ac) cpu->AF.F |= 0x10;
-	if (cy) cpu->AF.F |= 0x01;
-}
-
-static void adc(X8080* cpu, uint8_t data)
-{
-	bool ac = (cpu->AF.A & 0x0F) + (data & 0x0F) + (cpu->AF.F & 0x01) > 0x0F;
-	bool cy = (cpu->AF.A + data + (cpu->AF.F & 0x01) > 0xFF);
-
-	cpu->AF.A += data + (cpu->AF.F & 0x01);
-	cpu->AF.F = flags[cpu->AF.A];
-
-	if (ac) cpu->AF.F |= 0x10;
-	if (cy) cpu->AF.F |= 0x01;
-}
-
-static void sub(X8080* cpu, uint8_t data)
-{
-	bool ac = !((cpu->AF.A & 0x0F) < (data & 0x0F));
-	bool cy = (cpu->AF.A < data);
-
-	cpu->AF.A -= data; cpu->AF.F = flags[cpu->AF.A];
-
-	if (ac) cpu->AF.F |= 0x10;
-	if (cy) cpu->AF.F |= 0x01;
-}
-
-static void sbb(X8080* cpu, uint8_t data)
-{
-	bool ac = !((cpu->AF.A & 0x0F) < (data & 0x0F) + (cpu->AF.F & 0x01));
-	bool cy = (cpu->AF.A < data + (cpu->AF.F & 0x01));
-
-	cpu->AF.A -= data + (cpu->AF.F & 0x01);
-	cpu->AF.F = flags[cpu->AF.A];
-
-	if (ac) cpu->AF.F |= 0x10;
-	if (cy) cpu->AF.F |= 0x01;
-}
-
-static void and(X8080* cpu, uint8_t data)
-{
-	bool ac = ((cpu->AF.A | data) & 0x08) != 0;
-	cpu->AF.A &= data; cpu->AF.F = flags[cpu->AF.A];
-	if (ac) cpu->AF.F |= 0x10;
-}
-
-static void xor(X8080* cpu, uint8_t data)
-{
-	cpu->AF.A ^= data; cpu->AF.F = flags[cpu->AF.A];
-}
-
-static void or(X8080* cpu, uint8_t data)
-{
-	cpu->AF.A |= data; cpu->AF.F = flags[cpu->AF.A];
-}
-
-static void cmp(X8080* cpu, uint8_t data)
-{
-	bool ac = !((cpu->AF.A & 0x0F) < (data & 0x0F));
-	bool cy = (cpu->AF.A < data);
-
-	cpu->AF.F = flags[(uint8_t)(cpu->AF.A - data)];
-
-	if (ac) cpu->AF.F |= 0x10;
-	if (cy) cpu->AF.F |= 0x01;
-}
-
-static bool test(uint8_t IR, uint8_t F)
-{
-	switch (IR & 0x38)
+	if (INR[0] == 0x00)
 	{
-		case 0x00:	// NZ
-			return (F & 0x40) == 0x00;
+		for (int byte = 0x00; byte <= 0xFF; byte++)
+		{
+			INR[byte] = flags[byte] | ((byte & 0x0F) == 0x00 ? 0x10 : 0x00);
+			DCR[byte] = flags[byte] | ((byte & 0x0F) != 0x0F ? 0x10 : 0x00);
 
-		case 0x08:	// Z
-			return (F & 0x40) != 0x00;
+			for (int data = 0x00; data <= 0xFF; data++)
+			{
+				ADD[byte][data] = ((byte + data) << 8) | flags[(byte + data) & 0xFF] | ((byte & 0x0F) + (data & 0x0F) > 0x0F ? 0x10 : 0x00) | (byte + data > 0xFF ? 0x01 : 0x00);
+				ADC[byte][data] = ((byte + data + 1) << 8) | flags[(byte + data + 1) & 0xFF] | ((byte & 0x0F) + (data & 0x0F) + 1 > 0x0F ? 0x10 : 0x00) | (byte + data + 1 > 0xFF ? 0x01 : 0x00);
 
-		case 0x10:	// NC
-			return (F & 0x01) == 0x00;
+				SUB[byte][data] = ((byte - data) << 8) | flags[(byte - data) & 0xFF] | ((byte & 0x0F) < (data & 0x0F) ? 0x00 : 0x10) | (byte < data ? 0x01 : 0x00);
+				SBB[byte][data] = ((byte - data - 1) << 8) | flags[(byte - data - 1) & 0xFF] | ((byte & 0x0F) < (data & 0x0F) + 1 ? 0x00 : 0x10) | (byte < data + 1 ? 0x01 : 0x00);
 
-		case 0x18:	// C
-			return (F & 0x01) != 0x00;
+				AND[byte][data] = ((byte & data) << 8) | flags[byte & data] | ((byte | data) & 0x08 ? 0x10 : 0x00);
+			}
+		}
 
-		case 0x20:	// PO
-			return (F & 0x04) == 0x00;
+		for (int word = 0x0000; word <= 0xFFFF; word++)
+		{
+			uint8_t F = word & 0xFF;
+			uint8_t A = word >> 8;
 
-		case 0x28:	// PE
-			return (F & 0x04) != 0x00;
+			uint8_t RLC_A = (A << 1) | (A >> 7);
+			uint8_t RLC_F = (F & ~1) | (RLC_A & 1);
+			RLC[word] = ((RLC_A) << 8) | RLC_F;
 
-		case 0x30:	// P
-			return (F & 0x80) == 0x00;
+			uint8_t RRC_F = (F & ~1) | (A & 1);
+			uint8_t RRC_A = (A >> 1) | (A << 7);
+			RRC[word] = ((RRC_A) << 8) | RRC_F;
 
-		case 0x38:	// M
-			return (F & 0x80) != 0x00;
+			uint8_t RAL_A = (A << 1) | (F & 1);
+			uint8_t RAL_F = (F & ~1) | (A >> 7);
+			RAL[word] = ((RAL_A) << 8) | RAL_F;
+
+			uint8_t RAR_A = (A >> 1) | (F << 7);
+			uint8_t RAR_F = (F & ~1) | (A & 1);
+			RAR[word] = ((RAR_A) << 8) | RAR_F;
+
+			uint8_t T = ((A & 0x0F) > 0x09 || F & 0x10) ? 0x06 : 0x00;
+			if (A + T > 0x9F || F & 0x01) T += 0x60;
+			DAA[word] = ADD[A][T] | (F & 1);
+		}
 	}
-	
-	return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -634,19 +561,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x04:	// INR B
 			{
-				AF.F = (AF.F & 0x01) | flags[++BC.B];
-				if ((BC.B & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | INR[++BC.B];
 				break;
 			}
 
 			case 0x05:	// DCR B
 			{
-				AF.F = (AF.F & 0x01) | flags[--BC.B];
-				if ((BC.B & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | DCR[--BC.B];
 				break;
 			}
 
@@ -658,24 +579,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x07:	// RLC
 			{
-				if (AF.A & 0x80)
-				{
-					AF.A <<= 1;
-					AF.A |= 0x01;
-					AF.F |= 0x01;
-				}
-				else
-				{
-					AF.A <<= 1;
-					AF.F &= ~0x01;
-				}
-
+				AF.AF = RLC[AF.AF];
 				break;
 			}
 
 			case 0x09:	// DAD B
 			{
-				if (HL.HL + BC.BC >= 0x10000)
+				if ((HL.HL + BC.BC) & 0x10000)
 					AF.F |= 0x01;
 				else
 					AF.F &= 0xFE;
@@ -698,19 +608,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x0C:	// INR C
 			{
-				AF.F = (AF.F & 0x01) | flags[++BC.C];
-				if ((BC.C & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | INR[++BC.C];
 				break;
 			}
 
 			case 0x0D:	// DCR C
 			{
-				AF.F = (AF.F & 0x01) | flags[--BC.C];
-				if ((BC.C & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | DCR[--BC.C];
 				break;
 			}
 
@@ -722,18 +626,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x0F:	// RRC
 			{
-				if (AF.A & 0x01)
-				{
-					AF.A >>= 1;
-					AF.A |= 0x80;
-					AF.F |= 0x01;
-				}
-				else
-				{
-					AF.A >>= 1;
-					AF.F &= ~0x01;
-				}
-
+				AF.AF = RRC[AF.AF];
 				break;
 			}
 
@@ -758,19 +651,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x14:	// INR D
 			{
-				AF.F = (AF.F & 0x01) | flags[++DE.D];
-				if ((DE.D & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | INR[++DE.D];
 				break;
 			}
 
 			case 0x15:	// DCR D
 			{
-				AF.F = (AF.F & 0x01) | flags[--DE.D];
-				if ((DE.D & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | DCR[--DE.D];
 				break;
 			}
 
@@ -782,18 +669,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x17:	// RAL
 			{
-				BOOL bit = (AF.A & 0x80) != 0x00;
-
-				AF.A = (AF.A << 1) | (AF.F & 0x01);
-				if (bit) AF.F |= 0x01;
-				else AF.F &= 0xFE;
-
+				AF.AF = RAL[AF.AF];
 				break;
 			}
 
 			case 0x19:	// DAD D
 			{
-				if (HL.HL + DE.DE >= 0x10000)
+				if ((HL.HL + DE.DE) & 0x10000)
 					AF.F |= 0x01;
 				else
 					AF.F &= 0xFE;
@@ -816,19 +698,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x1C:	// INR E
 			{
-				AF.F = (AF.F & 0x01) | flags[++DE.E];
-				if ((DE.E & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | INR[++DE.E];
 				break;
 			}
 
 			case 0x1D:	// DCR E
 			{
-				AF.F = (AF.F & 0x01) | flags[--DE.E];
-				if ((DE.E & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | DCR[--DE.E];
 				break;
 			}
 
@@ -840,12 +716,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x1F:	// RAR
 			{
-				BOOL bit = (AF.A & 0x01) != 0x00;
-
-				AF.A = (AF.A >> 1) | ((AF.F & 0x01) << 7);
-				if (bit) AF.F |= 0x01;
-				else AF.F &= 0xFE;
-
+				AF.AF = RAR[AF.AF];
 				break;
 			}
 
@@ -873,19 +744,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x24:	// INR H
 			{
-				AF.F = (AF.F & 0x01) | flags[++HL.H];
-				if ((HL.H & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | INR[++HL.H];
 				break;
 			}
 
 			case 0x25:	// DCR H
 			{
-				AF.F = (AF.F & 0x01) | flags[--HL.H];
-				if ((HL.H & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | DCR[--HL.H];
 				break;
 			}
 
@@ -897,22 +762,18 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x27:	// DAA
 			{
-				uint8_t T = ((AF.A & 0x0F) > 0x09 || AF.F & 0x10) ? 0x06 : 0x00;
-				if (AF.A + T > 0x9F || AF.F & 0x01) T += 0x60;
-				uint8_t cf = AF.F & 0x01; add(self, T);
-				AF.F |= cf;
-
+				AF.AF = DAA[AF.AF];
 				break;
 			}
 
 			case 0x29:	// DAD H
 			{
-				if (HL.HL + HL.HL >= 0x10000)
+				if (HL.HL & 0x8000)
 					AF.F |= 0x01;
 				else
 					AF.F &= 0xFE;
 
-				HL.HL += HL.HL;
+				HL.HL <<= 1;
 				break;
 			}
 
@@ -933,19 +794,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x2C:	// INR L
 			{
-				AF.F = (AF.F & 0x01) | flags[++HL.L];
-				if ((HL.L & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | INR[++HL.L];
 				break;
 			}
 
 			case 0x2D:	// DCR L
 			{
-				AF.F = (AF.F & 0x01) | flags[--HL.L];
-				if ((HL.L & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | DCR[--HL.L];
 				break;
 			}
 
@@ -984,25 +839,17 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x34:	// INR M
 			{
-				uint8_t M = get(self, HL.HL, 0x82) + 1;
+				uint8_t M = get(self, HL.HL, 0x82);
+				AF.F = (AF.F & 0x01) | INR[++M];
 				put(self, HL.HL, M, 0x00);
-
-				AF.F = (AF.F & 0x01) | flags[M];
-				if ((M & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
 				break;
 			}
 
 			case 0x35:	// DCR M
 			{
-				uint8_t M = get(self, HL.HL, 0x82) - 1;
+				uint8_t M = get(self, HL.HL, 0x82);
+				AF.F = (AF.F & 0x01) | DCR[--M];
 				put(self, HL.HL, M, 0x00);
-
-				AF.F = (AF.F & 0x01) | flags[M];
-				if ((M & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
 				break;
 			}
 
@@ -1020,7 +867,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x39:	// DAD SP
 			{
-				if (HL.HL + SP.SP >= 0x10000)
+				if ((HL.HL + SP.SP) & 0x10000)
 					AF.F |= 0x01;
 				else
 					AF.F &= 0xFE;
@@ -1045,19 +892,13 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x3C:	// INR A
 			{
-				AF.F = (AF.F & 0x01) | flags[++AF.A];
-				if ((AF.A & 0x0F) == 0x00)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | INR[++AF.A];
 				break;
 			}
 
 			case 0x3D:	// DCR A
 			{
-				AF.F = (AF.F & 0x01) | flags[--AF.A];
-				if ((AF.A & 0x0F) != 0x0F)
-					AF.F |= 0x10;
-
+				AF.F = (AF.F & 0x01) | DCR[--AF.A];
 				break;
 			}
 
@@ -1459,398 +1300,455 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0x80:	// ADD B
 			{
-				add(self, BC.B);
+				AF.AF = ADD[AF.A][BC.B];
 				break;
 			}
 
 			case 0x81:	// ADD C
 			{
-				add(self, BC.C);
+				AF.AF = ADD[AF.A][BC.C];
 				break;
 			}
 
 			case 0x82:	// ADD D
 			{
-				add(self, DE.D);
+				AF.AF = ADD[AF.A][DE.D];
 				break;
 			}
 
 			case 0x83:	// ADD E
 			{
-				add(self, DE.E);
+				AF.AF = ADD[AF.A][DE.E];
 				break;
 			}
 
 			case 0x84:	// ADD H
 			{
-				add(self, HL.H);
+				AF.AF = ADD[AF.A][HL.H];
 				break;
 			}
 
 			case 0x85:	// ADD L
 			{
-				add(self, HL.L);
+				AF.AF = ADD[AF.A][HL.L];
 				break;
 			}
 
 			case 0x86:	// ADD M
 			{
-				add(self, get(self, HL.HL, 0x82));
+				AF.AF = ADD[AF.A][get(self, HL.HL, 0x82)];
 				break;
 			}
 
 			case 0x87:	// ADD A
 			{
-				add(self, AF.A);
+				AF.AF = ADD[AF.A][AF.A];
 				break;
 			}
 
 			case 0x88:	// ADC B
 			{
-				adc(self, BC.B);
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][BC.B];
+				else
+					AF.AF = ADD[AF.A][BC.B];
+
 				break;
 			}
 
 			case 0x89:	// ADC C
 			{
-				adc(self, BC.C);
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][BC.C];
+				else
+					AF.AF = ADD[AF.A][BC.C];
+
 				break;
 			}
 
 			case 0x8A:	// ADC D
 			{
-				adc(self, DE.D);
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][DE.D];
+				else
+					AF.AF = ADD[AF.A][DE.D];
+
 				break;
 			}
 
 			case 0x8B:	// ADC E
 			{
-				adc(self, DE.E);
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][DE.E];
+				else
+					AF.AF = ADD[AF.A][DE.E];
+
 				break;
 			}
 
 			case 0x8C:	// ADC H
 			{
-				adc(self, HL.H);
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][HL.H];
+				else
+					AF.AF = ADD[AF.A][HL.H];
+
 				break;
 			}
 
 			case 0x8D:	// ADC L
 			{
-				adc(self, HL.L);
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][HL.L];
+				else
+					AF.AF = ADD[AF.A][HL.L];
+
 				break;
 			}
 
 			case 0x8E:	// ADC M
 			{
-				adc(self, get(self, HL.HL, 0x82));
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][get(self, HL.HL, 0x82)];
+				else
+					AF.AF = ADD[AF.A][get(self, HL.HL, 0x82)];
+
 				break;
 			}
 
 			case 0x8F:	// ADC A
 			{
-				adc(self, AF.A);
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][AF.A];
+				else
+					AF.AF = ADD[AF.A][AF.A];
+
 				break;
 			}
 
 			case 0x90:	// SUB B
 			{
-				sub(self, BC.B);
+				AF.AF = SUB[AF.A][BC.B];
 				break;
 			}
 
 			case 0x91:	// SUB C
 			{
-				sub(self, BC.C);
+				AF.AF = SUB[AF.A][BC.C];
 				break;
 			}
 
 			case 0x92:	// SUB D
 			{
-				sub(self, DE.D);
+				AF.AF = SUB[AF.A][DE.D];
 				break;
 			}
 
 			case 0x93:	// SUB E
 			{
-				sub(self, DE.E);
+				AF.AF = SUB[AF.A][DE.E];
 				break;
 			}
 
 			case 0x94:	// SUB H
 			{
-				sub(self, HL.H);
+				AF.AF = SUB[AF.A][HL.H];
 				break;
 			}
 
 			case 0x95:	// SUB L
 			{
-				sub(self, HL.L);
+				AF.AF = SUB[AF.A][HL.L];
 				break;
 			}
 
 			case 0x96:	// SUB M
 			{
-				sub(self, get(self, HL.HL, 0x82));
+				AF.AF = SUB[AF.A][get(self, HL.HL, 0x82)];
 				break;
 			}
 
 			case 0x97:	// SUB A
 			{
-				sub(self, AF.A);
+				AF.AF = SUB[AF.A][AF.A];
 				break;
 			}
 
 			case 0x98:	// SBB B
 			{
-				sbb(self, BC.B);
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][BC.B];
+				else
+					AF.AF = SUB[AF.A][BC.B];
+
 				break;
 			}
 
 			case 0x99:	// SBB C
 			{
-				sbb(self, BC.C);
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][BC.C];
+				else
+					AF.AF = SUB[AF.A][BC.C];
+
 				break;
 			}
 
 			case 0x9A:	// SBB D
 			{
-				sbb(self, DE.D);
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][DE.D];
+				else
+					AF.AF = SUB[AF.A][DE.D];
+
 				break;
 			}
 
 			case 0x9B:	// SBB E
 			{
-				sbb(self, DE.E);
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][DE.E];
+				else
+					AF.AF = SUB[AF.A][DE.E];
+
 				break;
 			}
 
 			case 0x9C:	// SBB H
 			{
-				sbb(self, HL.H);
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][HL.H];
+				else
+					AF.AF = SUB[AF.A][HL.H];
+
 				break;
 			}
 
 			case 0x9D:	// SBB L
 			{
-				sbb(self, HL.L);
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][HL.L];
+				else
+					AF.AF = SUB[AF.A][HL.L];
+
 				break;
 			}
 
 			case 0x9E:	// SBB M
 			{
-				sbb(self, get(self, HL.HL, 0x82));
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][get(self, HL.HL, 0x82)];
+				else
+					AF.AF = SUB[AF.A][get(self, HL.HL, 0x82)];
+
 				break;
 			}
 
 			case 0x9F:	// SBB A
 			{
-				sbb(self, AF.A);
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][AF.A];
+				else
+					AF.AF = SUB[AF.A][AF.A];
+
 				break;
 			}
 
-			case 0xA0:	// AND B
+			case 0xA0:	// ANA B
 			{
-				and(self, BC.B);
+				AF.AF = AND[AF.A][BC.B];
 				break;
 			}
 
-			case 0xA1:	// AND C
+			case 0xA1:	// ANA C
 			{
-				and(self, BC.C);
+				AF.AF = AND[AF.A][BC.C];
 				break;
 			}
 
-			case 0xA2:	// AND D
+			case 0xA2:	// ANA D
 			{
-				and(self, DE.D);
+				AF.AF = AND[AF.A][DE.D];
 				break;
 			}
 
-			case 0xA3:	// AND E
+			case 0xA3:	// ANA E
 			{
-				and(self, DE.E);
+				AF.AF = AND[AF.A][DE.E];
 				break;
 			}
 
-			case 0xA4:	// AND H
+			case 0xA4:	// ANA H
 			{
-				and(self, HL.H);
+				AF.AF = AND[AF.A][HL.H];
 				break;
 			}
 
-			case 0xA5:	// AND L
+			case 0xA5:	// ANA L
 			{
-				and(self, HL.L);
+				AF.AF = AND[AF.A][HL.L];
 				break;
 			}
 
-			case 0xA6:	// AND M
+			case 0xA6:	// ANA M
 			{
-				and(self, get(self, HL.HL, 0x82));
+				AF.AF = AND[AF.A][get(self, HL.HL, 0x82)];
 				break;
 			}
 
-			case 0xA7:	// AND A
+			case 0xA7:	// ANA A
 			{
-				and(self, AF.A);
+				AF.AF = AND[AF.A][AF.A];
 				break;
 			}
 
-			case 0xA8:	// XOR B
+			case 0xA8:	// XRA B
 			{
-				xor(self, BC.B);
+				AF.F = flags[AF.A ^= BC.B];
 				break;
 			}
 
-			case 0xA9:	// XOR C
+			case 0xA9:	// XRA C
 			{
-				xor(self, BC.C);
+				AF.F = flags[AF.A ^= BC.C];
 				break;
 			}
 
-			case 0xAA:	// XOR D
+			case 0xAA:	// XRA D
 			{
-				xor(self, DE.D);
+				AF.F = flags[AF.A ^= DE.D];
 				break;
 			}
 
-			case 0xAB:	// XOR E
+			case 0xAB:	// XRA E
 			{
-				xor(self, DE.E);
+				AF.F = flags[AF.A ^= DE.E];
 				break;
 			}
 
-			case 0xAC:	// XOR H
+			case 0xAC:	// XRA H
 			{
-				xor(self, HL.H);
+				AF.F = flags[AF.A ^= HL.H];
 				break;
 			}
 
-			case 0xAD:	// XOR L
+			case 0xAD:	// XRA L
 			{
-				xor(self, HL.L);
+				AF.F = flags[AF.A ^= HL.L];
 				break;
 			}
 
-			case 0xAE:	// XOR M
+			case 0xAE:	// XRA M
 			{
-				xor(self, get(self, HL.HL, 0x82));
+				AF.F = flags[AF.A ^= get(self, HL.HL, 0x82)];
 				break;
 			}
 
-			case 0xAF:	// XOR A
+			case 0xAF:	// XRA A
 			{
-				xor(self, AF.A);
+				AF.F = flags[AF.A ^= AF.A];
 				break;
 			}
 
 			case 0xB0:	// ORA B
 			{
-				or(self, BC.B);
+				AF.F = flags[AF.A |= BC.B];
 				break;
 			}
 
 			case 0xB1:	// ORA C
 			{
-				or(self, BC.C);
+				AF.F = flags[AF.A |= BC.C];
 				break;
 			}
 
 			case 0xB2:	// ORA D
 			{
-				or(self, DE.D);
+				AF.F = flags[AF.A |= DE.D];
 				break;
 			}
 
 			case 0xB3:	// ORA E
 			{
-				or(self, DE.E);
+				AF.F = flags[AF.A |= DE.E];
 				break;
 			}
 
 			case 0xB4:	// ORA H
 			{
-				or(self, HL.H);
+				AF.F = flags[AF.A |= HL.H];
 				break;
 			}
 
 			case 0xB5:	// ORA L
 			{
-				or(self, HL.L);
+				AF.F = flags[AF.A |= HL.L];
 				break;
 			}
 
 			case 0xB6:	// ORA M
 			{
-				or(self, get(self, HL.HL, 0x82));
+				AF.F = flags[AF.A |= get(self, HL.HL, 0x82)];
 				break;
 			}
 
 			case 0xB7:	// ORA A
 			{
-				or(self, AF.A);
+				AF.F = flags[AF.A];
 				break;
 			}
 
 			case 0xB8:	// CMP B
 			{
-				cmp(self, BC.B);
+				AF.F = SUB[AF.A][BC.B];
 				break;
 			}
 
 			case 0xB9:	// CMP C
 			{
-				cmp(self, BC.C);
+				AF.F = SUB[AF.A][BC.C];
 				break;
 			}
 
 			case 0xBA:	// CMP D
 			{
-				cmp(self, DE.D);
+				AF.F = SUB[AF.A][DE.D];
 				break;
 			}
 
 			case 0xBB:	// CMP E
 			{
-				cmp(self, DE.E);
+				AF.F = SUB[AF.A][DE.E];
 				break;
 			}
 
 			case 0xBC:	// CMP H
 			{
-				cmp(self, HL.H);
+				AF.F = SUB[AF.A][HL.H];
 				break;
 			}
 
 			case 0xBD:	// CMP L
 			{
-				cmp(self, HL.L);
+				AF.F = SUB[AF.A][HL.L];
 				break;
 			}
 
 			case 0xBE:	// CMP M
 			{
-				cmp(self, get(self, HL.HL, 0x82));
+				AF.F = SUB[AF.A][get(self, HL.HL, 0x82)];
 				break;
 			}
 
 			case 0xBF:	// CMP A
 			{
-				cmp(self, AF.A);
+				AF.F = SUB[AF.A][AF.A];
 				break;
 			}
 
 			case 0xC0:	// RNZ
-			case 0xC8:	// RZ
-			case 0xD0:	// RNC
-			case 0xD8:	// RC
-			case 0xE0:	// RPO
-			case 0xE8:	// RPE
-			case 0xF0:	// RP
-			case 0xF8:	// RM
 			{
-				if (test(IR, AF.F))
+				if ((AF.F & 0x40) == 0)
 				{
 					WZ.Z = get(self, SP.SP++, 0x86);
 					WZ.W = get(self, SP.SP++, 0x86);
@@ -1868,18 +1766,11 @@ static bool test(uint8_t IR, uint8_t F)
 			}
 
 			case 0xC2:	// JNZ
-			case 0xCA:	// JZ
-			case 0xD2:	// JNC
-			case 0xDA:	// JC
-			case 0xE2:	// JPO
-			case 0xEA:	// JPE
-			case 0xF2:	// JP
-			case 0xFA:	// JM
 			{
 				WZ.Z = get(self, PC.PC++, 0x82);
 				WZ.W = get(self, PC.PC++, 0x82);
 
-				if (test(IR, AF.F))
+				if ((AF.F & 0x40) == 0)
 					PC.PC = WZ.WZ;
 
 				break;
@@ -1895,18 +1786,11 @@ static bool test(uint8_t IR, uint8_t F)
 			}
 
 			case 0xC4:	// CNZ
-			case 0xCC:	// CZ
-			case 0xD4:	// CNC
-			case 0xDC:	// CC
-			case 0xE4:	// CPO
-			case 0xEC:	// CPE
-			case 0xF4:	// CP
-			case 0xFC:	// CM
 			{
 				WZ.Z = get(self, PC.PC++, 0x82);
 				WZ.W = get(self, PC.PC++, 0x82);
 
-				if (test(IR, AF.F))
+				if ((AF.F & 0x40) == 0)
 				{
 					put(self, --SP.SP, PC.PCH, 0x04);
 					put(self, --SP.SP, PC.PCL, 0x04);
@@ -1925,7 +1809,7 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xC6:	// ADI
 			{
-				add(self, get(self, PC.PC++, 0x82));
+				AF.AF = ADD[AF.A][get(self, PC.PC++, 0x82)];
 				break;
 			}
 
@@ -1944,11 +1828,49 @@ static bool test(uint8_t IR, uint8_t F)
 				break;
 			}
 
+			case 0xC8:	// RZ
+			{
+				if (AF.F & 0x40)
+				{
+					WZ.Z = get(self, SP.SP++, 0x86);
+					WZ.W = get(self, SP.SP++, 0x86);
+					PC.PC = WZ.WZ;
+				}
+
+				break;
+			}
+
 			case 0xC9:	// RET
 			case 0xD9:
 			{
 				PC.PCL = get(self, SP.SP++, 0x86);
 				PC.PCH = get(self, SP.SP++, 0x86);
+				break;
+			}
+
+			case 0xCA:	// JZ
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x40)
+					PC.PC = WZ.WZ;
+
+				break;
+			}
+
+			case 0xCC:	// CZ
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x40)
+				{
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
@@ -1969,7 +1891,23 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xCE:	// ACI
 			{
-				adc(self, get(self, PC.PC++, 0x82));
+				if (AF.F & 1)
+					AF.AF = ADC[AF.A][get(self, PC.PC++, 0x82)];
+				else
+					AF.AF = ADD[AF.A][get(self, PC.PC++, 0x82)];
+
+				break;
+			}
+
+			case 0xD0:	// RNC
+			{
+				if ((AF.F & 0x01) == 0)
+				{
+					WZ.Z = get(self, SP.SP++, 0x86);
+					WZ.W = get(self, SP.SP++, 0x86);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
@@ -1980,10 +1918,36 @@ static bool test(uint8_t IR, uint8_t F)
 				break;
 			}
 
+			case 0xD2:	// JNC
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if ((AF.F & 0x01) == 0x00)
+					PC.PC = WZ.WZ;
+
+				break;
+			}
+
 			case 0xD3:	// OUT
 			{
 				WZ.W = WZ.Z = get(self, PC.PC++, 0x82);
 				out(self, WZ.WZ, AF.A);
+				break;
+			}
+
+			case 0xD4:	// CNC
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if ((AF.F & 0x01) == 0x00)
+				{
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
@@ -1996,7 +1960,30 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xD6:	// SUI
 			{
-				sub(self, get(self, PC.PC++, 0x82));
+				AF.AF = SUB[AF.A][get(self, PC.PC++, 0x82)];
+				break;
+			}
+
+			case 0xD8:	// RC
+			{
+				if (AF.F & 0x01)
+				{
+					WZ.Z = get(self, SP.SP++, 0x86);
+					WZ.W = get(self, SP.SP++, 0x86);
+					PC.PC = WZ.WZ;
+				}
+
+				break;
+			}
+
+			case 0xDA:	// JC
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x01)
+					PC.PC = WZ.WZ;
+
 				break;
 			}
 
@@ -2007,9 +1994,40 @@ static bool test(uint8_t IR, uint8_t F)
 				break;
 			}
 
+			case 0xDC:	// CC
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x01)
+				{
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
+					PC.PC = WZ.WZ;
+				}
+
+				break;
+			}
+
 			case 0xDE:	// SBI
 			{
-				sbb(self, get(self, PC.PC++, 0x82));
+				if (AF.F & 1)
+					AF.AF = SBB[AF.A][get(self, PC.PC++, 0x82)];
+				else
+					AF.AF = SUB[AF.A][get(self, PC.PC++, 0x82)];
+
+				break;
+			}
+
+			case 0xE0:	// RPO
+			{
+				if ((AF.F & 0x04) == 0)
+				{
+					WZ.Z = get(self, SP.SP++, 0x86);
+					WZ.W = get(self, SP.SP++, 0x86);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
@@ -2017,6 +2035,17 @@ static bool test(uint8_t IR, uint8_t F)
 			{
 				HL.L = get(self, SP.SP++, 0x86);
 				HL.H = get(self, SP.SP++, 0x86);
+				break;
+			}
+
+			case 0xE2:	// JPO
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if ((AF.F & 0x04) == 0x00)
+					PC.PC = WZ.WZ;
+
 				break;
 			}
 
@@ -2033,6 +2062,21 @@ static bool test(uint8_t IR, uint8_t F)
 				break;
 			}
 
+			case 0xE4:	// CPO
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if ((AF.F & 0x04) == 0x00)
+				{
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
+					PC.PC = WZ.WZ;
+				}
+
+				break;
+			}
+
 			case 0xE5:	// PUSH H
 			{
 				put(self, --SP.SP, HL.H, 0x04);
@@ -2042,13 +2086,36 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xE6:	// ANI
 			{
-				and(self, get(self, PC.PC++, 0x82));
+				AF.AF = AND[AF.A][get(self, PC.PC++, 0x82)];
+				break;
+			}
+
+			case 0xE8:	// RPE
+			{
+				if (AF.F & 0x04)
+				{
+					WZ.Z = get(self, SP.SP++, 0x86);
+					WZ.W = get(self, SP.SP++, 0x86);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
 			case 0xE9:	// PCHL
 			{
 				PC.PC = HL.HL;
+				break;
+			}
+				
+			case 0xEA:	// JPE
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x04)
+					PC.PC = WZ.WZ;
+
 				break;
 			}
 
@@ -2060,9 +2127,36 @@ static bool test(uint8_t IR, uint8_t F)
 				break;
 			}
 
+			case 0xEC:	// CPE
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x04)
+				{
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
+					PC.PC = WZ.WZ;
+				}
+
+				break;
+			}
+
 			case 0xEE:	// XRI
 			{
-				xor(self, get(self, PC.PC++, 0x82));
+				AF.F = flags[AF.A ^= get(self, PC.PC++, 0x82)];
+				break;
+			}
+
+			case 0xF0:	// RP
+			{
+				if ((AF.F & 0x80) == 0)
+				{
+					WZ.Z = get(self, SP.SP++, 0x86);
+					WZ.W = get(self, SP.SP++, 0x86);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
@@ -2073,9 +2167,35 @@ static bool test(uint8_t IR, uint8_t F)
 				break;
 			}
 
+			case 0xF2:	// JP
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if ((AF.F & 0x80) == 0x00)
+					PC.PC = WZ.WZ;
+
+				break;
+			}
+
 			case 0xF3:	// DI
 			{
-				self.IF = FALSE;
+//				self.IF = FALSE;
+				break;
+			}
+
+			case 0xF4:	// CP
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if ((AF.F & 0x80) == 0x00)
+				{
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
@@ -2088,7 +2208,19 @@ static bool test(uint8_t IR, uint8_t F)
 
 			case 0xF6:	// ORI
 			{
-				or(self, get(self, PC.PC++, 0x82));
+				AF.F = flags[AF.A |= get(self, PC.PC++, 0x82)];
+				break;
+			}
+
+			case 0xF8:	// RM
+			{
+				if (AF.F & 0x80)
+				{
+					WZ.Z = get(self, SP.SP++, 0x86);
+					WZ.W = get(self, SP.SP++, 0x86);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
@@ -2098,16 +2230,47 @@ static bool test(uint8_t IR, uint8_t F)
 				break;
 			}
 
+			case 0xFA:	// JM
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x80)
+					PC.PC = WZ.WZ;
+
+				break;
+			}
+
 			case 0xFB:	// EI
 			{
-				self.IF = TRUE;
+//				self.IF = TRUE;
+				break;
+			}
+
+			case 0xFC:	// CM
+			{
+				WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = get(self, PC.PC++, 0x82);
+
+				if (AF.F & 0x80)
+				{
+					put(self, --SP.SP, PC.PCH, 0x04);
+					put(self, --SP.SP, PC.PCL, 0x04);
+					PC.PC = WZ.WZ;
+				}
+
 				break;
 			}
 
 			case 0xFE:	// CPI
 			{
-				cmp(self, get(self, PC.PC++, 0x82));
+				AF.F = SUB[AF.A][get(self, PC.PC++, 0x82)];
 				break;
+			}
+
+			default:
+			{
+				NSLog(@"IR=%02X", IR);
 			}
 		}
 	}
@@ -2121,8 +2284,10 @@ static bool test(uint8_t IR, uint8_t F)
 
 - (id) initWithQuartz:(unsigned)freq start:(unsigned int)start
 {
-	if (self = [super init])
+	if (self = [self init])
 	{
+		[X8080 ALU];
+
 		quartz = freq;
 		START = start;
 
