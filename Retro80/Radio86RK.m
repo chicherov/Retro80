@@ -130,7 +130,7 @@ static uint32_t colors[] =
 			{
 				if (self.floppy != nil || (self.floppy = [[Floppy alloc] init]) != nil)
 				{
-					[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
+					[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:self.dma];
 					[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
 				}
 			}
@@ -262,7 +262,7 @@ static uint32_t colors[] =
 
 	if (self.isFloppy)
 	{
-		[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
+		[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:self.dma];
 		[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
 	}
 

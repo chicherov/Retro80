@@ -17,11 +17,11 @@
 	BOOL (*execute)(id, SEL, uint64_t);
 	SInt8 (*sample)(id, SEL, uint64_t);
 
+	NSRunLoop *runLoop;
+
 	NSTimer *timer;
 	BOOL mute;
 }
-
-NSRunLoop *runLoop;
 
 @synthesize output;
 @synthesize beeper;
@@ -137,7 +137,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 {
 	Sound *sound = (__bridge Sound*) inUserData; @synchronized(sound)
 	{
-		if (sound->CLK != (uint64_t) -1)
+		if (sound->CLK >= 0.00)
 		{
 			[sound callback:inBuffer];
 		}
@@ -150,7 +150,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 {
 	@synchronized(self)
 	{
-		if (CLK != -1)
+		if (CLK >= 0.00)
 		{
 			if ([crt respondsToSelector:@selector(draw)])
 				[crt draw];
@@ -163,24 +163,6 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 			}
 		}
 	}
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) receiveSleepNote: (NSNotification*) note
-{
-#ifdef DEBUG
-    NSLog(@"receiveSleepNote: %@", [note name]);
-#endif
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) receiveWakeNote: (NSNotification*) note
-{
-#ifdef DEBUG
-    NSLog(@"receiveWakeNote: %@", [note name]);
-#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -240,8 +222,6 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 									  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
 									  ];
 
-		[self.textField setHidden:FALSE];
-
 		inAudioFilePos = 0;
 		pause = FALSE;
 		return TRUE;
@@ -269,15 +249,42 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		NSLog(@"AudioFileClose error: %d", err);
 
 	self.textField.stringValue = @"";
-	[self.textField setHidden:TRUE];
-
 	inAudioFile = 0;
 }
 
 // -----------------------------------------------------------------------------
 
-- (void) start:(NSRunLoop *)runLoop
+- (void) thread
 {
+#ifdef DEBUG
+	NSLog(@"Thread start");
+#endif
+
+	runLoop = [NSRunLoop currentRunLoop];
+	[self start];
+
+	while ([runLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:1]]);
+
+	runLoop = nil;
+
+#ifdef DEBUG
+	NSLog(@"Thread stop");
+#endif
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) start
+{
+	if (runLoop == nil)
+	{
+		[NSThread detachNewThreadSelector:@selector(thread)
+								 toTarget:self
+							   withObject:self];
+
+		return;
+	}
+
 	if (inAudioFile == 0)
 	{
 		streamFormat.mSampleRate = 44100;
@@ -290,8 +297,9 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		streamFormat.mFramesPerPacket = 1;
 		streamFormat.mReserved = 0;
 
-		self.textField.stringValue = @"--:--";
-		[self.textField setHidden:TRUE];
+		[self.textField performSelectorOnMainThread:@selector(setStringValue:)
+										 withObject:@"--:--"
+									  waitUntilDone:FALSE];
 	}
 	
 	execute = (BOOL (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
@@ -316,79 +324,40 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 #ifdef DEBUG
 		NSLog(@"Timer start");
 #endif
-		return;
 	}
 
-	OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, [runLoop getCFRunLoop], NULL, 0, &audioQueue)) == noErr)
+	else
 	{
-		for (int i = 0; i < 3; i++)
+		OSStatus err; if ((err = AudioQueueNewOutput(&streamFormat, OutputCallback, (__bridge void *)self, [runLoop getCFRunLoop], NULL, 0, &audioQueue)) == noErr)
 		{
-			AudioQueueBufferRef buffer;
-
-			if ((err = AudioQueueAllocateBuffer(audioQueue, streamFormat.mSampleRate/50 * streamFormat.mBytesPerPacket, &buffer)) == noErr)
-				OutputCallback((__bridge void *)self, audioQueue, buffer);
-
-			else
+			for (int i = 0; i < 3; i++)
 			{
-				NSLog(@"AudioQueueAllocateBuffer error: %d", err);
+				AudioQueueBufferRef buffer;
+
+				if ((err = AudioQueueAllocateBuffer(audioQueue, streamFormat.mSampleRate/50 * streamFormat.mBytesPerPacket, &buffer)) == noErr)
+					OutputCallback((__bridge void *)self, audioQueue, buffer);
+
+				else
+				{
+					NSLog(@"AudioQueueAllocateBuffer error: %d", err);
+				}
+			}
+
+			if ((err = AudioQueueStart(audioQueue, nil)) != noErr)
+			{
+				NSLog(@"AudioQueueStart error: %d", err);
 			}
 		}
-
-		if ((err = AudioQueueStart(audioQueue, nil)) != noErr)
+		else
 		{
-			NSLog(@"AudioQueueStart error: %d", err);
+			NSLog(@"AudioQueueNewOutput error: %d", err);
 		}
 
-		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
-															   selector:@selector(receiveSleepNote:)
-																   name:NSWorkspaceWillSleepNotification
-																 object:nil];
-
-		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
-															   selector:@selector(receiveWakeNote:)
-																   name:NSWorkspaceDidWakeNotification
-																 object:nil];
+#ifdef DEBUG
+		NSLog(@"Sound start");
+#endif
 	}
-	else
-	{
-		NSLog(@"AudioQueueNewOutput error: %d", err);
-	}
-
-#ifdef DEBUG
-	NSLog(@"Sound start");
-#endif
-
 }
-
-// -----------------------------------------------------------------------------
-
-- (void) thread
-{
-#ifdef DEBUG
-	NSLog(@"Thread start");
-#endif
-
-	runLoop = [NSRunLoop currentRunLoop];
-	[self start:runLoop];
-	[runLoop run];
-
-	runLoop = nil;
-
-#ifdef DEBUG
-	NSLog(@"Thread stop");
-#endif
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) start
-{
-	if (runLoop == nil)
-		[NSThread detachNewThreadSelector:@selector(thread) toTarget:self withObject:nil];
-	else
-		[self start:runLoop];
-}
-
 
 // -----------------------------------------------------------------------------
 
@@ -396,7 +365,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 {
 	@synchronized(self)
 	{
-		CLK = (uint64_t) -1;
+		CLK = -1.0;
 	}
 
 	if (timer)
@@ -421,8 +390,6 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		NSLog(@"Sound stop");
 #endif
 	}
-
-	[[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
 }
 
 // ----------------------------------------------------------------------
@@ -528,14 +495,12 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 }
 
 // -----------------------------------------------------------------------------
+// Инициализация
 // -----------------------------------------------------------------------------
 
 - (void) awakeFromNib
 {
-	NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-	[defaults setBool:mute = [defaults boolForKey:@"mute"]
-			   forKey:@"mute"];
+	mute = [[NSUserDefaults standardUserDefaults] boolForKey:@"mute"];
 }
 
 

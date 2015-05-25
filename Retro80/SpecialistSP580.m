@@ -120,8 +120,7 @@
 	{
 		if (panel != nil)
 		{
-			self.cpu.PC--;
-			*data = 0x00;
+			*data = 0x76;
 			return;
 		}
 
@@ -142,8 +141,7 @@
 									   withObject:nil
 									waitUntilDone:FALSE];
 
-				self.cpu.PC--;
-				*data = 0x00;
+				*data = 0x76;
 				return;
 			}
 

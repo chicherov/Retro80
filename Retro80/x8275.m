@@ -83,6 +83,7 @@
 	uint8_t shiftMask;
 }
 
+@synthesize display;
 @synthesize INTR;
 
 - (BOOL) INTR:(uint64_t)clock

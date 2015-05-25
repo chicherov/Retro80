@@ -16,7 +16,6 @@
 @interface Micro80Screen : NSObject <DisplayController, WR, NSCoding>
 
 @property NSObject <WR> *WR;
-@property Display *display;
 
 @end
 

@@ -22,15 +22,17 @@
 	self.document.computer.nextResponder = self.document.display;
 	self.nextResponder = self.document.computer;
 
+	__weak WindowController *safeSelf = self;
+
 	eventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSKeyDownMask handler:^(NSEvent *theEvent)
 					{
 						NSWindow *targetWindow = theEvent.window;
-						if (targetWindow != self.window)
+						if (targetWindow != safeSelf.window)
 							return theEvent;
 
 						if (theEvent.keyCode == 53 || theEvent.keyCode == 48)
 						{
-							[self keyDown:theEvent];
+							[safeSelf keyDown:theEvent];
 							return (NSEvent*) nil;
 						}
 
@@ -43,9 +45,18 @@
 - (void) windowWillClose:(NSNotification *)notification
 {
 	[self.document.computer stop];
-
 	[NSEvent removeMonitor:eventMonitor];
-	self.nextResponder = nil;
 }
+
+// -----------------------------------------------------------------------------
+// DEBUG: dealloc
+// -----------------------------------------------------------------------------
+
+#ifdef DEBUG
+- (void) dealloc
+{
+	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
+}
+#endif
 
 @end

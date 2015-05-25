@@ -37,7 +37,8 @@
 
 @optional
 
-- (unichar) charAtX:(unsigned)x Y:(unsigned)y;
+- (unichar) charAtX:(unsigned)x
+				  Y:(unsigned)y;
 
 - (void) draw;
 
