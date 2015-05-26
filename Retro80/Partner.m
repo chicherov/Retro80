@@ -192,6 +192,7 @@
 	{
 		self.outHook = [[F80C alloc] initWithX8080:self.cpu];
 		self.outHook.mem = self.rom;
+		self.outHook.snd = self.snd;
 
 		self.outHook.extension = @"rkp";
 		self.outHook.type = 1;

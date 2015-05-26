@@ -42,6 +42,7 @@
 
 @property (weak) X8080 *cpu;
 @property NSObject<RD> *mem;
+@property NSObject<SoundController> *snd;
 
 @property NSString *extension;
 @property unsigned type;

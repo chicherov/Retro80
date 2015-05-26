@@ -9,26 +9,23 @@
 
 @interface Sound : NSResponder
 
-@property (weak) IBOutlet NSTextField *textField;
 @property (weak) IBOutlet Document* document;
+@property IBOutlet NSTextField *textField;
 
+@property (weak) NSObject <DisplayController> *crt;
 @property (weak) NSObject <SoundController> *snd;
 @property (weak) NSObject <Processor> *cpu;
 
-@property (weak) NSObject <DisplayController> *crt;
+@property BOOL debug;
+
+@property (readonly) BOOL isOutput;
+@property uint16_t beeper;
+@property BOOL output;
 
 @property (readonly) BOOL isInput;
 @property (readonly) BOOL input;
 
-@property uint16_t beeper;
-@property BOOL output;
-
-@property BOOL debug;
-@property BOOL pause;
-
-- (BOOL) open:(NSURL *)url;
-- (void) close;
-
+- (void) start:(NSURL *)URL;
 - (void) start;
 - (void) stop;
 

@@ -43,11 +43,52 @@
 // -----------------------------------------------------------------------------
 
 @interface X8080 : NSObject <Processor, Debug, NSCoding>
+{
+	uint16_t PC;
+	uint16_t SP;
 
-- (void) setHLDA:(NSObject<HLDA> *)object;
-- (void) setINTE:(NSObject<INTE> *)object;
-- (void) setINTR:(NSObject<INTR> *)object;
-- (void) setINTA:(NSObject<INTA> *)object;
+	union
+	{
+		uint16_t AF; struct
+		{
+			uint8_t F;
+			uint8_t A;
+		};
+
+	} AF;
+
+	union
+	{
+		uint16_t BC; struct
+		{
+			uint8_t C;
+			uint8_t B;
+		};
+
+	} BC;
+
+	union
+	{
+		uint16_t DE; struct
+		{
+			uint8_t E;
+			uint8_t D;
+		};
+
+	} DE;
+
+	union
+	{
+		uint16_t HL; struct
+		{
+			uint8_t L;
+			uint8_t H;
+		};
+		
+	} HL;
+
+	BOOL IF;
+}
 
 @property unsigned quartz;
 @property uint64_t CLK;
@@ -71,6 +112,12 @@
 @property uint8_t L;
 
 @property BOOL IF;
+
+@property NSObject<HLDA> *HLDA;
+@property NSObject<INTE> *INTE;
+
+- (void) setINTR:(NSObject<INTR> *)object;
+- (void) setINTA:(NSObject<INTA> *)object;
 
 // -----------------------------------------------------------------------------
 

@@ -22,13 +22,12 @@
 
 - (void) flagsChanged:(NSEvent*)theEvent
 {
-	if (ignoreShift)
+	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0)
 	{
-		modifierFlags = (theEvent.modifierFlags & ~NSShiftKeyMask) | (modifierFlags & NSShiftKeyMask);
-	}
-	else
-	{
-		modifierFlags = theEvent.modifierFlags;
+		if (ignoreShift)
+			modifierFlags = (theEvent.modifierFlags & ~NSShiftKeyMask) | (modifierFlags & NSShiftKeyMask);
+		else
+			modifierFlags = theEvent.modifierFlags;
 	}
 }
 

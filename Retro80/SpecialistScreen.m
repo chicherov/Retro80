@@ -47,7 +47,7 @@
 
 		for (uint16_t addr = 0x0000; addr < 0x3000; addr++)
 		{
-			uint32_t* ptr = bitmap + (addr >> 5) + (addr & 0xFF) * 384;
+			uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * 384;
 
 			if (isColor)
 			{

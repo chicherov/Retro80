@@ -46,6 +46,12 @@
 
 	if (menuItem.action == @selector(outHook:))
 	{
+		if (self.snd.sound.isOutput)
+		{
+			menuItem.state = FALSE;
+			return NO;
+		}
+
 		menuItem.state = self.outHook.enabled;
 		return self.outHook != nil;
 	}
@@ -116,18 +122,8 @@
 	@synchronized(self.snd.sound)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
-		
-		if (!self.snd.sound.isInput)
-		{
-			self.cpu.RESET = TRUE;
-			return;
-		}
+		self.cpu.RESET = TRUE;
 	}
-
-	[self stop];
-	[self.snd.sound close];
-	self.cpu.RESET = TRUE;
-	[self start];
 }
 
 // -----------------------------------------------------------------------------

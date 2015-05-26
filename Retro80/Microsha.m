@@ -238,6 +238,7 @@ static uint32_t colors[] =
 	{
 		self.outHook = [[MicroshaF80C alloc] initWithX8080:self.cpu];
 		self.outHook.mem = self.rom;
+		self.outHook.snd = self.snd;
 
 		self.outHook.extension = @"rkm";
 		self.outHook.type = 2;

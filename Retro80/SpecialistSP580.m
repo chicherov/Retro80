@@ -45,6 +45,7 @@
 	{
 		self.outHook = [[SpecialistSP580_F80C alloc] initWithX8080:self.cpu];
 		self.outHook.mem = self.rom;
+		self.outHook.snd = self.snd;
 	}
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0x8FFF];
@@ -190,7 +191,7 @@
 
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	if (*data == 0xA2 && self.enabled)
+	if (*data == 0xA2 && self.enabled && !self.snd.sound.isOutput)
 	{
 		@synchronized(self)
 		{

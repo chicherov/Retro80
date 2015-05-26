@@ -130,8 +130,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 		if ([fileExt isEqualToString:@"wav"])
 		{
 			[self.snd.sound stop];
-			[self.snd.sound open:panel.URLs.firstObject];
-			[self.snd.sound start];
+			[self.snd.sound start:panel.URLs.firstObject];
 		}
 
 		else if ((self.buffer = [NSData dataWithContentsOfURL:panel.URLs.firstObject]))
@@ -259,7 +258,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	if (*data == 0xA2 && enabled)
+	if (*data == 0xA2 && enabled && !self.snd.sound.isOutput)
 	{
 		@synchronized(self)
 		{

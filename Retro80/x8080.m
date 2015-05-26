@@ -7,82 +7,6 @@
 @implementation X8080
 {
 	// -------------------------------------------------------------------------
-	// Регистры процессора
-	// -------------------------------------------------------------------------
-
-	union
-	{
-		uint16_t PC; struct
-		{
-			uint8_t PCL;
-			uint8_t PCH;
-		};
-
-	} PC;
-
-	union
-	{
-		uint16_t SP; struct
-		{
-			uint8_t SPL;
-			uint8_t SPH;
-		};
-
-	} SP;
-
-	union
-	{
-		uint16_t AF; struct
-		{
-			uint8_t F;
-			uint8_t A;
-		};
-
-	} AF;
-
-	union
-	{
-		uint16_t BC; struct
-		{
-			uint8_t C;
-			uint8_t B;
-		};
-
-	} BC;
-
-	union
-	{
-		uint16_t DE; struct
-		{
-			uint8_t E;
-			uint8_t D;
-		};
-
-	} DE;
-
-	union
-	{
-		uint16_t HL; struct
-		{
-			uint8_t L;
-			uint8_t H;
-		};
-
-	} HL;
-
-	union
-	{
-		uint16_t WZ; struct
-		{
-			uint8_t Z;
-			uint8_t W;
-		};
-
-	} WZ;
-
-	BOOL IF;
-
-	// -------------------------------------------------------------------------
 	// Адресная шина
 	// -------------------------------------------------------------------------
 
@@ -149,30 +73,14 @@
 @synthesize quartz;
 @synthesize CLK;
 
-@synthesize RESET;
-
 @synthesize PAGE;
-@synthesize HALT;
 
-@synthesize MEMIO;
-
-- (void) setPC:(uint16_t)value { PC.PC = value; }
-- (uint16_t) PC { return PC.PC; }
-
-- (void) setSP:(uint16_t)value { SP.SP = value; }
-- (uint16_t) SP { return SP.SP; }
+@synthesize PC;
+@synthesize SP;
+@synthesize IF;
 
 - (void) setAF:(uint16_t)value { AF.AF = value; }
 - (uint16_t) AF { return AF.AF; }
-
-- (void) setBC:(uint16_t)value { BC.BC = value; }
-- (uint16_t) BC { return BC.BC; }
-
-- (void) setDE:(uint16_t)value { DE.DE = value; }
-- (uint16_t) DE { return DE.DE; }
-
-- (void) setHL:(uint16_t)value { HL.HL = value; }
-- (uint16_t) HL { return HL.HL; }
 
 - (void) setA:(uint8_t)value { AF.A = value; }
 - (uint8_t) A { return AF.A; }
@@ -180,11 +88,17 @@
 - (void) setF:(uint8_t)value { AF.F = value; }
 - (uint8_t) F { return AF.F; }
 
+- (void) setBC:(uint16_t)value { BC.BC = value; }
+- (uint16_t) BC { return BC.BC; }
+
 - (void) setB:(uint8_t)value { BC.B = value; }
 - (uint8_t) B { return BC.B; }
 
 - (void) setC:(uint8_t)value { BC.C = value; }
 - (uint8_t) C { return BC.C; }
+
+- (void) setDE:(uint16_t)value { DE.DE = value; }
+- (uint16_t) DE { return DE.DE; }
 
 - (void) setD:(uint8_t)value { DE.D = value; }
 - (uint8_t) D { return DE.D; }
@@ -192,11 +106,22 @@
 - (void) setE:(uint8_t)value { DE.E = value; }
 - (uint8_t) E { return DE.E; }
 
+- (void) setHL:(uint16_t)value { HL.HL = value; }
+- (uint16_t) HL { return HL.HL; }
+
 - (void) setH:(uint8_t)value { HL.H = value; }
 - (uint8_t) H { return HL.H; }
 
 - (void) setL:(uint8_t)value { HL.L = value; }
 - (uint8_t) L { return HL.L; }
+
+
+@synthesize RESET;
+
+@synthesize HALT;
+
+@synthesize MEMIO;
+
 
 // -----------------------------------------------------------------------------
 // Доступ к адресному пространству
@@ -303,6 +228,11 @@ uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
 	CallHLDA = (unsigned (*) (id, SEL, uint64_t)) [HLDA = object methodForSelector:@selector(HLDA:)];
 }
 
+- (NSObject<HLDA> *)HLDA
+{
+	return HLDA;
+}
+
 static unsigned HOLD(X8080* cpu, unsigned clk)
 {
 	unsigned clkHOLD = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:), cpu->CLK) : 0;
@@ -318,15 +248,9 @@ static unsigned HOLD(X8080* cpu, unsigned clk)
 	CallINTE = (void (*) (id, SEL, BOOL, uint64_t)) [INTE = object methodForSelector:@selector(INTE:clock:)];
 }
 
-- (void) setIF:(BOOL)IE
+- (NSObject<INTE> *) INTE
 {
-	IF = IE; if (INTE)
-		CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
-}
-
-- (BOOL) IF
-{
-	return IF;
+	return INTE;
 }
 
 // -----------------------------------------------------------------------------
@@ -506,14 +430,25 @@ static uint16_t AND[0x100][0x100];
 			for (NSObject<RESET> *object in RESETLIST)
 				[object RESET];
 
-			self.IF = FALSE;
+			IF = FALSE; if (INTE)
+				CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
 
 			PAGE = (START >> 16) & 0xF;
-			PC.PC = START & 0xFFFF;
+			PC = START & 0xFFFF;
 			RESET = FALSE;
 		}
 
-		uint32_t addr = (PAGE << 16) | PC.PC;
+		union
+		{
+			uint16_t WZ; struct
+			{
+				uint8_t Z;
+				uint8_t W;
+			};
+
+		} WZ;
+		
+		uint32_t addr = (PAGE << 16) | PC;
 		if (addr == STOP1 || addr == STOP2)
 			return FALSE;
 
@@ -522,7 +457,7 @@ static uint16_t AND[0x100][0x100];
 		if (IF && INTR && CallINTR(INTR, @selector(INTR:), CLK) && INTA)
 			IR = CallINTA(INTA, @selector(INTA:), CLK);
 		else
-			IR = MEMR(self, PC.PC++, CLK, 0xA2);
+			IR = MEMR(self, PC++, CLK, 0xA2);
 
 		CLK += 9; CLK += HOLD(self, timings[IR]);
 
@@ -542,8 +477,8 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x01:	// LXI B
 			{
-				BC.C = get(self, PC.PC++, 0x82);
-				BC.B = get(self, PC.PC++, 0x82);
+				BC.C = get(self, PC++, 0x82);
+				BC.B = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -573,7 +508,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x06:	// MVI B
 			{
-				BC.B = get(self, PC.PC++, 0x82);
+				BC.B = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -620,7 +555,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x0E:	// MVI C
 			{
-				BC.C = get(self, PC.PC++, 0x82);
+				BC.C = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -632,8 +567,8 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x11:	// LXI D
 			{
-				DE.E = get(self, PC.PC++, 0x82);
-				DE.D = get(self, PC.PC++, 0x82);
+				DE.E = get(self, PC++, 0x82);
+				DE.D = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -663,7 +598,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x16:	// MVI D
 			{
-				DE.D = get(self, PC.PC++, 0x82);
+				DE.D = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -710,7 +645,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x1E:	// MVI E
 			{
-				DE.E = get(self, PC.PC++, 0x82);
+				DE.E = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -722,15 +657,15 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x21:	// LXI H
 			{
-				HL.L = get(self, PC.PC++, 0x82);
-				HL.H = get(self, PC.PC++, 0x82);
+				HL.L = get(self, PC++, 0x82);
+				HL.H = get(self, PC++, 0x82);
 				break;
 			}
 
 			case 0x22:	// SHLD
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 				put(self, WZ.WZ++, HL.L, 0x00);
 				put(self, WZ.WZ, HL.H, 0x00);
 				break;
@@ -756,7 +691,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x26:	// MVI H
 			{
-				HL.H = get(self, PC.PC++, 0x82);
+				HL.H = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -779,8 +714,8 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x2A:	// LHLD
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 				HL.L = get(self, WZ.WZ++, 0x82);
 				HL.H = get(self, WZ.WZ, 0x82);
 				break;
@@ -806,7 +741,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x2E:	// MVI L
 			{
-				HL.L = get(self, PC.PC++, 0x82);
+				HL.L = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -818,22 +753,23 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x31:	// LXI SP
 			{
-				SP.SPL = get(self, PC.PC++, 0x82);
-				SP.SPH = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
+				SP = WZ.WZ;
 				break;
 			}
 
 			case 0x32:	// STA
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 				put(self, WZ.WZ, AF.A, 0x00);
 				break;
 			}
 
 			case 0x33:	// INX SP
 			{
-				SP.SP++;
+				SP++;
 				break;
 			}
 
@@ -855,7 +791,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x36:	// MVI M
 			{
-				put(self, HL.HL, get(self, PC.PC++, 0x82), 0x00);
+				put(self, HL.HL, get(self, PC++, 0x82), 0x00);
 				break;
 			}
 
@@ -867,26 +803,26 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x39:	// DAD SP
 			{
-				if ((HL.HL + SP.SP) & 0x10000)
+				if ((HL.HL + SP) & 0x10000)
 					AF.F |= 0x01;
 				else
 					AF.F &= 0xFE;
 
-				HL.HL += SP.SP;
+				HL.HL += SP;
 				break;
 			}
 
 			case 0x3A:	// LDA
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 				AF.A = get(self, WZ.WZ, 0x82);
 				break;
 			}
 
 			case 0x3B:	// DCX SP
 			{
-				SP.SP--;
+				SP--;
 				break;
 			}
 
@@ -904,7 +840,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x3E:	// MVI A
 			{
-				AF.A = get(self, PC.PC++, 0x82);
+				AF.A = get(self, PC++, 0x82);
 				break;
 			}
 
@@ -1240,7 +1176,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0x76:	// HLT
 			{
-				PC.PC--;
+				PC--;
 				break;
 			}
 
@@ -1750,9 +1686,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if ((AF.F & 0x40) == 0)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -1760,18 +1696,18 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xC1:	// POP B
 			{
-				BC.C = get(self, SP.SP++, 0x86);
-				BC.B = get(self, SP.SP++, 0x86);
+				BC.C = get(self, SP++, 0x86);
+				BC.B = get(self, SP++, 0x86);
 				break;
 			}
 
 			case 0xC2:	// JNZ
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x40) == 0)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
@@ -1779,22 +1715,22 @@ static uint16_t AND[0x100][0x100];
 			case 0xC3:	// JMP
 			case 0xCB:
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
-				PC.PC = WZ.WZ;
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
+				PC = WZ.WZ;
 				break;
 			}
 
 			case 0xC4:	// CNZ
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x40) == 0)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -1802,14 +1738,14 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xC5:	// PUSH B
 			{
-				put(self, --SP.SP, BC.B, 0x04);
-				put(self, --SP.SP, BC.C, 0x04);
+				put(self, --SP, BC.B, 0x04);
+				put(self, --SP, BC.C, 0x04);
 				break;
 			}
 
 			case 0xC6:	// ADI
 			{
-				AF.AF = ADD[AF.A][get(self, PC.PC++, 0x82)];
+				AF.AF = ADD[AF.A][get(self, PC++, 0x82)];
 				break;
 			}
 
@@ -1822,9 +1758,9 @@ static uint16_t AND[0x100][0x100];
 			case 0xF7:
 			case 0xFF:
 			{
-				put(self, --SP.SP, PC.PCH, 0x04);
-				put(self, --SP.SP, PC.PCL, 0x04);
-				PC.PC = IR & 0x38;
+				put(self, --SP, PC >> 8, 0x04);
+				put(self, --SP, PC, 0x04);
+				PC = IR & 0x38;
 				break;
 			}
 
@@ -1832,9 +1768,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if (AF.F & 0x40)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -1843,32 +1779,33 @@ static uint16_t AND[0x100][0x100];
 			case 0xC9:	// RET
 			case 0xD9:
 			{
-				PC.PCL = get(self, SP.SP++, 0x86);
-				PC.PCH = get(self, SP.SP++, 0x86);
+				WZ.Z = get(self, SP++, 0x86);
+				WZ.W = get(self, SP++, 0x86);
+				PC = WZ.WZ;
 				break;
 			}
 
 			case 0xCA:	// JZ
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x40)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
 
 			case 0xCC:	// CZ
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x40)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -1879,12 +1816,12 @@ static uint16_t AND[0x100][0x100];
 			case 0xED:
 			case 0xFD:
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
-				put(self, --SP.SP, PC.PCH, 0x04);
-				put(self, --SP.SP, PC.PCL, 0x04);
-				PC.PC = WZ.WZ;
+				put(self, --SP, PC >> 8, 0x04);
+				put(self, --SP, PC, 0x04);
+				PC = WZ.WZ;
 
 				break;
 			}
@@ -1892,9 +1829,9 @@ static uint16_t AND[0x100][0x100];
 			case 0xCE:	// ACI
 			{
 				if (AF.F & 1)
-					AF.AF = ADC[AF.A][get(self, PC.PC++, 0x82)];
+					AF.AF = ADC[AF.A][get(self, PC++, 0x82)];
 				else
-					AF.AF = ADD[AF.A][get(self, PC.PC++, 0x82)];
+					AF.AF = ADD[AF.A][get(self, PC++, 0x82)];
 
 				break;
 			}
@@ -1903,9 +1840,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if ((AF.F & 0x01) == 0)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -1913,39 +1850,39 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xD1:	// POP D
 			{
-				DE.E = get(self, SP.SP++, 0x86);
-				DE.D = get(self, SP.SP++, 0x86);
+				DE.E = get(self, SP++, 0x86);
+				DE.D = get(self, SP++, 0x86);
 				break;
 			}
 
 			case 0xD2:	// JNC
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x01) == 0x00)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
 
 			case 0xD3:	// OUT
 			{
-				WZ.W = WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = WZ.Z = get(self, PC++, 0x82);
 				out(self, WZ.WZ, AF.A);
 				break;
 			}
 
 			case 0xD4:	// CNC
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x01) == 0x00)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -1953,14 +1890,14 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xD5:	// PUSH D
 			{
-				put(self, --SP.SP, DE.D, 0x04);
-				put(self, --SP.SP, DE.E, 0x04);
+				put(self, --SP, DE.D, 0x04);
+				put(self, --SP, DE.E, 0x04);
 				break;
 			}
 
 			case 0xD6:	// SUI
 			{
-				AF.AF = SUB[AF.A][get(self, PC.PC++, 0x82)];
+				AF.AF = SUB[AF.A][get(self, PC++, 0x82)];
 				break;
 			}
 
@@ -1968,9 +1905,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if (AF.F & 0x01)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -1978,32 +1915,32 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xDA:	// JC
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x01)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
 
 			case 0xDB:	// IN
 			{
-				WZ.W = WZ.Z = get(self, PC.PC++, 0x82);
+				WZ.W = WZ.Z = get(self, PC++, 0x82);
 				AF.A = inp(self, WZ.WZ);
 				break;
 			}
 
 			case 0xDC:	// CC
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x01)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2012,9 +1949,9 @@ static uint16_t AND[0x100][0x100];
 			case 0xDE:	// SBI
 			{
 				if (AF.F & 1)
-					AF.AF = SBB[AF.A][get(self, PC.PC++, 0x82)];
+					AF.AF = SBB[AF.A][get(self, PC++, 0x82)];
 				else
-					AF.AF = SUB[AF.A][get(self, PC.PC++, 0x82)];
+					AF.AF = SUB[AF.A][get(self, PC++, 0x82)];
 
 				break;
 			}
@@ -2023,9 +1960,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if ((AF.F & 0x04) == 0)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2033,29 +1970,29 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xE1:	// POP H
 			{
-				HL.L = get(self, SP.SP++, 0x86);
-				HL.H = get(self, SP.SP++, 0x86);
+				HL.L = get(self, SP++, 0x86);
+				HL.H = get(self, SP++, 0x86);
 				break;
 			}
 
 			case 0xE2:	// JPO
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x04) == 0x00)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
 
 			case 0xE3:	// XTHL
 			{
-				WZ.Z = get(self, SP.SP++, 0x86);
-				WZ.W = get(self, SP.SP++, 0x86);
-				put(self, --SP.SP, HL.H, 0x04);
+				WZ.Z = get(self, SP++, 0x86);
+				WZ.W = get(self, SP++, 0x86);
+				put(self, --SP, HL.H, 0x04);
 
-				CLK += 18; MEMW(self, --SP.SP, HL.L, CLK);
+				CLK += 18; MEMW(self, --SP, HL.L, CLK);
 				CLK += 9; CLK += HOLD(self, 18);
 
 				HL.HL = WZ.WZ;
@@ -2064,14 +2001,14 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xE4:	// CPO
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x04) == 0x00)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2079,14 +2016,14 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xE5:	// PUSH H
 			{
-				put(self, --SP.SP, HL.H, 0x04);
-				put(self, --SP.SP, HL.L, 0x04);
+				put(self, --SP, HL.H, 0x04);
+				put(self, --SP, HL.L, 0x04);
 				break;
 			}
 
 			case 0xE6:	// ANI
 			{
-				AF.AF = AND[AF.A][get(self, PC.PC++, 0x82)];
+				AF.AF = AND[AF.A][get(self, PC++, 0x82)];
 				break;
 			}
 
@@ -2094,9 +2031,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if (AF.F & 0x04)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2104,17 +2041,17 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xE9:	// PCHL
 			{
-				PC.PC = HL.HL;
+				PC = HL.HL;
 				break;
 			}
 				
 			case 0xEA:	// JPE
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x04)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
@@ -2129,14 +2066,14 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xEC:	// CPE
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x04)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2144,7 +2081,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xEE:	// XRI
 			{
-				AF.F = flags[AF.A ^= get(self, PC.PC++, 0x82)];
+				AF.F = flags[AF.A ^= get(self, PC++, 0x82)];
 				break;
 			}
 
@@ -2152,9 +2089,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if ((AF.F & 0x80) == 0)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2162,38 +2099,40 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xF1:	// POP PSW
 			{
-				AF.F = get(self, SP.SP++, 0x86);
-				AF.A = get(self, SP.SP++, 0x86);
+				AF.F = get(self, SP++, 0x86);
+				AF.A = get(self, SP++, 0x86);
 				break;
 			}
 
 			case 0xF2:	// JP
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x80) == 0x00)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
 
 			case 0xF3:	// DI
 			{
-//				self.IF = FALSE;
+				IF = FALSE; if (INTE)
+					CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
+
 				break;
 			}
 
 			case 0xF4:	// CP
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if ((AF.F & 0x80) == 0x00)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2201,14 +2140,14 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xF5:	// PUSH PSW
 			{
-				put(self, --SP.SP, AF.A, 0x04);
-				put(self, --SP.SP, (AF.F & 0xD7) | 0x02, 0x04);
+				put(self, --SP, AF.A, 0x04);
+				put(self, --SP, (AF.F & 0xD7) | 0x02, 0x04);
 				break;
 			}
 
 			case 0xF6:	// ORI
 			{
-				AF.F = flags[AF.A |= get(self, PC.PC++, 0x82)];
+				AF.F = flags[AF.A |= get(self, PC++, 0x82)];
 				break;
 			}
 
@@ -2216,9 +2155,9 @@ static uint16_t AND[0x100][0x100];
 			{
 				if (AF.F & 0x80)
 				{
-					WZ.Z = get(self, SP.SP++, 0x86);
-					WZ.W = get(self, SP.SP++, 0x86);
-					PC.PC = WZ.WZ;
+					WZ.Z = get(self, SP++, 0x86);
+					WZ.W = get(self, SP++, 0x86);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2226,37 +2165,39 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xF9:	// SPHL
 			{
-				SP.SP = HL.HL;
+				SP = HL.HL;
 				break;
 			}
 
 			case 0xFA:	// JM
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x80)
-					PC.PC = WZ.WZ;
+					PC = WZ.WZ;
 
 				break;
 			}
 
 			case 0xFB:	// EI
 			{
-//				self.IF = TRUE;
+				IF = TRUE; if (INTE)
+					CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
+
 				break;
 			}
 
 			case 0xFC:	// CM
 			{
-				WZ.Z = get(self, PC.PC++, 0x82);
-				WZ.W = get(self, PC.PC++, 0x82);
+				WZ.Z = get(self, PC++, 0x82);
+				WZ.W = get(self, PC++, 0x82);
 
 				if (AF.F & 0x80)
 				{
-					put(self, --SP.SP, PC.PCH, 0x04);
-					put(self, --SP.SP, PC.PCL, 0x04);
-					PC.PC = WZ.WZ;
+					put(self, --SP, PC >> 8, 0x04);
+					put(self, --SP, PC, 0x04);
+					PC = WZ.WZ;
 				}
 
 				break;
@@ -2264,13 +2205,8 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xFE:	// CPI
 			{
-				AF.F = SUB[AF.A][get(self, PC.PC++, 0x82)];
+				AF.F = SUB[AF.A][get(self, PC++, 0x82)];
 				break;
-			}
-
-			default:
-			{
-				NSLog(@"IR=%02X", IR);
 			}
 		}
 	}
@@ -2318,8 +2254,8 @@ static uint16_t AND[0x100][0x100];
 	[encoder encodeBool:RESET forKey:@"RESET"];
 	[encoder encodeInt:PAGE forKey:@"PAGE"];
 
-	[encoder encodeInt:PC.PC forKey:@"PC"];
-	[encoder encodeInt:SP.SP forKey:@"SP"];
+	[encoder encodeInt:PC forKey:@"PC"];
+	[encoder encodeInt:SP forKey:@"SP"];
 	[encoder encodeInt:AF.AF forKey:@"AF"];
 	[encoder encodeInt:BC.BC forKey:@"BC"];
 	[encoder encodeInt:DE.DE forKey:@"DE"];
@@ -2339,8 +2275,8 @@ static uint16_t AND[0x100][0x100];
 		RESET = [decoder decodeBoolForKey:@"RESET"];
 		PAGE = [decoder decodeIntForKey:@"PAGE"];
 
-		PC.PC = [decoder decodeIntForKey:@"PC"];
-		SP.SP = [decoder decodeIntForKey:@"SP"];
+		PC = [decoder decodeIntForKey:@"PC"];
+		SP = [decoder decodeIntForKey:@"SP"];
 		AF.AF = [decoder decodeIntForKey:@"AF"];
 		BC.BC = [decoder decodeIntForKey:@"BC"];
 		DE.DE = [decoder decodeIntForKey:@"DE"];
@@ -2700,7 +2636,7 @@ static struct opcode_t opcodes[] =
 
 - (void) regs:(NSMutableString *)out
 {
-	[out appendFormat:@"A=%02X   BC=%04X DE=%04X HL=%04X SP=%04X   F=%02X (%c%c%c%c%c)   %cI", AF.A, BC.BC, DE.DE, HL.HL, SP.SP, AF.F,
+	[out appendFormat:@"A=%02X   BC=%04X DE=%04X HL=%04X SP=%04X   F=%02X (%c%c%c%c%c)   %cI", AF.A, BC.BC, DE.DE, HL.HL, SP, AF.F,
 	 AF.F & 0x80 ? 'S' : '-', AF.F & 0x40 ? 'Z' : '-', AF.F & 0x10 ? 'A' : '-', AF.F & 0x04 ? 'P' : '-', AF.F & 0x01 ? 'C' : '-',
 	 IF ? 'E' : 'D'
 	 ];
@@ -2710,7 +2646,7 @@ static struct opcode_t opcodes[] =
 	else
 		[out appendString:@"\n"];
 
-	offset = 0; lastL = [self dasm:(PAGE << 16) | PC.PC out:out mode:TRUE];
+	offset = 0; lastL = [self dasm:(PAGE << 16) | PC out:out mode:TRUE];
 }
 
 // -----------------------------------------------------------------------------
@@ -2848,7 +2784,7 @@ static struct opcode_t opcodes[] =
 		else if (dbgCmd == '1' || dbgCmd == 1)
 		{
 			if (command.length)
-				PC.PC = [self wordFromString:command];
+				PC = [self wordFromString:command];
 
 			if (dbgCmd++ == 1)
 				return [NSString stringWithFormat:@"  HL:  %04X ", HL.HL];
@@ -2878,13 +2814,13 @@ static struct opcode_t opcodes[] =
 				DE.DE = [self wordFromString:command];
 
 			if (dbgCmd++ == 4)
-				return [NSString stringWithFormat:@"  SP:  %04X ", SP.SP];
+				return [NSString stringWithFormat:@"  SP:  %04X ", SP];
 		}
 
 		else if (dbgCmd == '5' || dbgCmd == 5)
 		{
 			if (command.length)
-				SP.SP = [self wordFromString:command];
+				SP = [self wordFromString:command];
 
 			if (dbgCmd++ == 5)
 				return [NSString stringWithFormat:@"  AF:  %04X ", AF.AF];
@@ -2974,7 +2910,7 @@ static struct opcode_t opcodes[] =
 				if (array.count > 3)
 					@throw @"Неверное число аргументов";
 
-				uint32_t start = (PAGE << 16) | PC.PC;
+				uint32_t start = (PAGE << 16) | PC;
 
 				if ([array.firstObject length] > 1 && ([array.firstObject characterAtIndex:1] != '=' || ![self addr:&start fromString:[array.firstObject substringFromIndex:2]]))
 					@throw @"Ошибка в стартовом адресе";
@@ -2987,7 +2923,7 @@ static struct opcode_t opcodes[] =
 
 				STOP1 = stop1 == start ? -1 : stop1;
 				STOP2 = stop2 == start ? -1 : stop2;
-				PC.PC = start & 0xFFFF;
+				PC = start & 0xFFFF;
 				PAGE = start >> 16;
 				return nil;
 			}
@@ -3012,12 +2948,12 @@ static struct opcode_t opcodes[] =
 			{
 				if ([array.firstObject length] > 1)
 				{
-					uint32_t start = (PAGE << 16) | PC.PC;
+					uint32_t start = (PAGE << 16) | PC;
 
 					if ([array.firstObject characterAtIndex:1] != '=' || ![self addr:&start fromString:[array.firstObject substringFromIndex:2]])
 						@throw @"Ошибка в стартовом адресе";
 
-					PC.PC = start & 0xFFFF;
+					PC = start & 0xFFFF;
 					PAGE = start >> 16;
 				}
 				else
@@ -3035,34 +2971,34 @@ static struct opcode_t opcodes[] =
 
 				if ([array.firstObject length] > 1)
 				{
-					uint32_t start = (PAGE << 16) | PC.PC;
+					uint32_t start = (PAGE << 16) | PC;
 
 					if ([array.firstObject characterAtIndex:1] != '=' || ![self addr:&start fromString:[array.firstObject substringFromIndex:2]])
 						@throw @"Ошибка в стартовом адресе";
 
-					PC.PC = start & 0xFFFF;
+					PC = start & 0xFFFF;
 					PAGE = start >> 16;
 				}
 
-				uint32_t start = (PAGE << 16) | PC.PC;
+				uint32_t start = (PAGE << 16) | PC;
 
 				if ([array.firstObject length] > 1 && ([array.firstObject characterAtIndex:1] != '=' || ![self addr:&start fromString:[array.firstObject substringFromIndex:2]]))
 					@throw @"Ошибка в стартовом адресе";
 
-				PC.PC = start & 0xFFFF;
+				PC = start & 0xFFFF;
 				PAGE = start >> 16;
 
-				const uint8_t *ptr = [self pointerFromAddress:(PAGE << 16) | PC.PC];
+				const uint8_t *ptr = [self pointerFromAddress:(PAGE << 16) | PC];
 
 				if (ptr && (((*ptr & 0xCF) == 0xCD) || ((*ptr & 0xC7) == 0xC4)|| (*ptr & 0xC7) == 0xC2))	// CALL/Ccc/Jcc
 				{
-					STOP1 = (PAGE << 16) | ((PC.PC + 3) & 0xFFFF);
+					STOP1 = (PAGE << 16) | ((PC + 3) & 0xFFFF);
 					return nil;
 				}
 
 				if (ptr && (*ptr & 0xC7) == 0xC7)	// RST n
 				{
-					STOP1 = (PAGE << 16) | ((PC.PC + 1) & 0xFFFF);
+					STOP1 = (PAGE << 16) | ((PC + 1) & 0xFFFF);
 					return nil;
 				}
 
@@ -3237,12 +3173,12 @@ static struct opcode_t opcodes[] =
 
 				if ([command isEqualToString:@"X"])
 				{
-					dbgCmd = 1; return [NSString stringWithFormat:@"  PC:  %04X ", PC.PC];
+					dbgCmd = 1; return [NSString stringWithFormat:@"  PC:  %04X ", PC];
 				}
 
 				if ([command isEqualToString:@"XPC"] || [command isEqualToString:@"XP"])
 				{
-					dbgCmd = '1'; return [NSString stringWithFormat:@"  PC:  %04X ", PC.PC];
+					dbgCmd = '1'; return [NSString stringWithFormat:@"  PC:  %04X ", PC];
 				}
 
 				if ([command isEqualToString:@"XHL"] || [command isEqualToString:@"XH"])
@@ -3262,7 +3198,7 @@ static struct opcode_t opcodes[] =
 
 				if ([command isEqualToString:@"XSP"] || [command isEqualToString:@"XS"])
 				{
-					dbgCmd = '5'; return [NSString stringWithFormat:@"  SP:  %04X ", SP.SP];
+					dbgCmd = '5'; return [NSString stringWithFormat:@"  SP:  %04X ", SP];
 				}
 
 				if ([command isEqualToString:@"XAF"] || [command isEqualToString:@"XA"])

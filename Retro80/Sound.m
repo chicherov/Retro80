@@ -7,8 +7,9 @@
 	AudioStreamBasicDescription streamFormat;
 	AudioQueueRef audioQueue;
 
+	AudioFileID outAudioFile;
 	AudioFileID inAudioFile;
-	SInt64 inAudioFilePos;
+	SInt64 audioFilePos;
 	SInt64 packetCount;
 
 	Float64 CLK;
@@ -21,18 +22,20 @@
 
 	NSTimer *timer;
 	BOOL mute;
+
+	BOOL debug;
+	BOOL pause;
 }
+
+@synthesize crt;
+@synthesize snd;
+@synthesize cpu;
+
+@synthesize debug;
 
 @synthesize output;
 @synthesize beeper;
 @synthesize input;
-
-@synthesize debug;
-@synthesize pause;
-
-@synthesize snd;
-@synthesize cpu;
-@synthesize crt;
 
 // -----------------------------------------------------------------------------
 
@@ -50,24 +53,19 @@
 	{
 		UInt32 ioNumPackets = inBuffer->mAudioDataBytesCapacity / streamFormat.mBytesPerPacket;
 
-		OSStatus err; if ((AudioFileReadPackets(inAudioFile, true, &inBuffer->mAudioDataByteSize, NULL, inAudioFilePos, &ioNumPackets, inBuffer->mAudioData)) != noErr && err != eofErr)
-		{
+		OSStatus err; if ((AudioFileReadPackets(inAudioFile, true, &inBuffer->mAudioDataByteSize, NULL, audioFilePos, &ioNumPackets, inBuffer->mAudioData)) != noErr && err != eofErr)
 			NSLog(@"AudioFileReadPackets error: %d", err);
-		}
 
 		if (ioNumPackets > 0)
 		{
-			inAudioFilePos += ioNumPackets;
+			audioFilePos += ioNumPackets;
 
-			if ((unsigned) (inAudioFilePos / streamFormat.mSampleRate) != (unsigned) ((inAudioFilePos - ioNumPackets) / streamFormat.mSampleRate))
-			{
-				self.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
-											  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) / 60,
-											  (unsigned) (inAudioFilePos / streamFormat.mSampleRate) % 60,
-											  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
-											  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
-											  ];
-			}
+			self.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
+										  (unsigned) (audioFilePos / streamFormat.mSampleRate) / 60,
+										  (unsigned) (audioFilePos / streamFormat.mSampleRate) % 60,
+										  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+										  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+										  ];
 
 			uint8_t add = streamFormat.mFormatFlags & kLinearPCMFormatFlagIsSignedInteger ? 0x80 : 0x00;
 			uint8_t* ptr = inBuffer->mAudioData + (streamFormat.mBitsPerChannel == 16 ? 1 : 0);
@@ -77,14 +75,15 @@
 				input = ((*ptr + add) & 0xFF) > 0x80;
 				ptr += streamFormat.mBytesPerPacket;
 
-				if (!execute(cpu, @selector(execute:), CLK += clk))
+				if ((debug = !execute(cpu, @selector(execute:), CLK += clk)))
 				{
 					[self.document.computer performSelectorOnMainThread:@selector(debug:)
 															 withObject:self
 														  waitUntilDone:FALSE];
 
-					inAudioFilePos -= ioNumPackets;
-					debug = TRUE; break;
+					audioFilePos -= ioNumPackets;
+					CLK = cpu.CLK;
+					break;
 				}
 			}
 		}
@@ -92,37 +91,94 @@
 		else
 		{
 			[self stop];
-			[self close];
 			[self start];
 
 			return;
 		}
 	}
+
+	else if (streamFormat.mBitsPerChannel == 8)
+	{
+		memset(inBuffer->mAudioData, 0, inBuffer->mAudioDataByteSize = inBuffer->mAudioDataBytesCapacity);
+
+		if ((debug = !execute(cpu, @selector(execute:), CLK += clk * inBuffer->mAudioDataByteSize)))
+		{
+			[self.document.computer performSelectorOnMainThread:@selector(debug:)
+													 withObject:self
+												  waitUntilDone:FALSE];
+
+			CLK = cpu.CLK;
+		}
+	}
+
 	else
 	{
-		SInt8 *ptr = inBuffer->mAudioData;
+		SInt16 *ptr = inBuffer->mAudioData;
+		BOOL out = FALSE;
 
-		for (inBuffer->mAudioDataByteSize = 0; inBuffer->mAudioDataByteSize < inBuffer->mAudioDataBytesCapacity; inBuffer->mAudioDataByteSize++, ptr++)
+		for (inBuffer->mAudioDataByteSize = 0; inBuffer->mAudioDataByteSize < inBuffer->mAudioDataBytesCapacity; inBuffer->mAudioDataByteSize += 2, ptr++)
 		{
-			if (!execute(cpu, @selector(execute:), CLK += clk))
+			if ((debug = !execute(cpu, @selector(execute:), CLK += clk)))
 			{
 				while (inBuffer->mAudioDataByteSize < inBuffer->mAudioDataBytesCapacity)
 				{
-					inBuffer->mAudioDataByteSize++; *ptr++ = 0;
+					inBuffer->mAudioDataByteSize += 2; *ptr++ = 0;
 				}
 
 				[self.document.computer performSelectorOnMainThread:@selector(debug:)
 														 withObject:self
 													  waitUntilDone:FALSE];
 
-				debug = TRUE; break;
+				CLK = cpu.CLK;
+				break;
 			}
 
-			*ptr = (output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + (sample ? sample(snd, @selector(sample:), CLK) : 0);
-
-			if (streamFormat.mBitsPerChannel == 16)
+			if (outAudioFile)
 			{
-				*(SInt16*)ptr = *ptr * 256; inBuffer->mAudioDataByteSize++; ptr++;
+				*ptr = output ? +20000 : -20000;
+				if (output) out = TRUE;
+			}
+			else
+			{
+				*ptr = ((output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + (sample ? sample(snd, @selector(sample:), CLK) : 0)) << 8;
+			}
+		}
+
+		if (outAudioFile)
+		{
+			if (out)
+			{
+				UInt32 ioNumPackets = (UInt32) (packetCount - audioFilePos);
+
+				if (ioNumPackets)
+				{
+					if (ioNumPackets > streamFormat.mSampleRate * 3)
+						ioNumPackets = streamFormat.mSampleRate * 3;
+
+					NSMutableData *zero = [NSMutableData dataWithLength:ioNumPackets * streamFormat.mBytesPerPacket];
+
+					OSStatus err; if ((err = AudioFileWritePackets(outAudioFile, true, (UInt32) zero.length, NULL, audioFilePos, &ioNumPackets, zero.bytes)) != noErr)
+						NSLog(@"AudioFileWritePackets error: %d", err);
+
+					packetCount = audioFilePos += ioNumPackets;
+				}
+
+				ioNumPackets = inBuffer->mAudioDataBytesCapacity / streamFormat.mBytesPerPacket;
+
+				OSStatus err; if ((err = AudioFileWritePackets(outAudioFile, true, inBuffer->mAudioDataBytesCapacity, NULL, audioFilePos, &ioNumPackets, inBuffer->mAudioData)) != noErr)
+					NSLog(@"AudioFileWritePackets error: %d", err);
+
+				packetCount = audioFilePos += ioNumPackets;
+
+				self.textField.stringValue = [NSString stringWithFormat:@"%02d:%02d",
+											  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+											  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
+											  ];
+			}
+
+			else if (packetCount)
+			{
+				packetCount += inBuffer->mAudioDataBytesCapacity / streamFormat.mBytesPerPacket;
 			}
 		}
 	}
@@ -138,9 +194,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	Sound *sound = (__bridge Sound*) inUserData; @synchronized(sound)
 	{
 		if (sound->CLK >= 0.00)
-		{
 			[sound callback:inBuffer];
-		}
 	}
 }
 
@@ -155,11 +209,13 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 			if ([crt respondsToSelector:@selector(draw)])
 				[crt draw];
 
-			if (!debug && (debug = ![self.cpu execute:CLK += self.cpu.quartz * timer.timeInterval]))
+			if (!debug && (debug = !execute(cpu, @selector(execute:), CLK += clk)))
 			{
 				[self.document.computer performSelectorOnMainThread:@selector(debug:)
 														 withObject:self
 													  waitUntilDone:FALSE];
+
+				CLK = cpu.CLK;
 			}
 		}
 	}
@@ -167,12 +223,35 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 // -----------------------------------------------------------------------------
 
-- (BOOL) open:(NSURL *)url
+- (void) thread
+{
+#ifdef DEBUG
+	NSLog(@"Thread start");
+#endif
+
+	runLoop = [NSRunLoop currentRunLoop];
+	[self start];
+
+	while ([runLoop runMode:NSDefaultRunLoopMode
+				 beforeDate:[NSDate dateWithTimeIntervalSinceNow:1]]);
+
+	runLoop = nil;
+
+#ifdef DEBUG
+	NSLog(@"Thread stop");
+#endif
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) start:(NSURL *)URL
 {
 	@try
 	{
-		OSStatus err; if ((err = AudioFileOpenURL((__bridge CFURLRef)url, kAudioFileReadPermission, kAudioFileWAVEType, &inAudioFile)) != noErr)
+		OSStatus err; if ((err = AudioFileOpenURL((__bridge CFURLRef)URL, kAudioFileReadPermission, kAudioFileWAVEType, &inAudioFile)) != noErr)
 		{
+			inAudioFile = 0;
+
 			@throw [NSException exceptionWithName:@"Ошибка при открытии аудио файла"
 										   reason:[NSString stringWithFormat:@"AudioFileOpenURL error: %d", err]
 										 userInfo:nil];
@@ -222,54 +301,23 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 									  (unsigned) (packetCount / streamFormat.mSampleRate) % 60
 									  ];
 
-		inAudioFilePos = 0;
+		self.textField.textColor = [NSColor blackColor];
+
+		audioFilePos = 0;
 		pause = FALSE;
-		return TRUE;
 	}
 
 	@catch (NSException *exception)
 	{
 		NSLog(@"%@", exception);
 
-		if (inAudioFile)
-		{
-			AudioFileClose(inAudioFile);
-			inAudioFile = 0;
-		}
+		OSStatus err; if (inAudioFile && (err = AudioFileClose(inAudioFile)) != noErr)
+			NSLog(@"AudioFileClose error: %d", err);
 
-		return FALSE;
+		inAudioFile = 0;
 	}
-}
 
-// -----------------------------------------------------------------------------
-
-- (void) close
-{
-	OSStatus err; if ((err = AudioFileClose(inAudioFile)) != noErr)
-		NSLog(@"AudioFileClose error: %d", err);
-
-	self.textField.stringValue = @"";
-	inAudioFile = 0;
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) thread
-{
-#ifdef DEBUG
-	NSLog(@"Thread start");
-#endif
-
-	runLoop = [NSRunLoop currentRunLoop];
 	[self start];
-
-	while ([runLoop runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:1]]);
-
-	runLoop = nil;
-
-#ifdef DEBUG
-	NSLog(@"Thread stop");
-#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -290,7 +338,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		streamFormat.mSampleRate = 44100;
 		streamFormat.mFormatID = kAudioFormatLinearPCM;
 		streamFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
-		streamFormat.mBitsPerChannel = 8;
+		streamFormat.mBitsPerChannel = 16;
 		streamFormat.mChannelsPerFrame = 1;
 		streamFormat.mBytesPerPacket = streamFormat.mBitsPerChannel / 8 * streamFormat.mChannelsPerFrame;
 		streamFormat.mBytesPerFrame = streamFormat.mBitsPerChannel / 8 * streamFormat.mChannelsPerFrame;
@@ -300,8 +348,12 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		[self.textField performSelectorOnMainThread:@selector(setStringValue:)
 										 withObject:@"--:--"
 									  waitUntilDone:FALSE];
+
+		[self.textField performSelectorOnMainThread:@selector(setTextColor:)
+										 withObject:[NSColor blackColor]
+									  waitUntilDone:FALSE];
 	}
-	
+
 	execute = (BOOL (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
 
 	if ([self.snd respondsToSelector:@selector(sample:)])
@@ -318,6 +370,8 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 											   selector:@selector(timer)
 											   userInfo:nil
 												repeats:YES];
+
+		clk = self.cpu.quartz * timer.timeInterval;
 
 		[runLoop addTimer:timer forMode:NSDefaultRunLoopMode];
 
@@ -368,6 +422,15 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		CLK = -1.0;
 	}
 
+	OSStatus err; if (inAudioFile && (err = AudioFileClose(inAudioFile)) != noErr)
+		NSLog(@"AudioFileClose error: %d", err);
+
+	if (outAudioFile && (err = AudioFileClose(outAudioFile)) != noErr)
+		NSLog(@"AudioFileClose error: %d", err);
+
+	self.textField.stringValue = @"";
+	inAudioFile = outAudioFile = 0;
+
 	if (timer)
 	{
 		[timer invalidate];
@@ -394,6 +457,13 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 // ----------------------------------------------------------------------
 
+- (BOOL) isOutput
+{
+	return outAudioFile != 0;
+}
+
+// ----------------------------------------------------------------------
+
 - (BOOL) isInput
 {
 	return inAudioFile != 0;
@@ -405,16 +475,12 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(play:))
+	if (menuItem.action == @selector(playstart:))
 	{
 		if (inAudioFile)
-		{
 			menuItem.title = pause ? NSLocalizedString(@"Возобновить", "Resume") : NSLocalizedString(@"Пауза", "Pause");
-		}
 		else
-		{
 			menuItem.title = NSLocalizedString(@"Воспроизвести", "Play");
-		}
 
 		return YES;
 	}
@@ -426,12 +492,18 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 	if (menuItem.action == @selector(stepBackward:))
 	{
-		return inAudioFile && inAudioFilePos > streamFormat.mSampleRate;
+		return inAudioFile != 0;
 	}
 
 	if (menuItem.action == @selector(stepForward:))
 	{
-		return inAudioFile && inAudioFilePos + streamFormat.mSampleRate < packetCount;
+		return inAudioFile != 0;
+	}
+
+	if (menuItem.action == @selector(record:))
+	{
+		menuItem.state = outAudioFile != 0;
+		return inAudioFile == 0;
 	}
 
 	return NO;
@@ -441,24 +513,20 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 // play
 // -----------------------------------------------------------------------------
 
-- (IBAction) play:(id)sender
+- (IBAction) playstart:(id)sender
 {
-	@synchronized(self)
+	if (inAudioFile == 0)
 	{
-		if (inAudioFile)
+		NSOpenPanel *panel = [NSOpenPanel openPanel]; panel.allowedFileTypes = @[@"wav"];
+
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
-			pause = pause == FALSE;
-			return;
+			[self stop]; [self start:panel.URLs.firstObject];
 		}
 	}
-
-	NSOpenPanel *panel = [NSOpenPanel openPanel]; panel.allowedFileTypes = @[@"wav"];
-
-	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+	else
 	{
-		[self stop];
-		[self open:panel.URLs.firstObject];
-		[self start];
+		pause = !pause;
 	}
 }
 
@@ -468,20 +536,20 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (IBAction) playstop:(id)sender
 {
-	[self stop];
-
-	if (self.isInput)
-		[self close];
-
-	[self start];
+	[self stop]; [self start];
 }
 
 - (void) stepBackward:(id)sender
 {
 	@synchronized(self)
 	{
-		if (inAudioFile && inAudioFilePos > streamFormat.mSampleRate)
-			inAudioFilePos -= streamFormat.mSampleRate;
+		if (inAudioFile)
+		{
+			if (audioFilePos >= streamFormat.mSampleRate)
+				audioFilePos -= streamFormat.mSampleRate;
+			else
+				audioFilePos = 0;
+		}
 	}
 }
 
@@ -489,8 +557,49 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 {
 	@synchronized(self)
 	{
-		if (inAudioFile && inAudioFilePos + streamFormat.mSampleRate < packetCount)
-			inAudioFilePos += streamFormat.mSampleRate;
+		if (inAudioFile && audioFilePos + streamFormat.mSampleRate < packetCount)
+			audioFilePos += streamFormat.mSampleRate;
+	}
+}
+
+// -----------------------------------------------------------------------------
+// record
+// -----------------------------------------------------------------------------
+
+- (IBAction) record:(id)sender
+{
+	if (outAudioFile)
+	{
+		OSStatus err; if ((err = AudioFileClose(outAudioFile)) != noErr)
+			NSLog(@"AudioFileClose error: %d", err);
+
+		self.textField.textColor = [NSColor blackColor];
+		self.textField.stringValue = @"--:--";
+
+		outAudioFile = 0;
+	}
+
+	else if (inAudioFile == 0)
+	{
+		NSSavePanel *savePanel = [NSSavePanel savePanel];
+		savePanel.allowedFileTypes = @[@"wav"];
+
+		if ([savePanel runModal] == NSFileHandlingPanelOKButton) @synchronized(self)
+		{
+			OSStatus err; if ((err = AudioFileCreateWithURL((__bridge CFURLRef)savePanel.URL, kAudioFileWAVEType, &streamFormat, kAudioFileFlags_EraseFile, &outAudioFile)) != noErr)
+			{
+				NSLog(@"AudioFileCreateWithURL error: %d", err);
+				outAudioFile = 0;
+			}
+			else
+			{
+				self.textField.textColor = [NSColor redColor];
+				self.textField.stringValue = @"--:--";
+
+				audioFilePos = 0;
+				packetCount = 0;
+			}
+		}
 	}
 }
 
