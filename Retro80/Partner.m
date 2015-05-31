@@ -289,7 +289,6 @@
 	// Системный регистр 1
 
 	self.sys1.cpu = self.cpu;
-	self.sys1.crt = self.crt;
 
 	// Системный регистр 2
 
@@ -299,8 +298,8 @@
 
 	// Контроллер прерывания
 
-	self.cpu.INTA = self.sys1;
-	self.cpu.INTR = self.crt;
+	self.cpu.IRQ = self.crt;
+	self.cpu.RST = 0xF7;
 
 	// Контроллер НГМД
 
@@ -365,17 +364,10 @@
 @implementation PartnerSystem1
 
 @synthesize cpu;
-@synthesize crt;
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	cpu.PAGE = data >> 4;
-}
-
-- (uint8_t) INTA:(uint64_t)clock
-{
-	crt.INTR = FALSE;
-	return 0xF7;
 }
 
 @end
@@ -394,24 +386,25 @@
 
 - (void) setSlot:(uint8_t)data
 {
-	slot = data;
-
-	if (slot & 0x02 && partner.isFloppy)
+	if (data & 0x02 && partner.isFloppy)
 	{
 		partner.win1.object = partner.fddbios;
 		partner.win2.object = nil;
+		slot = 0x02;
 	}
 
-	else if (slot & 0x04 && partner.isColor)
+	else if (data & 0x04 && partner.isColor)
 	{
 		partner.win1.object = partner.mcpgbios;
 		partner.win2.object = partner.mcpgfont;
+		slot = 0x04;
 	}
 
 	else
 	{
 		partner.win1.object = nil;
 		partner.win2.object = nil;
+		slot = 0x00;
 	}
 }
 
@@ -501,7 +494,6 @@
 
 @synthesize object;
 
-
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	[object RD:addr data:data CLK:clock];
@@ -513,12 +505,15 @@
 		[(NSObject<WR> *)object WR:addr data:data CLK:clock];
 }
 
+- (void) SYNC:(uint16_t)addr status:(uint8_t)status
+{
+	if ([object respondsToSelector:@selector(SYNC:status:)])
+		[object SYNC:addr status:status];
+}
+
 - (uint8_t *) BYTE:(uint16_t)addr
 {
-	if ([object conformsToProtocol:@protocol(BYTE)])
-		return [(NSObject<BYTE> *)object BYTE:addr];
-	else
-		return 0;
+	return [object BYTE:addr];
 }
 
 @end

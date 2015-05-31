@@ -1,8 +1,22 @@
+/*******************************************************************************
+ ПЭВМ «ЮТ-88»
+ ******************************************************************************/
+
 #import "Micro80.h"
 
-@interface UT88: NSObject <Computer, NSCoding>
+@interface UT88RAM : RAM
+@property uint8_t page;
+@end
 
-@property Screen* screen;
-@property Sound* sound;
+@interface UT88Port40 : NSObject <RD, WR>
+@property UT88RAM *ram;
+@end
+
+@interface UT88: Micro80
+
+@property UT88Port40 *sys;
+@property UT88RAM *ram;
+
+@property BOOL isMonitor;
 
 @end

@@ -80,6 +80,8 @@
 	if (menuItem.action == @selector(ROMDisk:))
 		menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
 
+	if (menuItem.action == @selector(monitorROM:))
+		menuItem.hidden = TRUE;
 
 	menuItem.state = FALSE;
 	menuItem.submenu = nil;
@@ -93,6 +95,10 @@
 }
 
 - (IBAction) extraMemory:(id)sender
+{
+}
+
+- (IBAction) monitorROM:(id)sender
 {
 }
 
@@ -122,7 +128,7 @@
 	@synchronized(self.snd.sound)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
-		self.cpu.RESET = TRUE;
+		[self.cpu reset];
 	}
 }
 

@@ -22,19 +22,16 @@
 
 - (BOOL) createObjects
 {
-	if ((self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0xF800]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000 start:0xF800]) == nil)
 		return FALSE;
 
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if ((self.ram = [[RAM alloc] initWithLength:0xF800 mask:0xFFFF]) == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0xF800 mask:0xFFFF]) == nil)
 		return FALSE;
 
-	if ((self.crt = [[Micro80Screen alloc] init]) == nil)
-		return FALSE;
-
-	if ((self.kbd = [[Micro80Keyboard alloc] init]) == nil)
+	if (self.kbd == nil && (self.kbd = [[Micro80Keyboard alloc] init]) == nil)
 		return FALSE;
 
 	return TRUE;
@@ -42,10 +39,14 @@
 
 - (BOOL) mapObjects
 {
-	if ((self.snd = [[Micro80Recorder alloc] init]) == nil)
+	if (self.snd == nil && (self.snd = [[Micro80Recorder alloc] init]) == nil)
 		return FALSE;
 
-	self.crt.WR = self.ram;
+	if (self.crt == nil && (self.crt = [[Micro80Screen alloc] init]) == nil)
+		return FALSE;
+
+	self.crt.memory = self.ram.mutableBytes + 0xE800;
+	self.crt.cursor = self.ram.mutableBytes + 0xE000;
 
 	if (self.inpHook == nil)
 	{
@@ -65,9 +66,7 @@
 		self.outHook.extension = @"rk8";
 	}
 
-	[self.cpu mapObject:self.ram from:0x0000 to:0xDFFF];
-	[self.cpu mapObject:self.crt from:0xE000 to:0xEFFF RD:self.ram];
-	[self.cpu mapObject:self.ram from:0xF000 to:0xF7FF];
+	[self.cpu mapObject:self.ram from:0x0000 to:0xF7FF];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
 	[self.cpu mapObject:self.inpHook from:0xFD95 to:0xFD95 WR:nil];
@@ -118,7 +117,6 @@
 	[encoder encodeObject:self.cpu forKey:@"cpu"];
 	[encoder encodeObject:self.rom forKey:@"rom"];
 	[encoder encodeObject:self.ram forKey:@"ram"];
-	[encoder encodeObject:self.crt forKey:@"crt"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 
 	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
@@ -136,9 +134,6 @@
 			return self = nil;
 
 		if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-			return self = nil;
-
-		if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
 			return self = nil;
 
 		if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
@@ -164,53 +159,32 @@
 {
 	NSData *rom;
 
-	uint32_t* bitmap;
-
-	uint8_t memory[32][64];
 	uint8_t screen[32][64];
+	uint32_t* bitmap;
 }
 
 @synthesize display;
-@synthesize WR;
-
-// -----------------------------------------------------------------------------
-
-- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
-{
-	[WR WR:addr data:data CLK:clock];
-
-	uint8_t ch; if (addr & 0x800)
-	{
-		ch = (memory[0][addr & 0x7FF] & 0x80) | (data & 0x7F);
-	}
-	else
-	{
-		if (data & 0x80)
-			ch = memory[0][--addr & 0x7FF] | 0x80;
-		else
-			ch = memory[0][--addr & 0x7FF] & 0x7F;
-	}
-
-	if (memory[0][addr & 0x7FF] != ch)
-		memory[0][addr & 0x7FF] = ch;
-}
-
-// -----------------------------------------------------------------------------
+@synthesize memory;
+@synthesize cursor;
+@synthesize rows;
 
 - (void) draw
 {
-	for (unsigned row = 0; row < 32; row++)
+	if (bitmap == NULL)
+		bitmap = [self.display setupTextWidth:64 height:rows cx:6 cy:8];
+
+	if (bitmap)
 	{
-		for (unsigned col = 0; col < 64; col++)
+		const uint8_t *mem1 = memory;
+		const uint8_t *mem2 = cursor;
+
+		for (unsigned row = 0; row < rows; row++)
 		{
-			uint8_t ch =  memory[row][col];
-
-			if (screen[row][col] != ch)
+			for (unsigned col = 0; col < 64; col++)
 			{
-				if (bitmap == NULL)
-					bitmap = [self.display setupTextWidth:64 height:32 cx:6 cy:8];
+				uint8_t ch = (*mem1++ & 0x7F); ch |= *++mem2 & 0x80;
 
-				if (bitmap)
+				if (screen[row][col] != ch)
 				{
 					screen[row][col] = ch;
 
@@ -230,9 +204,10 @@
 				}
 			}
 		}
+
+		self.display.needsDisplay = TRUE;
 	}
 
-	self.display.needsDisplay = TRUE;
 }
 
 // -----------------------------------------------------------------------------
@@ -250,36 +225,14 @@
 
 	return [unicode characterAtIndex:screen[y][x] & 0x7F];
 }
-
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
-
 - (id) init
 {
 	if (self = [super init])
 	{
 		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Micro80" ofType:@"fnt"]]) == nil)
 			return self = nil;
-	}
 
-	return self;
-}
-
-// -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[encoder encodeValueOfObjCType:"[2048c]" at:memory];
-}
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [self init])
-	{
-		[decoder decodeValueOfObjCType:"[2048c]" at:memory];
+		rows = 32;
 	}
 	
 	return self;
@@ -329,6 +282,15 @@
 }
 
 // -----------------------------------------------------------------------------
+// Порт B
+// -----------------------------------------------------------------------------
+
+- (uint8_t) B
+{
+	return [super B] & 0x7F;
+}
+
+// -----------------------------------------------------------------------------
 // Порт C
 // -----------------------------------------------------------------------------
 
@@ -355,7 +317,6 @@
 		}
 	}
 
-	memset(keyboard, 0x00, sizeof(keyboard));
 	return data;
 }
 

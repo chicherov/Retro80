@@ -19,11 +19,10 @@
 @protocol Processor
 
 - (BOOL) execute:(uint64_t)clock;
+- (void) reset;
 
 @property uint32_t quartz;
 @property uint64_t CLK;
-@property BOOL RESET;
-@property BOOL HALT;
 
 @end
 

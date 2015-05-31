@@ -24,41 +24,45 @@
 
 - (uint8_t *) BYTE:(uint16_t)addr
 {
-	if ([self.mem respondsToSelector:@selector(BYTE:)])
-		return [(NSObject<BYTE> *)self.mem BYTE:addr];
-	else
-		return 0;
+	return [self.mem BYTE:addr];
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) SYNC:(uint16_t)addr status:(uint8_t)status
+{
+	if (!(hook = status == 0xA2 && enabled && !self.snd.sound.isInput))
+	{
+		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
+			[self.mem SYNC:addr status:status];
+	}
+	else if (cancel)
+	{
+		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
+			[self.mem SYNC:addr status:status];
+
+		cancel = FALSE;
+		hook = FALSE;
+	}
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	if (*data == 0xA2 && enabled && !self.snd.sound.isInput)
+	if (hook)
 	{
-		if (panel != nil)
-		{
-			*data = 0x76;
-			return;
-		}
-
-			if (cancel)
-			cancel = FALSE;
-
-		else
+		*data = 0x76; if (panel == nil)
 		{
 			if (pos != 0 && self.cpu.A == 0xFF)
-				while (pos < self.buffer.length && ((const uint8_t *)self.buffer.bytes) [pos++] != 0xE6);
+				while (pos < self.buffer.length && ((const uint8_t *) self.buffer.bytes) [pos++] != 0xE6);
 
 			if (pos < self.buffer.length)
 			{
-				self.cpu.A = ((const uint8_t *)self.buffer.bytes) [pos++];
-
-				*data = 0xC9;
-				return;
+				self.cpu.A = ((const uint8_t *) self.buffer.bytes) [pos++]; *data = 0xC9;
 			}
 
-			if (self.cpu.A == 0xFF)
+			else if (self.cpu.A == 0xFF)
 			{
 				[self performSelectorOnMainThread:@selector(openPanel)
 									   withObject:nil
@@ -67,14 +71,21 @@
 				[self performSelectorOnMainThread:@selector(open)
 									   withObject:nil
 									waitUntilDone:FALSE];
+			}
 
-				*data = 0x76;
-				return;
+			else
+			{
+				cancel = TRUE;
 			}
 		}
 	}
 
-	[self.mem RD:addr data:data CLK:clock];
+	else
+	{
+		[self.mem RD:addr data:data CLK:clock];
+	}
+
+	return;
 }
 
 // -----------------------------------------------------------------------------
@@ -212,7 +223,6 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 					cancel = TRUE;
 				}
 			}
-
 		}
 	}
 
@@ -248,19 +258,27 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 - (uint8_t *) BYTE:(uint16_t)addr
 {
-	if ([self.mem respondsToSelector:@selector(BYTE:)])
-		return [(NSObject<BYTE> *)self.mem BYTE:addr];
-	else
-		return 0;
+	return [self.mem BYTE:addr];
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) SYNC:(uint16_t)addr status:(uint8_t)status
+{
+	if (!(hook = status == 0xA2 && enabled && !self.snd.sound.isOutput))
+	{
+		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
+			[self.mem SYNC:addr status:status];
+	}
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	if (*data == 0xA2 && enabled && !self.snd.sound.isOutput)
+	if (hook)
 	{
-		@synchronized(self)
+		*data = 0xC9; @synchronized(self)
 		{
 			uint8_t byte = self.type && self.type != 3 ? self.cpu.C : self.cpu.A;
 
@@ -283,12 +301,12 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 				[self.buffer appendBytes:&byte length:1];
 			}
 		}
-
-		*data = 0xC9;
-		return;
 	}
 
-	[self.mem RD:addr data:data CLK:clock];
+	else
+	{
+		[self.mem RD:addr data:data CLK:clock];
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -373,19 +391,6 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 								savePanel.nameFieldStringValue = stringFromRK(ptr + 4, i - 4);
 								break;
 							}
-						}
-					}
-				}
-
-				else if (self.type == 4 && ptr[0] == 0x00)
-				{
-					int i = 9; while (i < length && ptr[i] >= 0x20 && ptr[i] < 0x7F) i++; if (i < length && ptr[i] == 0x00 && i <= 25)
-					{
-						if (length == ((ptr[4] << 8) | ptr[3]) - ((ptr[2] << 8) | ptr[1]) + i + 2)
-						{
-							savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
-							savePanel.nameFieldStringValue = stringFromRK(ptr + 9, i - 9);
-							break;
 						}
 					}
 				}

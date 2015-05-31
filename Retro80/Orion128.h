@@ -16,7 +16,7 @@
 // Системные регистры ПЭВМ "Орион 128"
 // -----------------------------------------------------------------------------
 
-@interface Orion128System : NSObject <RD, WR, SoundController, INTE>
+@interface Orion128System : NSObject <WR, SoundController, INTE>
 
 @property Orion128Screen *crt;
 @property (weak) X8080 *cpu;

@@ -13,9 +13,11 @@
 // Дисплей "Микро-80"
 // -----------------------------------------------------------------------------
 
-@interface Micro80Screen : NSObject <DisplayController, WR, NSCoding>
+@interface Micro80Screen : NSObject <DisplayController>
 
-@property NSObject <WR> *WR;
+@property const uint8_t* memory;
+@property const uint8_t* cursor;
+@property unsigned rows;
 
 @end
 
@@ -52,5 +54,7 @@
 
 @property F806 *inpHook;
 @property F80C *outHook;
+
+- (BOOL) createObjects;
 
 @end

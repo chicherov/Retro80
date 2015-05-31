@@ -5,6 +5,11 @@
 // -----------------------------------------------------------------------------
 
 @interface MEM : NSObject <RD, WR, BYTE>
+{
+	uint8_t *mutableBytes;
+	NSUInteger length;
+	uint16_t mask;
+}
 
 - (MEM *) memoryAtOffest:(NSUInteger)offset length:(NSUInteger)len mask:(uint16_t)msk;
 

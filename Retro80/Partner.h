@@ -11,10 +11,9 @@
 // Системнный регистр 1 - выбор станицы адресного простарнства
 // -----------------------------------------------------------------------------
 
-@interface PartnerSystem1 : NSObject <WR, INTA>
+@interface PartnerSystem1 : NSObject <WR>
 
 @property (weak) X8080 *cpu;
-@property X8275* crt;
 
 @end
 
@@ -34,9 +33,9 @@
 // Окно внешнего устройства
 // -----------------------------------------------------------------------------
 
-@interface PartnerExternal : NSObject <RD, WR>
+@interface PartnerExternal : NSObject <RD, WR, BYTE>
 
-@property NSObject <RD> *object;
+@property NSObject <RD, BYTE> *object;
 
 @end
 

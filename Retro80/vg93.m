@@ -290,7 +290,6 @@
 			else
 			{
 				status.S7 = file == nil;
-				status.S1 = 0;
 			}
 
 			*data = status.byte;
@@ -535,7 +534,7 @@
 
 - (void) RD:(uint8_t *)data clock:(uint64_t)clock
 {
-	if (read && clock > DRQ)
+	status.S1 = 0; if (read && clock > DRQ)
 	{
 		DRQ += ms200 / 6250; while (DRQ < clock && pos < length)
 		{
@@ -576,7 +575,7 @@
 
 - (void) WR:(uint8_t)data clock:(uint64_t)clock
 {
-	if (write)
+	status.S1 = 0; if (write)
 	{
 		DRQ += ms200 / 6250; while (DRQ < clock && pos < length)
 		{

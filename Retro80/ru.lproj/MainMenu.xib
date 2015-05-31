@@ -98,7 +98,7 @@
                                                 <action selector="newDocument:" target="-1" id="9VT-gG-e0j"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="ЮТ-88" tag="600" enabled="NO" id="fMK-1j-gIa">
+                                        <menuItem title="ЮТ-88" tag="600" id="fMK-1j-gIa">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="newDocument:" target="-1" id="KcG-aJ-gK0"/>
@@ -272,6 +272,12 @@
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="floppy:" target="-1" id="O7L-Vx-HLc"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="ПЗУ монитора" id="DP4-YP-cW1">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="monitorROM:" target="-1" id="spA-rY-e5L"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Модуль ОЗУ" id="vJC-7g-PJH">

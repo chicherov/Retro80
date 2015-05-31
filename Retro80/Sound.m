@@ -363,7 +363,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 	CLK = [self.cpu CLK]; clk = [self.cpu quartz] / streamFormat.mSampleRate;
 
-	if (inAudioFile == 0 && ((self.cpu.HALT = self.document.inViewingMode) || mute))
+	if (inAudioFile == 0 && (self.document.inViewingMode || mute))
 	{
 		timer = [NSTimer scheduledTimerWithTimeInterval:0.02
 												 target:self

@@ -137,7 +137,7 @@
 		else
 		{
 			uint8_t data = 0x00; [DMA[channel] RD:&data clock:clock + clk + 9];
-			MEMW(cpu, dma[channel].address++, data, clock + clk + 18);
+			MEMW(cpu, dma[channel].address++, data, clock + clk + 18, 0x00);
 		}
 
 		if (dma[channel].count-- == 0)

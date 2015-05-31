@@ -154,7 +154,7 @@
 
 		memcpy(ram.mutableBytes, self.ram.mutableBytes, 0x20000);
 		self.ram = ram; [self mapObjects];
-		self.cpu.RESET = TRUE;
+		[self.cpu reset];
 	}
 }
 
@@ -242,6 +242,8 @@
 
 - (BOOL) mapObjects
 {
+	self.cpu.FF = TRUE;
+	
 	self.crt.memory = self.ram.mutableBytes;
 
 	if (self.sys == nil && (self.sys = [[Orion128System alloc] init]) == nil)
@@ -284,17 +286,11 @@
 	for (uint8_t page = 0; page < 4; page++)
 	{
 		MEM *mem = [self.ram memoryAtOffest:page << 16 length:0x10000 mask:0xFFFF];
-
-		if (mem == nil)
-			[self.cpu mapObject:self.sys atPage:page from:0x0000 to:0xEFFF WR:nil];
-		else
-			[self.cpu mapObject:mem atPage:page from:0x0000 to:0xEFFF];
+		[self.cpu mapObject:mem atPage:page from:0x0000 to:0xEFFF];
 
 		[self.cpu mapObject:self.ram atPage:page from:0xF000 to:0xF3FF];
 		[self.cpu mapObject:self.kbd atPage:page from:0xF400 to:0xF4FF];
 		[self.cpu mapObject:self.ext atPage:page from:0xF500 to:0xF5FF];
-
-		[self.cpu mapObject:self.sys atPage:page from:0xF600 to:0xF7FF WR:nil];
 
 		if (self.isFloppy)
 			[self.cpu mapObject:self.fdd atPage:page from:0xF700 to:0xF72F];
@@ -465,11 +461,6 @@
 			crt.page = (~data & 3);
 			break;
 	}
-}
-
-- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
-{
-	*data = 0xFF;
 }
 
 - (void) INTE:(BOOL)IF clock:(uint64_t)clock

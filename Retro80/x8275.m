@@ -21,6 +21,8 @@
 	uint64_t rowTimer;
 	uint64_t dmaTimer;
 
+	BOOL IRQ;
+
 	// -------------------------------------------------------------------------
 	// Буфер строки и FIFO
 	// -------------------------------------------------------------------------
@@ -84,11 +86,16 @@
 }
 
 @synthesize display;
-@synthesize INTR;
 
-- (BOOL) INTR:(uint64_t)clock
+- (BOOL) IRQ:(uint64_t)clock
 {
-	return INTR;
+	if (IRQ)
+	{
+		IRQ = FALSE;
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 // -----------------------------------------------------------------------------
@@ -185,7 +192,7 @@ CCCC[][3] =
 		{
 			*data = status.byte;
 
-			status.IR = FALSE;
+			IRQ = status.IR = FALSE;
 
 			status.IC = 0;
 			status.DU = 0;
@@ -233,7 +240,7 @@ CCCC[][3] =
 			{
 				case 0x00:					// Команда Reset
 				{
-					INTR = status.IR = FALSE;
+					IRQ = status.IR = FALSE;
 
 					status.VE = 0;
 					status.IE = 0;
@@ -347,9 +354,9 @@ CCCC[][3] =
 					}
 
 					if (row == config.R && status.IE)
-						INTR = status.IR = TRUE;
+						IRQ = status.IR = TRUE;
 					else
-						INTR = FALSE;
+						IRQ = FALSE;
 
 						EoR = FALSE; for (uint8_t col = 0, f = 0; col <= config.H; col++)
 					{
@@ -790,7 +797,7 @@ CCCC[][3] =
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:status.byte forKey:@"status"];
-	[encoder encodeBool:INTR forKey:@"INTR"];
+	[encoder encodeBool:IRQ forKey:@"IRQ"];
 	[encoder encodeInt32:*(uint32_t *)config.byte forKey:@"config"];
 	[encoder encodeInt:*(uint16_t *)cursor.byte forKey:@"cursor"];
 	[encoder encodeInt:mode.byte forKey:@"mode"];
@@ -814,7 +821,7 @@ CCCC[][3] =
 	if (self = [self init])
 	{
 		status.byte = [decoder decodeIntForKey:@"status"];
-		INTR = [decoder decodeBoolForKey:@"INTR"];
+		IRQ = [decoder decodeBoolForKey:@"IRQ"];
 		*(uint32_t *)config.byte = [decoder decodeInt32ForKey:@"config"];
 		*(uint16_t *)cursor.byte = [decoder decodeIntForKey:@"cursor"];
 		mode.byte = [decoder decodeIntForKey:@"mode"];

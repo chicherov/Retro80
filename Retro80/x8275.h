@@ -8,7 +8,7 @@
 
 // -----------------------------------------------------------------------------
 
-@interface X8275 : NSObject <DisplayController, RD, WR, HLDA, DMA, INTE, INTR, NSCoding>
+@interface X8275 : NSObject <DisplayController, RD, WR, HLDA, DMA, INTE, IRQ, NSCoding>
 {
 	// -------------------------------------------------------------------------
 	// Регистры i8275

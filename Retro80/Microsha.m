@@ -358,16 +358,15 @@ static uint32_t colors[] =
 	BOOL disable;
 }
 
-- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
+- (void) SYNC:(uint16_t)addr status:(uint8_t)status
 {
-	if (addr == 0xF89A || disable)
+	[super SYNC:addr status:status]; if (hook && (addr == 0xF89A || disable))
 	{
-		disable = addr == 0xF89A; [self.mem RD:addr data:data CLK:clock];
-	}
+		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
+			[self.mem SYNC:addr status:status];
 
-	else
-	{
-		[super RD:addr data:data CLK:clock];
+		disable = addr == 0xF89A;
+		hook = FALSE;
 	}
 }
 

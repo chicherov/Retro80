@@ -67,6 +67,8 @@
 		D9A82D6D1B0C9B0400DC9B5F /* ORDOS-4.03.rom in Resources */ = {isa = PBXBuildFile; fileRef = D9A82D6B1B0C9B0400DC9B5F /* ORDOS-4.03.rom */; };
 		D9B6E5ED1AFBDAF300175E50 /* SpecialistMX_Commander.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */; };
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
+		D9DE3A281B18E84C006B4104 /* UT88.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3E219B4584200C3ED9A /* UT88.m */; };
+		D9DE3A2B1B18EAA2006B4104 /* UT88.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9DE3A291B18EAA2006B4104 /* UT88.bin */; };
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
@@ -188,6 +190,7 @@
 		D9A82D6B1B0C9B0400DC9B5F /* ORDOS-4.03.rom */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ORDOS-4.03.rom"; path = "Retro80/ROM/ORDOS-4.03.rom"; sourceTree = "<group>"; };
 		D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_Commander.bin; path = Retro80/ROM/SpecialistMX_Commander.bin; sourceTree = "<group>"; };
 		D9CC91F419BEF8840038106A /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Retro80/ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		D9DE3A291B18EAA2006B4104 /* UT88.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = UT88.bin; path = Retro80/ROM/UT88.bin; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
 		D9EBB61F19B47E1300C833CA /* x8080.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8080.m; sourceTree = "<group>"; };
 		D9EBB62219B47E8B00C833CA /* mem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mem.h; sourceTree = "<group>"; };
@@ -238,6 +241,7 @@
 				D93DC7351AB2CE5B0005D473 /* SYMGEN.BIN */,
 				D93DC73B1AB2CE5B0005D473 /* Micro80.bin */,
 				D93DC73E1AB2CE5B0005D473 /* Micro80.fnt */,
+				D9DE3A291B18EAA2006B4104 /* UT88.bin */,
 				D93DC73D1AB2CE5B0005D473 /* Radio86RK.bin */,
 				D93DC73C1AB2CE5B0005D473 /* Microsha.bin */,
 				D93DC7381AB2CE5B0005D473 /* Apogeo.bin */,
@@ -514,6 +518,7 @@
 				D93DC7431AB2CE5B0005D473 /* dos29.bin in Resources */,
 				D92894F71AB2DDD50039C236 /* SpecialistSP580.bin in Resources */,
 				D953B74E1AD329A900C99F05 /* Specialist2SD.bin in Resources */,
+				D9DE3A2B1B18EAA2006B4104 /* UT88.bin in Resources */,
 				D927018B1B074B8800CC51BD /* Orion128-1.bin in Resources */,
 				D9A82D6D1B0C9B0400DC9B5F /* ORDOS-4.03.rom in Resources */,
 				D974FCAA19ADE9450041DF91 /* Document.xib in Resources */,
@@ -557,6 +562,7 @@
 				D98BEB4A19F2A2DC008E4EC4 /* Partner.m in Sources */,
 				D994F55C1ADBA9C7002408E8 /* SpecialistSP580.m in Sources */,
 				D929488219B5850C009BC312 /* RKKeyboard.m in Sources */,
+				D9DE3A281B18E84C006B4104 /* UT88.m in Sources */,
 				D974FCE219AE08190041DF91 /* Microsha.m in Sources */,
 				D974FCA719ADE9450041DF91 /* Document.m in Sources */,
 				D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */,

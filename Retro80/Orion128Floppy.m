@@ -58,12 +58,8 @@
 		case 0xF704:
 
 			[super RD:0xF700 data:data CLK:clock];
-			*data = (*data & 0x01 ? 0x00 : 0x80) | ((*data & 0x02) >> 1);
+			*data = status.S0 ? status.S1 : 0x80;
 			break;
-
-		default:
-
-			*data = 0xFF;
 	}
 }
 

@@ -149,7 +149,7 @@
 			pasteKey = NSNotFound;
 		}
 
-		if (paste != nil && clock - pasteClock > 2000000)
+		if (paste != nil && clock - pasteClock > 3000000)
 		{
 			if (pos == paste.length)
 				paste = nil;

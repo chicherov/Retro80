@@ -6,10 +6,14 @@
 
 @protocol RD
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock;
+@optional
+- (void) SYNC:(uint16_t)addr status:(uint8_t)status;
 @end
 
 @protocol WR
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock;
+@optional
+- (void) SYNC:(uint16_t)addr status:(uint8_t)status;
 @end
 
 @protocol BYTE
@@ -26,16 +30,12 @@
 - (unsigned) HLDA:(uint64_t)clock;
 @end
 
+@protocol IRQ
+- (BOOL) IRQ:(uint64_t)clock;
+@end
+
 @protocol INTE
 - (void) INTE:(BOOL)IF clock:(uint64_t)clock;
-@end
-
-@protocol INTR
-- (BOOL) INTR:(uint64_t)clock;
-@end
-
-@protocol INTA
-- (uint8_t) INTA:(uint64_t)clock;
 @end
 
 // -----------------------------------------------------------------------------
@@ -44,6 +44,15 @@
 
 @interface X8080 : NSObject <Processor, Debug, NSCoding>
 {
+	unsigned quartz;
+	uint64_t CLK;
+
+	uint8_t PAGE;
+
+	// -------------------------------------------------------------------------
+	// Регистры процессора
+	// -------------------------------------------------------------------------
+
 	uint16_t PC;
 	uint16_t SP;
 
@@ -87,7 +96,28 @@
 		
 	} HL;
 
+	// -------------------------------------------------------------------------
+	// Сигнал IRQ
+	// -------------------------------------------------------------------------
+
+	BOOL (*CallIRQ) (id, SEL, uint64_t);
+	NSObject<IRQ> *IRQ;
+	uint8_t RST;
+
+	// -------------------------------------------------------------------------
+	// Сигнал INTE
+	// -------------------------------------------------------------------------
+
+	void (*CallINTE) (id, SEL, BOOL, uint64_t);
+	NSObject<INTE> *INTE;
 	BOOL IF;
+
+	// -------------------------------------------------------------------------
+	// Сигнал HLDA
+	// -------------------------------------------------------------------------
+
+	unsigned (*CallHLDA) (id, SEL, uint64_t);
+	NSObject<HLDA> *HLDA;
 }
 
 @property unsigned quartz;
@@ -97,6 +127,7 @@
 
 @property uint16_t PC;
 @property uint16_t SP;
+
 @property uint16_t AF;
 @property uint16_t BC;
 @property uint16_t DE;
@@ -111,60 +142,60 @@
 @property uint8_t H;
 @property uint8_t L;
 
+@property NSObject<IRQ> *IRQ;
+@property uint8_t RST;
+
+@property NSObject<INTE> *INTE;
 @property BOOL IF;
 
 @property NSObject<HLDA> *HLDA;
-@property NSObject<INTE> *INTE;
-
-- (void) setINTR:(NSObject<INTR> *)object;
-- (void) setINTA:(NSObject<INTA> *)object;
 
 // -----------------------------------------------------------------------------
 
-- (id) initWithQuartz:(unsigned)quartz start:(unsigned)start;
+- (id) initWithQuartz:(unsigned)quartz start:(uint32_t)start;
 
 // -----------------------------------------------------------------------------
 
-- (void) mapObject:(NSObject<RD, WR>*)object
-			atPage:(uint8_t)page
-			  from:(uint16_t)from
-				to:(uint16_t)to;
-
-- (void) mapObject:(NSObject<RD, WR>*)object
-			  from:(uint16_t)from
-				to:(uint16_t)to;
-
-- (void) mapObject:(NSObject<RD>*)rd
-			atPage:(uint8_t)page
-			  from:(uint16_t)from
-				to:(uint16_t)to
-				WR:(NSObject<WR>*)wr;
-
-- (void) mapObject:(NSObject<RD>*)rd
-			  from:(uint16_t)from
-				to:(uint16_t)to
-				WR:(NSObject<WR>*)wr;
-
-- (void) mapObject:(NSObject<WR>*)wr
-			atPage:(uint8_t)page
-			  from:(uint16_t)from
-				to:(uint16_t)to
-				RD:(NSObject<RD>*)rd;
-
-- (void) mapObject:(NSObject<WR>*)wr
-			  from:(uint16_t)from
-				to:(uint16_t)to
-				RD:(NSObject<RD>*)rd;
-
-// -----------------------------------------------------------------------------
-
-@property BOOL RESET;
 @property BOOL MEMIO;
+@property BOOL FF;
 
 // -----------------------------------------------------------------------------
 
-uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data);
-void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
+- (void) mapObject:(NSObject<RD, WR>*)object
+			atPage:(uint8_t)page
+			  from:(uint16_t)from
+				to:(uint16_t)to;
+
+- (void) mapObject:(NSObject<RD, WR>*)object
+			  from:(uint16_t)from
+				to:(uint16_t)to;
+
+- (void) mapObject:(NSObject<RD>*)rd
+			atPage:(uint8_t)page
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				WR:(NSObject<WR>*)wr;
+
+- (void) mapObject:(NSObject<RD>*)rd
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				WR:(NSObject<WR>*)wr;
+
+- (void) mapObject:(NSObject<WR>*)wr
+			atPage:(uint8_t)page
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				RD:(NSObject<RD>*)rd;
+
+- (void) mapObject:(NSObject<WR>*)wr
+			  from:(uint16_t)from
+				to:(uint16_t)to
+				RD:(NSObject<RD>*)rd;
+
+// -----------------------------------------------------------------------------
+
+void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
+uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
 
 // -----------------------------------------------------------------------------
 
@@ -177,7 +208,7 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
 
 // -----------------------------------------------------------------------------
 
-uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data);
-void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock);
+void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
+uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
 
 @end

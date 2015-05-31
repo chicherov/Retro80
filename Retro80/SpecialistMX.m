@@ -63,6 +63,9 @@
 			
 		case 0x12:	// D4.2	(pF2 - сторона)
 
+			if (fdd.selected == 0)
+				fdd.selected = 1;
+
 			fdd.head = data & 1;
 			break;
 
@@ -219,7 +222,7 @@
 
 		RAM *ram = [[RAM alloc] initWithLength:size mask:0xFFFF];
 		memcpy(ram.mutableBytes, self.ram.mutableBytes, size < self.ram.length ? size : self.ram.length);
-		self.ram = ram; [self mapObjects]; self.cpu.RESET = TRUE;
+		self.ram = ram; [self mapObjects]; [self.cpu reset];
 	}
 }
 
@@ -494,7 +497,6 @@
 
 				memcpy(self.ram.mutableBytes + addr, bios.bytes, bios.length);
 
-				self.cpu.RESET = FALSE;
 				self.cpu.PC = addr;
 				self.cpu.PAGE = 0;
 			}
@@ -513,7 +515,6 @@
 			self.cpu.PC = addr;
 		}
 
-		self.cpu.RESET = FALSE;
 		self.cpu.PAGE = 0;
 	}
 	

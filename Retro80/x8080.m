@@ -17,45 +17,25 @@
 	void (*CallRD [16][0x10000]) (id, SEL, uint16_t, uint8_t *, uint64_t);
 	void (*CallWR [16][0x10000]) (id, SEL, uint16_t, uint8_t, uint64_t);
 
+	void (*CallIOR [256]) (id, SEL, uint16_t, uint8_t *, uint64_t);
+	void (*CallIOW [256]) (id, SEL, uint16_t, uint8_t, uint64_t);
+
+	void (*SyncRD [16][0x10000]) (id, SEL, uint16_t, uint8_t);
+	void (*SyncWR [16][0x10000]) (id, SEL, uint16_t, uint8_t);
+
+	void (*SyncIO [256]) (id, SEL, uint16_t, uint8_t);
+
 	NSMutableArray *RESETLIST;
-	unsigned START;
+	uint32_t START;
 
-	// -------------------------------------------------------------------------
-	// Сигнал HLDA
-	// -------------------------------------------------------------------------
-
-	unsigned (*CallHLDA) (id, SEL, uint64_t);
-	NSObject<HLDA> *HLDA;
-
-	// -------------------------------------------------------------------------
-	// Сигнал INTE
-	// -------------------------------------------------------------------------
-
-	void (*CallINTE) (id, SEL, BOOL, uint64_t);
-	NSObject<INTE> *INTE;
-
-	// -------------------------------------------------------------------------
-	// Сигнал INTR
-	// -------------------------------------------------------------------------
-
-	BOOL (*CallINTR) (id, SEL, uint64_t);
-	NSObject<INTE> *INTR;
-
-	// -------------------------------------------------------------------------
-	// Сигнал INTA
-	// -------------------------------------------------------------------------
-
-	uint8_t (*CallINTA) (id, SEL, uint64_t);
-	NSObject<INTA> *INTA;
+	uint32_t STOP1;
+	uint32_t STOP2;
 
 	// -------------------------------------------------------------------------
 	// Отладчик
 	// -------------------------------------------------------------------------
 
 	NSString *unicode;
-
-	uint32_t STOP1;
-	uint32_t STOP2;
 
 	uint16_t offset;
 	uint32_t lastL;
@@ -77,7 +57,6 @@
 
 @synthesize PC;
 @synthesize SP;
-@synthesize IF;
 
 - (void) setAF:(uint16_t)value { AF.AF = value; }
 - (uint16_t) AF { return AF.AF; }
@@ -115,31 +94,114 @@
 - (void) setL:(uint8_t)value { HL.L = value; }
 - (uint8_t) L { return HL.L; }
 
+// -----------------------------------------------------------------------------
+// Работа с сигналом IRQ
+// -----------------------------------------------------------------------------
 
-@synthesize RESET;
+- (void) setIRQ:(NSObject<IRQ> *)object
+{
+	CallIRQ = (BOOL (*) (id, SEL, uint64_t)) [IRQ = object methodForSelector:@selector(IRQ:)];
+}
 
-@synthesize HALT;
+- (NSObject<IRQ> *) IRQ
+{
+	return IRQ;
+}
 
-@synthesize MEMIO;
+@synthesize RST;
 
+// -----------------------------------------------------------------------------
+// Работа с сигналом INTE
+// -----------------------------------------------------------------------------
+
+- (void) setINTE:(NSObject<INTE> *)object
+{
+	CallINTE = (void (*) (id, SEL, BOOL, uint64_t)) [INTE = object methodForSelector:@selector(INTE:clock:)];
+}
+
+- (NSObject<INTE> *) INTE
+{
+	return INTE;
+}
+
+- (void) setIF:(BOOL)value
+{
+	IF = value; if (INTE)
+		CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
+}
+
+- (BOOL) IF
+{
+	return IF;
+}
+
+// -----------------------------------------------------------------------------
+// Работа с сигналом HLDA
+// -----------------------------------------------------------------------------
+
+- (void) setHLDA:(NSObject<HLDA> *)object
+{
+	CallHLDA = (unsigned (*) (id, SEL, uint64_t)) [HLDA = object methodForSelector:@selector(HLDA:)];
+}
+
+- (NSObject<HLDA> *)HLDA
+{
+	return HLDA;
+}
+
+static unsigned HOLD(X8080* cpu, unsigned clk)
+{
+	unsigned clkHOLD = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:), cpu->CLK) : 0;
+	return clk > clkHOLD ? clk : clkHOLD;
+}
 
 // -----------------------------------------------------------------------------
 // Доступ к адресному пространству
 // -----------------------------------------------------------------------------
 
+@synthesize MEMIO;
+@synthesize FF;
+
 - (void) mapObject:(NSObject<RD> *)rd atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to WR:(NSObject<WR> *)wr
 {
+	void (*rdCall) (id, SEL, uint16_t, uint8_t *, uint64_t) = 0;
+	void (*rdSync) (id, SEL, uint16_t, uint8_t) = 0;
+
+	if (rd)
+	{
+		rdCall = (void (*) (id, SEL, uint16_t, uint8_t *, uint64_t)) [rd methodForSelector:@selector(RD:data:CLK:)];
+
+		if ([rd respondsToSelector:@selector(SYNC:status:)])
+			rdSync = (void (*) (id, SEL, uint16_t, uint8_t)) [rd methodForSelector:@selector(SYNC:status:)];
+
+		if ([rd conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:rd])
+			[RESETLIST addObject:rd];
+	}
+
+	void (*wrCall) (id, SEL, uint16_t, uint8_t, uint64_t) = 0;
+	void (*wrSync) (id, SEL, uint16_t, uint8_t) = 0;
+
+	if (wr)
+	{
+		wrCall = (void (*) (id, SEL, uint16_t, uint8_t, uint64_t)) [wr methodForSelector:@selector(WR:data:CLK:)];
+
+		if ([wr respondsToSelector:@selector(SYNC:status:)])
+			wrSync = (void (*) (id, SEL, uint16_t, uint8_t)) [wr methodForSelector:@selector(SYNC:status:)];
+
+		if ([wr conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:wr])
+			[RESETLIST addObject:wr];
+	}
+
 	for (unsigned address = from; address <= to; address++)
-		CallRD[page][address] = (void (*) (id, SEL, uint16_t, uint8_t *, uint64_t)) [RD[page][address] = rd methodForSelector:@selector(RD:data:CLK:)];
+	{
+		RD[page][address] = rd;
+		CallRD[page][address] = rdCall;
+		SyncRD[page][address] = rdSync;
 
-	if ([rd conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:rd])
-		[RESETLIST addObject:rd];
-
-	for (unsigned address = from; address <= to; address++)
-		CallWR[page][address] = (void (*) (id, SEL, uint16_t, uint8_t, uint64_t)) [WR[page][address] = wr methodForSelector:@selector(WR:data:CLK:)];
-
-	if ([wr conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:wr])
-		[RESETLIST addObject:wr];
+		WR[page][address] = wr;
+		CallWR[page][address] = wrCall;
+		SyncWR[page][address] = wrSync;
+	}
 }
 
 - (void) mapObject:(NSObject<WR> *)wr atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to RD:(NSObject<RD> *)rd
@@ -171,18 +233,26 @@
 
 // -----------------------------------------------------------------------------
 
-uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
+void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status)
 {
-	if (cpu->RD[cpu->PAGE][addr])
+	if (cpu->SyncWR[cpu->PAGE][addr])
+		cpu->SyncWR[cpu->PAGE][addr](cpu->WR[cpu->PAGE][addr], @selector(SYNC:status:), addr, status);
+
+	if (cpu->CallWR[cpu->PAGE][addr])
+		cpu->CallWR[cpu->PAGE][addr](cpu->WR[cpu->PAGE][addr], @selector(WR:data:CLK:), addr, data, clock);
+}
+
+uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status)
+{
+	if (cpu->SyncRD[cpu->PAGE][addr])
+		cpu->SyncRD[cpu->PAGE][addr](cpu->RD[cpu->PAGE][addr], @selector(SYNC:status:), addr, status);
+
+	uint8_t data = cpu->FF ? 0xFF : status;
+
+	if (cpu->CallRD[cpu->PAGE][addr])
 		cpu->CallRD[cpu->PAGE][addr](cpu->RD[cpu->PAGE][addr], @selector(RD:data:CLK:), addr, &data, clock);
 
 	return data;
-}
-
-void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
-{
-	if (cpu->WR[cpu->PAGE][addr])
-		cpu->CallWR[cpu->PAGE][addr](cpu->WR[cpu->PAGE][addr], @selector(WR:data:CLK:), addr, data, clock);
 }
 
 // -----------------------------------------------------------------------------
@@ -196,79 +266,46 @@ void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
 
 - (void) mapObject:(NSObject<RD, WR> *)object atPort:(uint8_t)port
 {
-	IO[port] = object; MEMIO = FALSE;
+	IO[port] = object;
+	MEMIO = FALSE;
+
+	CallIOR[port] = object ? (void (*) (id, SEL, uint16_t, uint8_t *, uint64_t)) [object methodForSelector:@selector(RD:data:CLK:)] : 0;
+	CallIOW[port] = object ? (void (*) (id, SEL, uint16_t, uint8_t, uint64_t)) [object methodForSelector:@selector(WR:data:CLK:)] : 0;
+
+	if ([object respondsToSelector:@selector(SYNC:status:)])
+		SyncIO[port] = (void (*) (id, SEL, uint16_t, uint8_t)) [object methodForSelector:@selector(SYNC:status:)];
+	else
+		SyncIO[port] = 0;
 }
 
 // -----------------------------------------------------------------------------
 
-void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock)
+void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status)
 {
-	if (cpu->IO[addr >> 8])
-		[cpu->IO[addr >> 8] WR:addr data:data CLK:clock];
-	else if (cpu->MEMIO)
-		MEMW(cpu, addr, data, clock);
+	if (cpu->SyncIO[addr & 0xFF])
+		cpu->SyncIO[addr & 0xFF](cpu->IO[addr & 0xFF], @selector(SYNC:status:), addr, status);
+
+	if (cpu->CallIOW[addr & 0xFF])
+		cpu->CallIOW[addr & 0xFF](cpu->IO[addr & 0xFF], @selector(WR:data:CLK:), addr, data, clock);
+
+	else if (cpu->MEMIO && cpu->CallWR[cpu->PAGE][addr])
+		cpu->CallWR[cpu->PAGE][addr](cpu->WR[cpu->PAGE][addr], @selector(WR:data:CLK:), addr, data, clock);
 }
 
-uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t data)
+uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status)
 {
-	if (cpu->IO[addr >> 8])
-		[cpu->IO[addr >> 8] RD:addr data:&data CLK:clock];
-	else if (cpu->MEMIO)
-		data = MEMR(cpu, addr, clock, data);
+	if (cpu->SyncIO[addr & 0xFF])
+		cpu->SyncIO[addr & 0xFF](cpu->IO[addr & 0xFF], @selector(SYNC:status:), addr, status);
+
+	uint8_t data = cpu->FF ? 0xFF : status;
+
+	if (cpu->CallIOR[addr & 0xFF])
+		cpu->CallIOR[addr & 0xFF](cpu->IO[addr & 0xFF], @selector(RD:data:CLK:), addr, &data, clock);
+
+	else if (cpu->MEMIO && cpu->CallRD[cpu->PAGE][addr])
+		cpu->CallRD[cpu->PAGE][addr](cpu->RD[cpu->PAGE][addr], @selector(RD:data:CLK:), addr, &data, clock);
 
 	return data;
-}
-
-// -----------------------------------------------------------------------------
-// Работа с сигналом HLDA
-// -----------------------------------------------------------------------------
-
-- (void) setHLDA:(NSObject<HLDA> *)object
-{
-	CallHLDA = (unsigned (*) (id, SEL, uint64_t)) [HLDA = object methodForSelector:@selector(HLDA:)];
-}
-
-- (NSObject<HLDA> *)HLDA
-{
-	return HLDA;
-}
-
-static unsigned HOLD(X8080* cpu, unsigned clk)
-{
-	unsigned clkHOLD = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:), cpu->CLK) : 0;
-	return clk > clkHOLD ? clk : clkHOLD;
-}
-
-// -----------------------------------------------------------------------------
-// Работа с сигналом INTE
-// -----------------------------------------------------------------------------
-
-- (void) setINTE:(NSObject<INTE> *)object
-{
-	CallINTE = (void (*) (id, SEL, BOOL, uint64_t)) [INTE = object methodForSelector:@selector(INTE:clock:)];
-}
-
-- (NSObject<INTE> *) INTE
-{
-	return INTE;
-}
-
-// -----------------------------------------------------------------------------
-// Работа с сигналом INTR
-// -----------------------------------------------------------------------------
-
-- (void) setINTR:(NSObject<INTE> *)object
-{
-	CallINTR = (BOOL (*) (id, SEL, uint64_t)) [INTR = object methodForSelector:@selector(INTR:)];
-}
-
-// -----------------------------------------------------------------------------
-// Работа с сигналом INTA
-// -----------------------------------------------------------------------------
-
-- (void) setINTA:(NSObject<INTA> *)object
-{
-	CallINTA = (uint8_t (*) (id, SEL, uint64_t)) [INTA = object methodForSelector:@selector(INTA:)];
 }
 
 // -----------------------------------------------------------------------------
@@ -307,7 +344,7 @@ static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 
 static void put(X8080* cpu, uint16_t addr, uint8_t data, uint8_t status)
 {
-	cpu->CLK += 18; MEMW(cpu, addr, data, cpu->CLK);
+	cpu->CLK += 18; MEMW(cpu, addr, data, cpu->CLK, status);
 	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
 }
 
@@ -320,7 +357,7 @@ static uint8_t inp(X8080* cpu, uint16_t addr)
 
 static void out(X8080* cpu, uint16_t addr, uint8_t data)
 {
-	cpu->CLK += 18; IOW(cpu, addr, data, cpu->CLK);
+	cpu->CLK += 18; IOW(cpu, addr, data, cpu->CLK, 0x10);
 	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
 }
 
@@ -328,25 +365,7 @@ static void out(X8080* cpu, uint16_t addr, uint8_t data)
 // ALU
 // -----------------------------------------------------------------------------
 
-static uint8_t flags[256] =
-{
-	0x46,0x02,0x02,0x06,0x02,0x06,0x06,0x02,0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,
-	0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,0x06,0x02,0x02,0x06,0x02,0x06,0x06,0x02,
-	0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,0x06,0x02,0x02,0x06,0x02,0x06,0x06,0x02,
-	0x06,0x02,0x02,0x06,0x02,0x06,0x06,0x02,0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,
-	0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,0x06,0x02,0x02,0x06,0x02,0x06,0x06,0x02,
-	0x06,0x02,0x02,0x06,0x02,0x06,0x06,0x02,0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,
-	0x06,0x02,0x02,0x06,0x02,0x06,0x06,0x02,0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,
-	0x02,0x06,0x06,0x02,0x06,0x02,0x02,0x06,0x06,0x02,0x02,0x06,0x02,0x06,0x06,0x02,
-	0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86,0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,
-	0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86,
-	0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86,
-	0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86,0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,
-	0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86,
-	0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86,0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,
-	0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86,0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,
-	0x86,0x82,0x82,0x86,0x82,0x86,0x86,0x82,0x82,0x86,0x86,0x82,0x86,0x82,0x82,0x86
-};
+static uint8_t flags[256];
 
 static uint8_t INR[0x100];
 static uint8_t DCR[0x100];
@@ -365,8 +384,24 @@ static uint16_t AND[0x100][0x100];
 
 + (void) ALU
 {
-	if (INR[0] == 0x00)
+	if (flags[0] == 0)
 	{
+		for (int byte = 0x00; byte <= 0xFF; byte++)
+		{
+			uint8_t flag = (byte ? 0x06 : 0x46) | (byte & 0x80);
+
+			if (byte & 0x01) flag ^= 0x04;
+			if (byte & 0x02) flag ^= 0x04;
+			if (byte & 0x04) flag ^= 0x04;
+			if (byte & 0x08) flag ^= 0x04;
+			if (byte & 0x10) flag ^= 0x04;
+			if (byte & 0x20) flag ^= 0x04;
+			if (byte & 0x40) flag ^= 0x04;
+			if (byte & 0x80) flag ^= 0x04;
+
+			flags[byte] = flag;
+		}
+
 		for (int byte = 0x00; byte <= 0xFF; byte++)
 		{
 			INR[byte] = flags[byte] | ((byte & 0x0F) == 0x00 ? 0x10 : 0x00);
@@ -413,31 +448,28 @@ static uint16_t AND[0x100][0x100];
 }
 
 // -----------------------------------------------------------------------------
+// reset
+// -----------------------------------------------------------------------------
+
+- (void) reset
+{
+	for (NSObject<RESET> *object in RESETLIST)
+		[object RESET];
+
+	self.IF = FALSE;
+
+	PAGE = (START >> 16) & 0xF;
+	PC = START & 0xFFFF;
+}
+
+// -----------------------------------------------------------------------------
 // execute
 // -----------------------------------------------------------------------------
 
 - (BOOL) execute:(uint64_t)CLKI
 {
-	if (HALT) while (CLK < CLKI)
+	while (CLK < CLKI)
 	{
-		CLK += 18; CLK+= HOLD(self, 18);
-	}
-
-	else while (CLK < CLKI)
-	{
-		if (RESET)
-		{
-			for (NSObject<RESET> *object in RESETLIST)
-				[object RESET];
-
-			IF = FALSE; if (INTE)
-				CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
-
-			PAGE = (START >> 16) & 0xF;
-			PC = START & 0xFFFF;
-			RESET = FALSE;
-		}
-
 		union
 		{
 			uint16_t WZ; struct
@@ -454,8 +486,8 @@ static uint16_t AND[0x100][0x100];
 
 		uint8_t IR; CLK += 9;
 
-		if (IF && INTR && CallINTR(INTR, @selector(INTR:), CLK) && INTA)
-			IR = CallINTA(INTA, @selector(INTA:), CLK);
+		if (IF && IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK))
+			IR = RST;
 		else
 			IR = MEMR(self, PC++, CLK, 0xA2);
 
@@ -1988,14 +2020,15 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xE3:	// XTHL
 			{
-				WZ.Z = get(self, SP++, 0x86);
-				WZ.W = get(self, SP++, 0x86);
-				put(self, --SP, HL.H, 0x04);
+				WZ.Z = get(self, SP, 0x86);
+				WZ.W = get(self, SP + 1, 0x86);
+				put(self, SP + 1, HL.H, 0x04);
 
-				CLK += 18; MEMW(self, --SP, HL.L, CLK);
-				CLK += 9; CLK += HOLD(self, 18);
-
+				uint64_t M5 = CLK + 9 * 5;
+				put(self, SP, HL.L, 0x04);
+				if (CLK < M5) CLK = M5;
 				HL.HL = WZ.WZ;
+
 				break;
 			}
 
@@ -2117,9 +2150,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xF3:	// DI
 			{
-				IF = FALSE; if (INTE)
-					CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
-
+				self.IF = FALSE;
 				break;
 			}
 
@@ -2182,9 +2213,7 @@ static uint16_t AND[0x100][0x100];
 
 			case 0xFB:	// EI
 			{
-				IF = TRUE; if (INTE)
-					CallINTE(INTE, @selector(INTE:clock:), IF, CLK);
-
+				self.IF = TRUE;
 				break;
 			}
 
@@ -2227,8 +2256,10 @@ static uint16_t AND[0x100][0x100];
 		quartz = freq;
 		START = start;
 
+		PAGE = (START >> 16) & 0xF;
+		PC = START & 0xFFFF;
+
 		RESETLIST = [[NSMutableArray alloc] init];
-		RESET = TRUE;
 
 		MEMIO = TRUE;
 
@@ -2251,7 +2282,6 @@ static uint16_t AND[0x100][0x100];
 	[encoder encodeInt64:CLK forKey:@"CLK"];
 	[encoder encodeBool:IF forKey:@"IF"];
 
-	[encoder encodeBool:RESET forKey:@"RESET"];
 	[encoder encodeInt:PAGE forKey:@"PAGE"];
 
 	[encoder encodeInt:PC forKey:@"PC"];
@@ -2272,7 +2302,6 @@ static uint16_t AND[0x100][0x100];
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 		IF = [decoder decodeBoolForKey:@"IF"];
 
-		RESET = [decoder decodeBoolForKey:@"RESET"];
 		PAGE = [decoder decodeIntForKey:@"PAGE"];
 
 		PC = [decoder decodeIntForKey:@"PC"];
