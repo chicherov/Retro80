@@ -20,11 +20,6 @@
 	void (*CallIOR [256]) (id, SEL, uint16_t, uint8_t *, uint64_t);
 	void (*CallIOW [256]) (id, SEL, uint16_t, uint8_t, uint64_t);
 
-	void (*SyncRD [16][0x10000]) (id, SEL, uint16_t, uint8_t);
-	void (*SyncWR [16][0x10000]) (id, SEL, uint16_t, uint8_t);
-
-	void (*SyncIO [256]) (id, SEL, uint16_t, uint8_t);
-
 	NSMutableArray *RESETLIST;
 	uint32_t START;
 
@@ -159,34 +154,29 @@ static unsigned HOLD(X8080* cpu, unsigned clk)
 // Доступ к адресному пространству
 // -----------------------------------------------------------------------------
 
+@synthesize RAMDISK;
+@synthesize M1;
+
 @synthesize MEMIO;
 @synthesize FF;
 
 - (void) mapObject:(NSObject<RD> *)rd atPage:(uint8_t)page from:(uint16_t)from to:(uint16_t)to WR:(NSObject<WR> *)wr
 {
 	void (*rdCall) (id, SEL, uint16_t, uint8_t *, uint64_t) = 0;
-	void (*rdSync) (id, SEL, uint16_t, uint8_t) = 0;
 
 	if (rd)
 	{
 		rdCall = (void (*) (id, SEL, uint16_t, uint8_t *, uint64_t)) [rd methodForSelector:@selector(RD:data:CLK:)];
-
-		if ([rd respondsToSelector:@selector(SYNC:status:)])
-			rdSync = (void (*) (id, SEL, uint16_t, uint8_t)) [rd methodForSelector:@selector(SYNC:status:)];
 
 		if ([rd conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:rd])
 			[RESETLIST addObject:rd];
 	}
 
 	void (*wrCall) (id, SEL, uint16_t, uint8_t, uint64_t) = 0;
-	void (*wrSync) (id, SEL, uint16_t, uint8_t) = 0;
 
 	if (wr)
 	{
 		wrCall = (void (*) (id, SEL, uint16_t, uint8_t, uint64_t)) [wr methodForSelector:@selector(WR:data:CLK:)];
-
-		if ([wr respondsToSelector:@selector(SYNC:status:)])
-			wrSync = (void (*) (id, SEL, uint16_t, uint8_t)) [wr methodForSelector:@selector(SYNC:status:)];
 
 		if ([wr conformsToProtocol:@protocol(RESET)] && ![RESETLIST containsObject:wr])
 			[RESETLIST addObject:wr];
@@ -196,11 +186,9 @@ static unsigned HOLD(X8080* cpu, unsigned clk)
 	{
 		RD[page][address] = rd;
 		CallRD[page][address] = rdCall;
-		SyncRD[page][address] = rdSync;
 
 		WR[page][address] = wr;
 		CallWR[page][address] = wrCall;
-		SyncWR[page][address] = wrSync;
 	}
 }
 
@@ -235,22 +223,21 @@ static unsigned HOLD(X8080* cpu, unsigned clk)
 
 void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status)
 {
-	if (cpu->SyncWR[cpu->PAGE][addr])
-		cpu->SyncWR[cpu->PAGE][addr](cpu->WR[cpu->PAGE][addr], @selector(SYNC:status:), addr, status);
+	uint8_t page = status == 0x04 && cpu->RAMDISK ? cpu->RAMDISK : cpu->PAGE;
 
-	if (cpu->CallWR[cpu->PAGE][addr])
-		cpu->CallWR[cpu->PAGE][addr](cpu->WR[cpu->PAGE][addr], @selector(WR:data:CLK:), addr, data, clock);
+	if (cpu->CallWR[page][addr])
+		cpu->CallWR[page][addr](cpu->WR[page][addr], @selector(WR:data:CLK:), addr, data, clock);
 }
 
 uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status)
 {
-	if (cpu->SyncRD[cpu->PAGE][addr])
-		cpu->SyncRD[cpu->PAGE][addr](cpu->RD[cpu->PAGE][addr], @selector(SYNC:status:), addr, status);
-
 	uint8_t data = cpu->FF ? 0xFF : status;
+	cpu->M1 = status == 0xA2;
 
-	if (cpu->CallRD[cpu->PAGE][addr])
-		cpu->CallRD[cpu->PAGE][addr](cpu->RD[cpu->PAGE][addr], @selector(RD:data:CLK:), addr, &data, clock);
+	uint8_t page = status == 0x86 && cpu->RAMDISK ? cpu->RAMDISK : cpu->PAGE;
+
+	if (cpu->CallRD[page][addr])
+		cpu->CallRD[page][addr](cpu->RD[page][addr], @selector(RD:data:CLK:), addr, &data, clock);
 
 	return data;
 }
@@ -271,20 +258,12 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status)
 
 	CallIOR[port] = object ? (void (*) (id, SEL, uint16_t, uint8_t *, uint64_t)) [object methodForSelector:@selector(RD:data:CLK:)] : 0;
 	CallIOW[port] = object ? (void (*) (id, SEL, uint16_t, uint8_t, uint64_t)) [object methodForSelector:@selector(WR:data:CLK:)] : 0;
-
-	if ([object respondsToSelector:@selector(SYNC:status:)])
-		SyncIO[port] = (void (*) (id, SEL, uint16_t, uint8_t)) [object methodForSelector:@selector(SYNC:status:)];
-	else
-		SyncIO[port] = 0;
 }
 
 // -----------------------------------------------------------------------------
 
 void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status)
 {
-	if (cpu->SyncIO[addr & 0xFF])
-		cpu->SyncIO[addr & 0xFF](cpu->IO[addr & 0xFF], @selector(SYNC:status:), addr, status);
-
 	if (cpu->CallIOW[addr & 0xFF])
 		cpu->CallIOW[addr & 0xFF](cpu->IO[addr & 0xFF], @selector(WR:data:CLK:), addr, data, clock);
 
@@ -294,9 +273,6 @@ void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status
 
 uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status)
 {
-	if (cpu->SyncIO[addr & 0xFF])
-		cpu->SyncIO[addr & 0xFF](cpu->IO[addr & 0xFF], @selector(SYNC:status:), addr, status);
-
 	uint8_t data = cpu->FF ? 0xFF : status;
 
 	if (cpu->CallIOR[addr & 0xFF])

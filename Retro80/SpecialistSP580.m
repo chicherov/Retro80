@@ -6,11 +6,6 @@
 
 @implementation SpecialistSP580
 
-+ (NSArray *) extensions
-{
-	return @[@"sp580"];
-}
-
 - (BOOL) createObjects
 {
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistSP580" mask:0x0FFF]) == nil)
@@ -46,17 +41,6 @@
 	self.kbd.crt = self.crt;
 	self.kbd.snd = self.snd;
 	return TRUE;
-}
-
-- (id) initWithData:(NSData *)data URL:(NSURL *)url
-{
-	if (self = [self init])
-	{
-		self.inpHook.buffer = data;
-		[self.kbd paste:@"I\n"];
-	}
-
-	return self;
 }
 
 @end

@@ -56,38 +56,15 @@
 // Инициализация
 // -----------------------------------------------------------------------------
 
-- (id) init
-{
-	if (self = [super init])
-	{
-		if (![self createObjects])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.inpHook.enabled = TRUE;
-		self.outHook.enabled = TRUE;
-	}
-
-	return self;
-}
-
 - (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
 	if (self = [self init])
 	{
-		if (([url.pathExtension.lowercaseString isEqualToString:@"gam"] || [url.pathExtension.lowercaseString isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6)
-		{
-			self.inpHook.buffer = data;
-			self.inpHook.pos = 1;
-		}
-		else
-		{
-			self.inpHook.buffer = data;
-			self.inpHook.pos = 0;
-		}
+		NSString *pathExtension = url.pathExtension.lowercaseString;
 
+		self.inpHook.pos = ([pathExtension isEqualToString:@"gam"] || [pathExtension isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6;
+
+		self.inpHook.buffer = data;
 		[self.kbd paste:@"I\n"];
 	}
 
@@ -103,27 +80,33 @@
 	[super encodeWithCoder:encoder];
 
 	[encoder encodeObject:self.cpu forKey:@"cpu"];
+	[encoder encodeObject:self.rom forKey:@"rom"];
+	[encoder encodeObject:self.ram forKey:@"ram"];
 	[encoder encodeObject:self.crt forKey:@"crt"];
 	[encoder encodeObject:self.dma forKey:@"dma"];
 	[encoder encodeObject:self.snd forKey:@"snd"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 	[encoder encodeObject:self.ext forKey:@"ext"];
-	[encoder encodeObject:self.rom forKey:@"rom"];
-	[encoder encodeObject:self.ram forKey:@"ram"];
 
 	[encoder encodeBool:self.isColor forKey:@"isColor"];
-
-	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
-	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
 
 // -----------------------------------------------------------------------------
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
 {
+	if (![super decodeWithCoder:decoder])
+		return FALSE;
+
 	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
 		return FALSE;
 
+	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
+		return FALSE;
+
+	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
+		return FALSE;
+	
 	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
 		return FALSE;
 
@@ -139,34 +122,8 @@
 	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
 		return FALSE;
 
-	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
-		return FALSE;
-
-	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
-
 	self.isColor = [decoder decodeBoolForKey:@"isColor"];
-
 	return TRUE;
-}
-
-// -----------------------------------------------------------------------------
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super initWithCoder:decoder])
-	{
-		if (![self decodeWithCoder:decoder])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
-		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
-	}
-
-	return self;
 }
 
 @end

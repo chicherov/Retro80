@@ -55,6 +55,4 @@
 @property F806 *inpHook;
 @property F80C *outHook;
 
-- (BOOL) createObjects;
-
 @end

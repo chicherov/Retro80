@@ -42,17 +42,17 @@
 	{
 		if (menuItem.tag == 0)
 		{
-			menuItem.state = self.isFloppy;
+			menuItem.state = self.fdd != nil;
 			return YES;
 		}
 		else
 		{
-			NSURL *url = [self.floppy getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			NSURL *url = [self.fdd getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
 			else
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
 
-			return self.isFloppy && menuItem.tag != [self.floppy selected];
+			return self.fdd != nil && menuItem.tag != [self.fdd selected];
 		}
 	}
 
@@ -97,7 +97,7 @@ static uint32_t colors[] =
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	if (menuItem.tag == 0) @synchronized(self.snd.sound)
+	@synchronized(self.snd.sound)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -117,26 +117,34 @@ static uint32_t colors[] =
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
-		if ((self.isFloppy = !self.isFloppy))
+		if (self.fdd == nil)
 		{
-			if (self.dos29 != nil || (self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
+			if ((self.fdd = [[Floppy alloc] init]) != nil)
 			{
-				if (self.dos29.length > 0xDBF && self.dos29.mutableBytes[0xDBF] == 0xC1)
-					self.dos29.mutableBytes[0xDBF] = 0xD1;
-
-				if (self.floppy != nil || (self.floppy = [[Floppy alloc] init]) != nil)
+				if ((self.dos = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
 				{
-					[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
-					[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+					if (self.dos.length > 0xDBF && self.dos.mutableBytes[0xDBF] == 0xC1)
+						self.dos.mutableBytes[0xDBF] = 0xD1;
+
+					[self.cpu mapObject:self.dos from:0xE000 to:0xEFFF WR:nil];
+					[self.cpu mapObject:self.fdd from:0xF000 to:0xF7FF];
+				}
+				else
+				{
+					self.fdd = nil;
 				}
 			}
 		}
 		else
 		{
 			[self.cpu mapObject:nil from:0xE000 to:0xF7FF];
+
+			self.fdd = nil;
+			self.dos = nil;
 		}
 	}
-	else if (menuItem.tag && self.isFloppy)
+
+	else if (self.fdd != nil)
 	{
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
 		panel.allowedFileTypes = @[@"rkdisk"];
@@ -146,12 +154,12 @@ static uint32_t colors[] =
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
 			[self.document registerUndoWithMenuItem:menuItem];
-			[self.floppy setDisk:menuItem.tag URL:panel.URLs.firstObject];
+			[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
 		}
-		else if ([self.floppy getDisk:menuItem.tag] != nil)
+		else if ([self.fdd getDisk:menuItem.tag] != nil)
 		{
 			[self.document registerUndoWithMenuItem:menuItem];
-			[self.floppy setDisk:menuItem.tag URL:nil];
+			[self.fdd setDisk:menuItem.tag URL:nil];
 		}
 	}
 }
@@ -185,10 +193,10 @@ static uint32_t colors[] =
 {
 	[super encodeWithCoder:encoder];
 
-	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"]; if (self.isFloppy)
+	if (self.fdd != nil)
 	{
-		[encoder encodeObject:self.floppy forKey:@"floppy"];
-		[encoder encodeObject:self.dos29 forKey:@"dos29"];
+		[encoder encodeObject:self.fdd forKey:@"fdd"];
+		[encoder encodeObject:self.dos forKey:@"dos"];
 	}
 }
 
@@ -199,12 +207,9 @@ static uint32_t colors[] =
 	if (![super decodeWithCoder:decoder])
 		return FALSE;
 
-	if ((self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"]))
+	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) != nil)
 	{
-		if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
-			return FALSE;
-
-		if ((self.dos29 = [decoder decodeObjectForKey:@"dos29"]) == nil)
+		if ((self.dos = [decoder decodeObjectForKey:@"dos"]) == nil)
 			return FALSE;
 	}
 
@@ -255,10 +260,10 @@ static uint32_t colors[] =
 	[self.cpu mapObject:self.outHook from:0xFCAB to:0xFCAB WR:self.dma];
 	[self.cpu mapObject:self.outHook from:0xF89A to:0xF89A WR:self.dma];
 
-	if (self.isFloppy)
+	if (self.fdd != nil)
 	{
-		[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:nil];
-		[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+		[self.cpu mapObject:self.dos from:0xE000 to:0xEFFF WR:nil];
+		[self.cpu mapObject:self.fdd from:0xF000 to:0xF7FF];
 	}
 
 	return [super mapObjects];
@@ -267,7 +272,7 @@ static uint32_t colors[] =
 @end
 
 // -----------------------------------------------------------------------------
-// Первый интерфейс 8255, вариант клавиатуры РК86 для Микроши
+// Первый интерфейс ВВ55, вариант клавиатуры РК86 для Микроши
 // -----------------------------------------------------------------------------
 
 @implementation MicroshaKeyboard
@@ -318,7 +323,7 @@ static uint32_t colors[] =
 @end
 
 // -----------------------------------------------------------------------------
-// Второй интерфейс 8255, управление знакогенератором
+// Второй интерфейс ВВ55, управление знакогенератором
 // -----------------------------------------------------------------------------
 
 @implementation MicroshaExt
@@ -358,15 +363,16 @@ static uint32_t colors[] =
 	BOOL disable;
 }
 
-- (void) SYNC:(uint16_t)addr status:(uint8_t)status
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	[super SYNC:addr status:status]; if (hook && (addr == 0xF89A || disable))
+	if (self.cpu.M1 && (addr == 0xF89A || disable))
 	{
-		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
-			[self.mem SYNC:addr status:status];
+		disable = addr == 0xF89A; [self.mem RD:addr data:data CLK:clock];
+	}
 
-		disable = addr == 0xF89A;
-		hook = FALSE;
+	else
+	{
+		[super RD:addr data:data CLK:clock];
 	}
 }
 

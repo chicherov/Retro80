@@ -27,10 +27,6 @@
 @property ROM *rom;
 @property RAM *ram;
 
-- (BOOL) decodeWithCoder:(NSCoder *)decoder;
-- (BOOL) createObjects;
-- (BOOL) mapObjects;
-
 @property F806 *inpHook;
 @property F80C *outHook;
 

@@ -15,7 +15,7 @@
 
 + (NSArray *) extensions
 {
-	return [[@[@"rks"] arrayByAddingObjectsFromArray:[SpecialistSP580 extensions]] arrayByAddingObjectsFromArray:[SpecialistMX_RAMFOS extensions]];
+	return [@[@"rks"] arrayByAddingObjectsFromArray:[SpecialistMX_RAMFOS extensions]];
 }
 
 // -----------------------------------------------------------------------------
@@ -45,7 +45,7 @@
 			case 1:
 			{
 				NSURL *url = [(ROMDisk*)self.ext URL]; if ((menuItem.state = url != nil))
-					menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+					menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
 				else
 					menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 
@@ -261,19 +261,19 @@
 
 			case 4:
 
-				return self = [[SpecialistSP580 alloc] init];
+				return self = [[SpecialistSP580 alloc] initWithType:0];
 
 			case 5:
 
-				return self = [[SpecialistMX_Commander alloc] init];
+				return self = [[SpecialistMX_Commander alloc] initWithType:0];
 
 			case 6:
 
-				return self = [[SpecialistMX_RAMFOS alloc] init];
+				return self = [[SpecialistMX_RAMFOS alloc] initWithType:0];
 
 			case 7:
 
-				return self = [[SpecialistMX2 alloc] init];
+				return self = [[SpecialistMX2 alloc] initWithType:0];
 		}
 
 		if (![self createObjects])
@@ -287,13 +287,6 @@
 	}
 
 	return self;
-}
-
-// -----------------------------------------------------------------------------
-
-- (id) init
-{
-	return self = [self initWithType:0];
 }
 
 // -----------------------------------------------------------------------------
@@ -363,9 +356,6 @@
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 	[encoder encodeObject:self.ext forKey:@"ext"];
 	[encoder encodeObject:self.snd forKey:@"snd"];
-
-	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
-	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
@@ -392,23 +382,6 @@
 		return FALSE;
 
 	return TRUE;
-}
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super initWithCoder:decoder])
-	{
-		if (![self decodeWithCoder:decoder])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
-		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
-	}
-
-	return self;
 }
 
 @end

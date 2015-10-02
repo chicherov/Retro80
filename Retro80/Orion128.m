@@ -64,6 +64,7 @@
 	if (menuItem.action == @selector(extraMemory:))
 	{
 		menuItem.state = self.ram.length != 0x20000;
+		menuItem.submenu = nil;
 		return TRUE;
 	}
 
@@ -353,13 +354,6 @@
 }
 
 // -----------------------------------------------------------------------------
-
-- (id) init
-{
-	return self = [self initWithType:0];
-}
-
-// -----------------------------------------------------------------------------
 // encodeWithCoder/decodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------
 
@@ -378,9 +372,6 @@
 
 	if (self.isFloppy)
 		[encoder encodeObject:self.fdd forKey:@"fdd"];
-
-	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
-	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
@@ -410,23 +401,6 @@
 	}
 
 	return TRUE;
-}
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super initWithCoder:decoder])
-	{
-		if (![self decodeWithCoder:decoder])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
-		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
-	}
-
-	return self;
 }
 
 @end

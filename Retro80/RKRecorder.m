@@ -29,28 +29,9 @@
 
 // -----------------------------------------------------------------------------
 
-- (void) SYNC:(uint16_t)addr status:(uint8_t)status
-{
-	if (!(hook = status == 0xA2 && enabled && !self.snd.sound.isInput))
-	{
-		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
-			[self.mem SYNC:addr status:status];
-	}
-	else if (cancel)
-	{
-		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
-			[self.mem SYNC:addr status:status];
-
-		cancel = FALSE;
-		hook = FALSE;
-	}
-}
-
-// -----------------------------------------------------------------------------
-
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	if (hook)
+	if (self.cpu.M1 && enabled && !self.snd.sound.isInput && !cancel)
 	{
 		*data = 0x76; if (panel == nil)
 		{
@@ -83,6 +64,7 @@
 	else
 	{
 		[self.mem RD:addr data:data CLK:clock];
+		cancel = FALSE;
 	}
 
 	return;
@@ -263,20 +245,9 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 // -----------------------------------------------------------------------------
 
-- (void) SYNC:(uint16_t)addr status:(uint8_t)status
-{
-	if (!(hook = status == 0xA2 && enabled && !self.snd.sound.isOutput))
-	{
-		if ([self.mem respondsToSelector:@selector(SYNC:status:)])
-			[self.mem SYNC:addr status:status];
-	}
-}
-
-// -----------------------------------------------------------------------------
-
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	if (hook)
+	if (self.cpu.M1 && enabled && !self.snd.sound.isOutput)
 	{
 		*data = 0xC9; @synchronized(self)
 		{

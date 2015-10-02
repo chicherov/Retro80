@@ -78,26 +78,9 @@
 	return TRUE;
 }
 
-- (id) init
-{
-	if (self = [super init])
-	{
-		if (![self createObjects])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.inpHook.enabled = TRUE;
-		self.outHook.enabled = TRUE;
-	}
-
-	return self;
-}
-
 - (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
-	if (self = [self init])
+	if (self = [self initWithType:0])
 	{
 		self.inpHook.buffer = data;
 		[self.kbd paste:@"I\n"];
@@ -107,7 +90,7 @@
 }
 
 // -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
+// encodeWithCoder/decodeWithCoder
 // -----------------------------------------------------------------------------
 
 - (void) encodeWithCoder:(NSCoder *)encoder
@@ -118,35 +101,26 @@
 	[encoder encodeObject:self.rom forKey:@"rom"];
 	[encoder encodeObject:self.ram forKey:@"ram"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
-
-	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
-	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
 }
 
-- (id) initWithCoder:(NSCoder *)decoder
+- (BOOL) decodeWithCoder:(NSCoder *)decoder
 {
-	if (self = [super initWithCoder:decoder])
-	{
-		if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
-			return self = nil;
+	if (![super decodeWithCoder:decoder])
+		return FALSE;
 
-		if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
-			return self = nil;
+	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+		return FALSE;
 
-		if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-			return self = nil;
+	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
+		return FALSE;
 
-		if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
-			return self = nil;
+	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
+		return FALSE;
 
-		if (![self mapObjects])
-			return self = nil;
+	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
+		return FALSE;
 
-		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
-		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
-	}
-	
-	return self;
+	return TRUE;
 }
 
 @end
@@ -260,7 +234,7 @@
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	sound.output = data != 0x00;
+	sound.output = data & 0x01;
 }
 
 @end

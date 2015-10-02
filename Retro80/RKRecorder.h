@@ -7,9 +7,7 @@
 @interface F806 : NSObject <Adjustment, RD, BYTE>
 {
 	NSOpenPanel *panel;
-
 	BOOL cancel;
-	BOOL hook;
 }
 
 - (id) initWithX8080:(X8080 *)cpu;
@@ -36,8 +34,6 @@
 @interface F80C : NSObject <Adjustment, RD, BYTE>
 {
 	NSTimeInterval last;
-
-	BOOL hook;
 }
 
 - (id) initWithX8080:(X8080 *)cpu;

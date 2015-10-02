@@ -6,14 +6,10 @@
 
 @protocol RD
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock;
-@optional
-- (void) SYNC:(uint16_t)addr status:(uint8_t)status;
 @end
 
 @protocol WR
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock;
-@optional
-- (void) SYNC:(uint16_t)addr status:(uint8_t)status;
 @end
 
 @protocol BYTE
@@ -155,6 +151,9 @@
 - (id) initWithQuartz:(unsigned)quartz start:(uint32_t)start;
 
 // -----------------------------------------------------------------------------
+
+@property uint8_t RAMDISK;
+@property BOOL M1;
 
 @property BOOL MEMIO;
 @property BOOL FF;

@@ -87,6 +87,13 @@
 @property NSObject <SoundController> *snd;
 @property NSObject <Keyboard> *kbd;
 
+- (BOOL) createObjects;
+- (BOOL) mapObjects;
+
+- (void) encodeWithCoder:(NSCoder *)encoder;
+- (BOOL) decodeWithCoder:(NSCoder *)decoder;
+- (id) initWithCoder:(NSCoder *)decoder;
+
 - (id) initWithData:(NSData *)data URL:(NSURL *)url;
 - (id) initWithType:(NSInteger)type;
 

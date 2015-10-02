@@ -505,12 +505,6 @@
 		[(NSObject<WR> *)object WR:addr data:data CLK:clock];
 }
 
-- (void) SYNC:(uint16_t)addr status:(uint8_t)status
-{
-	if ([object respondsToSelector:@selector(SYNC:status:)])
-		[object SYNC:addr status:status];
-}
-
 - (uint8_t *) BYTE:(uint16_t)addr
 {
 	return [object BYTE:addr];

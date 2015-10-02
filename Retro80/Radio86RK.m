@@ -31,9 +31,9 @@
 	if (menuItem.action == @selector(ROMDisk:))
 	{
 		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
-			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
 		else
-			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+			menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 
 		menuItem.submenu = nil;
 		return YES;
@@ -43,17 +43,17 @@
 	{
 		if (menuItem.tag == 0)
 		{
-			menuItem.state = self.isFloppy;
+			menuItem.state = self.fdd != nil;
 			return YES;
 		}
 		else
 		{
-			NSURL *url = [self.floppy getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			NSURL *url = [self.fdd getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
 			else
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
+				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
 
-			return self.isFloppy && menuItem.tag != [self.floppy selected];
+			return self.fdd != nil && menuItem.tag != [self.fdd selected];
 		}
 	}
 
@@ -124,24 +124,31 @@ static uint32_t colors[] =
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
-		if ((self.isFloppy = !self.isFloppy))
+		if (self.fdd == nil)
 		{
-			if (self.dos29 != nil || (self.dos29 = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
+			if ((self.fdd = [[Floppy alloc] init]) != nil)
 			{
-				if (self.floppy != nil || (self.floppy = [[Floppy alloc] init]) != nil)
+				if ((self.dos = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
 				{
-					[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:self.dma];
-					[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+					[self.cpu mapObject:self.dos from:0xE000 to:0xEFFF WR:self.dma];
+					[self.cpu mapObject:self.fdd from:0xF000 to:0xF7FF];
+				}
+				else
+				{
+					self.fdd = nil;
 				}
 			}
-
 		}
 		else
 		{
 			[self.cpu mapObject:self.rom from:0xE000 to:0xF7FF WR:self.dma];
+
+			self.fdd = nil;
+			self.dos = nil;
 		}
 	}
-	else if (menuItem.tag && self.isFloppy)
+
+	else if (self.fdd != nil)
 	{
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
 		panel.allowedFileTypes = @[@"rkdisk"];
@@ -151,12 +158,12 @@ static uint32_t colors[] =
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
 			[self.document registerUndoWithMenuItem:menuItem];
-			[self.floppy setDisk:menuItem.tag URL:panel.URLs.firstObject];
+			[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
 		}
-		else if ([self.floppy getDisk:menuItem.tag] != nil)
+		else if ([self.fdd getDisk:menuItem.tag] != nil)
 		{
 			[self.document registerUndoWithMenuItem:menuItem];
-			[self.floppy setDisk:menuItem.tag URL:nil];
+			[self.fdd setDisk:menuItem.tag URL:nil];
 		}
 	}
 }
@@ -167,13 +174,13 @@ static uint32_t colors[] =
 
 - (BOOL) createObjects
 {
-	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if ((self.ext = [[ROMDisk alloc] init]) == nil)
+	if (self.snd == nil && (self.snd = [[Radio86RK8253 alloc] init]) == nil)
 		return FALSE;
 
-	if ((self.snd = [[Radio86RK8253 alloc] init]) == nil)
+	if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
 		return FALSE;
 
 	if (![super createObjects])
@@ -183,6 +190,7 @@ static uint32_t colors[] =
 
 	self.snd.channel0 = TRUE;
 	self.snd.rkmode = TRUE;
+
 	return TRUE;
 }
 
@@ -192,10 +200,10 @@ static uint32_t colors[] =
 {
 	[super encodeWithCoder:encoder];
 
-	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"]; if (self.isFloppy)
+	if (self.fdd != nil)
 	{
-		[encoder encodeObject:self.floppy forKey:@"floppy"];
-		[encoder encodeObject:self.dos29 forKey:@"dos29"];
+		[encoder encodeObject:self.fdd forKey:@"fdd"];
+		[encoder encodeObject:self.dos forKey:@"dos"];
 	}
 }
 
@@ -206,12 +214,9 @@ static uint32_t colors[] =
 	if (![super decodeWithCoder:decoder])
 		return FALSE;
 
-	if ((self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"]))
+	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) != nil)
 	{
-		if ((self.floppy = [decoder decodeObjectForKey:@"floppy"]) == nil)
-			return FALSE;
-
-		if ((self.dos29 = [decoder decodeObjectForKey:@"dos29"]) == nil)
+		if ((self.dos = [decoder decodeObjectForKey:@"dos"]) == nil)
 			return FALSE;
 	}
 
@@ -261,10 +266,10 @@ static uint32_t colors[] =
 	[self.cpu mapObject:self.inpHook from:0xFB98 to:0xFB98 WR:self.dma];
 	[self.cpu mapObject:self.outHook from:0xFC46 to:0xFC46 WR:self.dma];
 
-	if (self.isFloppy)
+	if (self.fdd != nil)
 	{
-		[self.cpu mapObject:self.dos29 from:0xE000 to:0xEFFF WR:self.dma];
-		[self.cpu mapObject:self.floppy from:0xF000 to:0xF7FF];
+		[self.cpu mapObject:self.dos from:0xE000 to:0xEFFF WR:self.dma];
+		[self.cpu mapObject:self.fdd from:0xF000 to:0xF7FF];
 	}
 
 	return [super mapObjects];
@@ -273,7 +278,7 @@ static uint32_t colors[] =
 @end
 
 // =============================================================================
-//
+// Radio86RK8253 - ВИ53 (только запись) повешен параллельно ВВ55
 // =============================================================================
 
 @implementation Radio86RK8253

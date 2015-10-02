@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="7702" systemVersion="14D136" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="7706" systemVersion="14D136" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="7702"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="7706"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="Document">
@@ -32,7 +32,7 @@
             <windowCollectionBehavior key="collectionBehavior" fullScreenPrimary="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="100" y="500" width="468" height="322"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
             <value key="minSize" type="size" width="468" height="322"/>
             <view key="contentView" id="VHf-sT-NAQ">
                 <rect key="frame" x="0.0" y="0.0" width="468" height="322"/>
@@ -42,6 +42,12 @@
                         <rect key="frame" x="0.0" y="22" width="468" height="300"/>
                         <connections>
                             <outlet property="constraint" destination="2e6-Zo-PUb" id="vcN-eU-Dt2"/>
+                            <outlet property="digit1" destination="Q1s-GN-Epx" id="kWw-Wc-IhU"/>
+                            <outlet property="digit2" destination="ErH-GJ-97A" id="fJ1-Xp-vHw"/>
+                            <outlet property="digit3" destination="tUO-DX-8oi" id="UKG-MU-MCk"/>
+                            <outlet property="digit4" destination="0af-jc-DW1" id="BE6-JV-IST"/>
+                            <outlet property="digit5" destination="as5-em-ydf" id="Jwj-Qg-D8I"/>
+                            <outlet property="digit6" destination="bV2-nW-PMC" id="laF-jW-cOZ"/>
                             <outlet property="document" destination="-2" id="hsX-IB-F4h"/>
                             <outlet property="nextResponder" destination="43H-H2-5a3" id="Lok-Ks-Gfu"/>
                         </connections>
@@ -57,14 +63,68 @@
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
+                    <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="bV2-nW-PMC" customClass="Digit">
+                        <rect key="frame" x="448" y="0.0" width="13" height="22"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="13" id="cAK-Zi-gAP"/>
+                        </constraints>
+                    </customView>
+                    <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="as5-em-ydf" customClass="Digit">
+                        <rect key="frame" x="435" y="0.0" width="13" height="22"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="13" id="R9H-sK-gsp"/>
+                        </constraints>
+                    </customView>
+                    <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="0af-jc-DW1" customClass="Digit">
+                        <rect key="frame" x="409" y="0.0" width="13" height="22"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="13" id="MSs-GB-7n2"/>
+                        </constraints>
+                    </customView>
+                    <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="tUO-DX-8oi" customClass="Digit">
+                        <rect key="frame" x="396" y="0.0" width="13" height="22"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="13" id="9E1-EY-mM5"/>
+                        </constraints>
+                    </customView>
+                    <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ErH-GJ-97A" customClass="Digit">
+                        <rect key="frame" x="383" y="0.0" width="13" height="22"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="13" id="TU5-jd-82M"/>
+                        </constraints>
+                    </customView>
+                    <customView hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Q1s-GN-Epx" customClass="Digit">
+                        <rect key="frame" x="370" y="0.0" width="13" height="22"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="13" id="EhL-DL-dhG"/>
+                        </constraints>
+                    </customView>
                 </subviews>
                 <constraints>
                     <constraint firstAttribute="bottom" secondItem="ELn-iW-TvI" secondAttribute="bottom" constant="22" id="2e6-Zo-PUb"/>
+                    <constraint firstItem="Q1s-GN-Epx" firstAttribute="top" secondItem="ErH-GJ-97A" secondAttribute="top" id="3sl-bw-2xV"/>
+                    <constraint firstItem="tUO-DX-8oi" firstAttribute="leading" secondItem="ErH-GJ-97A" secondAttribute="trailing" id="4pr-8n-WMS"/>
+                    <constraint firstItem="ErH-GJ-97A" firstAttribute="leading" secondItem="Q1s-GN-Epx" secondAttribute="trailing" id="58d-CX-0QA"/>
+                    <constraint firstAttribute="bottom" secondItem="bV2-nW-PMC" secondAttribute="bottom" id="Asj-4L-ckR"/>
                     <constraint firstItem="ELn-iW-TvI" firstAttribute="leading" secondItem="VHf-sT-NAQ" secondAttribute="leading" id="E94-kJ-nuR"/>
+                    <constraint firstItem="bV2-nW-PMC" firstAttribute="top" secondItem="ggy-Fu-duH" secondAttribute="top" id="F5R-pH-nTX"/>
+                    <constraint firstItem="tUO-DX-8oi" firstAttribute="top" secondItem="bV2-nW-PMC" secondAttribute="top" id="Fg4-7G-8Le"/>
                     <constraint firstItem="ggy-Fu-duH" firstAttribute="leading" secondItem="VHf-sT-NAQ" secondAttribute="leading" constant="7" id="InQ-j3-e1K"/>
+                    <constraint firstItem="0af-jc-DW1" firstAttribute="leading" secondItem="tUO-DX-8oi" secondAttribute="trailing" id="Ip2-zM-lab"/>
+                    <constraint firstItem="tUO-DX-8oi" firstAttribute="top" secondItem="as5-em-ydf" secondAttribute="top" id="M3v-ef-ha2"/>
+                    <constraint firstAttribute="bottom" secondItem="tUO-DX-8oi" secondAttribute="bottom" id="Oay-VC-9Hy"/>
+                    <constraint firstItem="as5-em-ydf" firstAttribute="leading" secondItem="0af-jc-DW1" secondAttribute="trailing" constant="13" id="ZMC-SG-N4t"/>
+                    <constraint firstAttribute="trailing" secondItem="bV2-nW-PMC" secondAttribute="trailing" constant="7" id="ZbR-bZ-FUs"/>
                     <constraint firstAttribute="bottom" secondItem="ggy-Fu-duH" secondAttribute="bottom" id="eu8-YM-pAG"/>
                     <constraint firstAttribute="trailing" secondItem="ELn-iW-TvI" secondAttribute="trailing" id="kcv-gh-kx9"/>
+                    <constraint firstAttribute="bottom" secondItem="Q1s-GN-Epx" secondAttribute="bottom" id="lBe-64-WsI"/>
+                    <constraint firstItem="bV2-nW-PMC" firstAttribute="leading" secondItem="as5-em-ydf" secondAttribute="trailing" id="m8l-L5-Yi9"/>
                     <constraint firstItem="ELn-iW-TvI" firstAttribute="top" secondItem="VHf-sT-NAQ" secondAttribute="top" id="q9T-J4-cSJ"/>
+                    <constraint firstAttribute="bottom" secondItem="as5-em-ydf" secondAttribute="bottom" id="qN1-x6-wck"/>
+                    <constraint firstItem="tUO-DX-8oi" firstAttribute="top" secondItem="0af-jc-DW1" secondAttribute="top" id="t3u-VI-Bsq"/>
+                    <constraint firstItem="Q1s-GN-Epx" firstAttribute="top" secondItem="tUO-DX-8oi" secondAttribute="top" id="utq-FI-yGZ"/>
+                    <constraint firstAttribute="bottom" secondItem="ErH-GJ-97A" secondAttribute="bottom" id="wfa-pf-Tr9"/>
+                    <constraint firstAttribute="bottom" secondItem="0af-jc-DW1" secondAttribute="bottom" id="xRA-jd-0s8"/>
                 </constraints>
             </view>
             <contentBorderThickness minY="22"/>
@@ -75,7 +135,7 @@
         <window title="Ретро КР580: Отладчик" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES"/>
             <rect key="contentRect" x="167" y="107" width="783" height="522"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
             <view key="contentView" id="qfh-TF-8L7">
                 <rect key="frame" x="0.0" y="0.0" width="783" height="522"/>
                 <autoresizingMask key="autoresizingMask"/>
@@ -87,7 +147,7 @@
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <textView importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" id="FeX-Q1-ED0">
-                                    <rect key="frame" x="0.0" y="0.0" width="778" height="518"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="781" height="520"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                     <size key="minSize" width="781" height="520"/>
@@ -107,7 +167,7 @@
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                         <scroller key="verticalScroller" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="HgN-ys-NyT">
-                            <rect key="frame" x="224" y="1" width="15" height="133"/>
+                            <rect key="frame" x="766" y="1" width="16" height="520"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
                     </scrollView>

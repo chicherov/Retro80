@@ -2,16 +2,6 @@
 
 @implementation Computer
 
-- (id) initWithData:(NSData *)data URL:(NSURL *)url
-{
-	return self = nil;
-}
-
-- (id) initWithType:(NSInteger)type
-{
-	return [self init];
-}
-
 + (NSString *) title
 {
 	return nil;
@@ -80,7 +70,7 @@
 	if (menuItem.action == @selector(ROMDisk:))
 		menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
 
-	if (menuItem.action == @selector(monitorROM:))
+	if (menuItem.action == @selector(UT88:))
 		menuItem.hidden = TRUE;
 
 	menuItem.state = FALSE;
@@ -98,7 +88,7 @@
 {
 }
 
-- (IBAction) monitorROM:(id)sender
+- (IBAction) UT88:(id)sender
 {
 }
 
@@ -162,6 +152,70 @@
 - (IBAction) outHook:(NSMenuItem *)menuItem
 {
 	self.outHook.enabled = !self.outHook.enabled;
+}
+
+// -----------------------------------------------------------------------------
+// Инициализация
+// -----------------------------------------------------------------------------
+
+- (BOOL) createObjects
+{
+	return FALSE;
+}
+
+- (BOOL) mapObjects
+{
+	return FALSE;
+}
+
+- (void) encodeWithCoder:(NSCoder *)encoder
+{
+	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
+	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
+}
+
+- (BOOL) decodeWithCoder:(NSCoder *)decoder
+{
+	return TRUE;
+}
+
+- (id) initWithCoder:(NSCoder *)decoder
+{
+	if (self = [super initWithCoder:decoder])
+	{
+		if (![self decodeWithCoder:decoder])
+			return self = nil;
+
+		if (![self mapObjects])
+			return self = nil;
+
+		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
+		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+	}
+
+	return self;
+}
+
+- (id) initWithData:(NSData *)data URL:(NSURL *)url
+{
+	return self = nil;
+}
+
+- (id) initWithType:(NSInteger)type
+{
+	if (self = [super init])
+	{
+		if (![self createObjects])
+			return self = nil;
+
+		if (![self mapObjects])
+			return self = nil;
+
+		self.inpHook.enabled = TRUE;
+		self.outHook.enabled = TRUE;
+	}
+
+	return self;
 }
 
 // -----------------------------------------------------------------------------

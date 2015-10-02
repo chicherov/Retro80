@@ -1,6 +1,24 @@
 #import "Retro80.h"
 #import "Display.h"
 
+@implementation Digit
+@synthesize segments;
+NSImage *image;
+
+- (void) drawRect:(NSRect)rect
+{
+	if (image == nil)
+		image = [[NSImage alloc] initWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"digits" ofType:@"png"]];
+
+	[image drawInRect:rect
+			 fromRect:NSMakeRect((segments & 15) * 60, (~(segments >> 4) & 7) * 100, 60, 100)
+			operation:NSCompositeSourceOver
+			 fraction: 1.0
+	 ];
+}
+
+@end
+
 @implementation Display
 {
 	IBOutlet NSLayoutConstraint *constraint;

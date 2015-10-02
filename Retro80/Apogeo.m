@@ -31,9 +31,9 @@
 	if (menuItem.action == @selector(ROMDisk:))
 	{
 		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
-			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
 		else
-			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+			menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 
 		menuItem.submenu = nil;
 		return YES;

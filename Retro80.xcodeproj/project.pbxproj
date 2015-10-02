@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D907F01F1B1BB45500616107 /* digits.png in Resources */ = {isa = PBXBuildFile; fileRef = D907F01E1B1BB45500616107 /* digits.png */; };
 		D90D94141B09A27300CE2475 /* Orion128Floppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D90D94131B09A27300CE2475 /* Orion128Floppy.m */; };
 		D91B89EF1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin in Resources */ = {isa = PBXBuildFile; fileRef = D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */; };
 		D91FBD7E19AE60A70002128E /* Sound.m in Sources */ = {isa = PBXBuildFile; fileRef = D91FBD7D19AE60A70002128E /* Sound.m */; };
+		D92059E81B1C8638009D353D /* UT88-0.bin in Resources */ = {isa = PBXBuildFile; fileRef = D92059E71B1C8638009D353D /* UT88-0.bin */; };
 		D92701851B073E1D00CC51BD /* Orion128.m in Sources */ = {isa = PBXBuildFile; fileRef = D92701841B073E1D00CC51BD /* Orion128.m */; };
 		D92701881B07429F00CC51BD /* Orion128Screen.m in Sources */ = {isa = PBXBuildFile; fileRef = D92701871B07429F00CC51BD /* Orion128Screen.m */; };
 		D927018B1B074B8800CC51BD /* Orion128-1.bin in Resources */ = {isa = PBXBuildFile; fileRef = D92701891B074B8800CC51BD /* Orion128-1.bin */; };
@@ -68,7 +70,7 @@
 		D9B6E5ED1AFBDAF300175E50 /* SpecialistMX_Commander.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */; };
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
 		D9DE3A281B18E84C006B4104 /* UT88.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3E219B4584200C3ED9A /* UT88.m */; };
-		D9DE3A2B1B18EAA2006B4104 /* UT88.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9DE3A291B18EAA2006B4104 /* UT88.bin */; };
+		D9DE3A2B1B18EAA2006B4104 /* UT88-F.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9DE3A291B18EAA2006B4104 /* UT88-F.bin */; };
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
@@ -101,11 +103,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D907F01E1B1BB45500616107 /* digits.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = digits.png; sourceTree = "<group>"; };
 		D90D94121B09A27300CE2475 /* Orion128Floppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orion128Floppy.h; sourceTree = "<group>"; };
 		D90D94131B09A27300CE2475 /* Orion128Floppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Orion128Floppy.m; sourceTree = "<group>"; };
 		D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_RAMFOS.bin; path = Retro80/ROM/SpecialistMX_RAMFOS.bin; sourceTree = "<group>"; };
 		D91FBD7C19AE60A70002128E /* Sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sound.h; sourceTree = "<group>"; };
 		D91FBD7D19AE60A70002128E /* Sound.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Sound.m; sourceTree = "<group>"; };
+		D92059E71B1C8638009D353D /* UT88-0.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "UT88-0.bin"; path = "Retro80/ROM/UT88-0.bin"; sourceTree = "<group>"; };
 		D92701831B073E1D00CC51BD /* Orion128.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orion128.h; sourceTree = "<group>"; };
 		D92701841B073E1D00CC51BD /* Orion128.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Orion128.m; sourceTree = "<group>"; };
 		D92701861B07429F00CC51BD /* Orion128Screen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orion128Screen.h; sourceTree = "<group>"; };
@@ -190,7 +194,7 @@
 		D9A82D6B1B0C9B0400DC9B5F /* ORDOS-4.03.rom */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ORDOS-4.03.rom"; path = "Retro80/ROM/ORDOS-4.03.rom"; sourceTree = "<group>"; };
 		D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_Commander.bin; path = Retro80/ROM/SpecialistMX_Commander.bin; sourceTree = "<group>"; };
 		D9CC91F419BEF8840038106A /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Retro80/ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		D9DE3A291B18EAA2006B4104 /* UT88.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = UT88.bin; path = Retro80/ROM/UT88.bin; sourceTree = "<group>"; };
+		D9DE3A291B18EAA2006B4104 /* UT88-F.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "UT88-F.bin"; path = "Retro80/ROM/UT88-F.bin"; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
 		D9EBB61F19B47E1300C833CA /* x8080.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8080.m; sourceTree = "<group>"; };
 		D9EBB62219B47E8B00C833CA /* mem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mem.h; sourceTree = "<group>"; };
@@ -241,7 +245,8 @@
 				D93DC7351AB2CE5B0005D473 /* SYMGEN.BIN */,
 				D93DC73B1AB2CE5B0005D473 /* Micro80.bin */,
 				D93DC73E1AB2CE5B0005D473 /* Micro80.fnt */,
-				D9DE3A291B18EAA2006B4104 /* UT88.bin */,
+				D92059E71B1C8638009D353D /* UT88-0.bin */,
+				D9DE3A291B18EAA2006B4104 /* UT88-F.bin */,
 				D93DC73D1AB2CE5B0005D473 /* Radio86RK.bin */,
 				D93DC73C1AB2CE5B0005D473 /* Microsha.bin */,
 				D93DC7381AB2CE5B0005D473 /* Apogeo.bin */,
@@ -310,6 +315,7 @@
 				D9FE179C19B9F874008EBD32 /* Computer.m */,
 				D974FCCA19ADEA080041DF91 /* Display.h */,
 				D974FCCB19ADEA080041DF91 /* Display.m */,
+				D907F01E1B1BB45500616107 /* digits.png */,
 				D91FBD7C19AE60A70002128E /* Sound.h */,
 				D91FBD7D19AE60A70002128E /* Sound.m */,
 				D9F1C4181AE189F900E927F7 /* Debug.h */,
@@ -351,12 +357,12 @@
 				D974FCE119AE08190041DF91 /* Microsha.m */,
 				D974FCE819AE10500041DF91 /* Apogeo.h */,
 				D974FCE919AE10500041DF91 /* Apogeo.m */,
+				D98BEB4819F2A2DC008E4EC4 /* Partner.h */,
+				D98BEB4919F2A2DC008E4EC4 /* Partner.m */,
 				D9A4245E19B8974A00DAA3E0 /* ROMDisk.h */,
 				D9A4245F19B8974A00DAA3E0 /* ROMDisk.m */,
 				D982B4E519BCB62C005350CC /* Floppy.h */,
 				D982B4E619BCB62C005350CC /* Floppy.m */,
-				D98BEB4819F2A2DC008E4EC4 /* Partner.h */,
-				D98BEB4919F2A2DC008E4EC4 /* Partner.m */,
 			);
 			name = Radio86RK;
 			sourceTree = "<group>";
@@ -518,7 +524,7 @@
 				D93DC7431AB2CE5B0005D473 /* dos29.bin in Resources */,
 				D92894F71AB2DDD50039C236 /* SpecialistSP580.bin in Resources */,
 				D953B74E1AD329A900C99F05 /* Specialist2SD.bin in Resources */,
-				D9DE3A2B1B18EAA2006B4104 /* UT88.bin in Resources */,
+				D9DE3A2B1B18EAA2006B4104 /* UT88-F.bin in Resources */,
 				D927018B1B074B8800CC51BD /* Orion128-1.bin in Resources */,
 				D9A82D6D1B0C9B0400DC9B5F /* ORDOS-4.03.rom in Resources */,
 				D974FCAA19ADE9450041DF91 /* Document.xib in Resources */,
@@ -536,10 +542,12 @@
 				D9A1AADC1AB1AAD400D0E5FF /* Specialist1.bin in Resources */,
 				D93DC7441AB2CE5B0005D473 /* mcpg.bin in Resources */,
 				D93DC7401AB2CE5B0005D473 /* Basic.bin in Resources */,
+				D907F01F1B1BB45500616107 /* digits.png in Resources */,
 				D93DC7421AB2CE5B0005D473 /* Apogeo.bin in Resources */,
 				D99ACCA61AB9824600E05074 /* Lik.bin in Resources */,
 				D93DC7411AB2CE5B0005D473 /* Partner.bin in Resources */,
 				D93DC7461AB2CE5B0005D473 /* Microsha.bin in Resources */,
+				D92059E81B1C8638009D353D /* UT88-0.bin in Resources */,
 				D93DC7471AB2CE5B0005D473 /* Radio86RK.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
