@@ -455,7 +455,7 @@
 
 - (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
-	if (self = [self init])
+	if (self = [self initWithType:0])
 	{
 		unsigned addr; if ([url.pathExtension.lowercaseString isEqualToString:@"mon"])
 		{

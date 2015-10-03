@@ -293,8 +293,8 @@
 
 - (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
-	if ([[SpecialistSP580 extensions] containsObject:url.pathExtension.lowercaseString])
-		return self = [[SpecialistSP580 alloc] initWithData:data URL:url];
+//	if ([[SpecialistSP580 extensions] containsObject:url.pathExtension.lowercaseString])
+//		return self = [[SpecialistSP580 alloc] initWithData:data URL:url];
 
 	if ([[SpecialistMX_RAMFOS extensions] containsObject:url.pathExtension.lowercaseString])
 		return self = [[SpecialistMX_RAMFOS alloc] initWithData:data URL:url];
