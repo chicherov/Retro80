@@ -74,13 +74,15 @@
 // Подсчет контрольной суммы для Радио86РК/Микроша
 // -----------------------------------------------------------------------------
 
-static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
+static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 {
 	uint8_t B = 0x00, C = 0x00; while (size--)
 	{
-		if (!microsha)
+		if (type != 2)
 		{
-			bool CF = (C + *ptr) > 0xFF; C += *ptr; if (size)
+			bool CF = (C + *ptr) > 0xFF; C += *ptr;
+
+			if (type == 4) B += CF; else if (size)
 			{
 				B += *ptr + (CF ? 1 : 0);
 			}
@@ -111,7 +113,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 
 - (void) open
 {
-	panel.allowedFileTypes = @[@"wav", @"bin", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension];
+	panel.allowedFileTypes = @[@"wav", @"bin", @"com", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension];
 
 	if ([self.extension isEqualToString:@"rko"])
 		panel.allowedFileTypes = [panel.allowedFileTypes arrayByAddingObjectsFromArray:@[@"ord", @"bru"]];
@@ -153,7 +155,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 						NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:0x4D];
 						[mutableData appendBytes:ptr length:len];
 
-						uint16_t cs = csum(ptr, len, FALSE);
+						uint16_t cs = csum(ptr, len, self.type);
 						buffer[0x49] = cs >> 8; buffer[0x4A] = cs & 0xFF;
 						[mutableData appendBytes:buffer + 0x46 length:5];
 
@@ -174,7 +176,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 				}
 			}
 
-			else if ([fileExt isEqualToString:@"bin"])
+			else if ([fileExt isEqualToString:@"bin"] || [fileExt isEqualToString:@"com"])
 			{
 				if (self.buffer.length && self.buffer.length <= 0x10000)
 				{
@@ -182,15 +184,28 @@ static uint16_t csum(const uint8_t* ptr, size_t size, bool microsha)
 					buffer[2] = ((self.buffer.length - 1) >> 8) & 0xFF;
 					buffer[3] = (self.buffer.length - 1) & 0xFF;
 
+					if ([fileExt isEqualToString:@"com"])
+					{
+						buffer[0]++; buffer[2]++;
+					}
+
+					if (self.type == 3)
+					{
+						uint8_t tmp = buffer[0]; buffer[0] = buffer[1]; buffer[1] = tmp;
+						tmp = buffer[2]; buffer[2] = buffer[3]; buffer[3] = tmp;
+					}
+
 					NSMutableData *mutableData = [NSMutableData dataWithBytes:buffer length:4];
 					[mutableData appendData:self.buffer];
 
 					if (self.type)
 					{
-						uint16_t cs = csum(self.buffer.bytes, self.buffer.length, self.type == 2);
-						buffer[2] = cs >> 8; buffer[3] = cs & 0xFF; buffer[1] = 0xE6;
+						uint16_t cs = csum(self.buffer.bytes, self.buffer.length, self.type);
+						buffer[2] = self.type == 3 ? cs & 0xFF : cs >> 8;
+						buffer[3] = self.type == 3 ? cs >> 8 : cs & 0xFF;
+						buffer[0] = 0x00; buffer[1] = 0xE6;
 
-						if (self.type == 2)
+						if (self.type == 2 || self.type == 3)
 							[mutableData appendBytes:buffer + 2 length:2];
 						else
 							[mutableData appendBytes:buffer length:4];

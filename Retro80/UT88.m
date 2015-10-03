@@ -284,7 +284,7 @@
 			self.inpHook.snd = self.snd;
 
 			self.inpHook.extension = @"rku";
-			self.inpHook.type = 1;
+			self.inpHook.type = 4;
 
 			self.inpHook.enabled = TRUE;
 		}
@@ -298,7 +298,7 @@
 			self.outHook.snd = self.snd;
 
 			self.outHook.extension = @"rku";
-			self.outHook.type = 1;
+			self.outHook.type = 4;
 
 			self.outHook.enabled = TRUE;
 		}
