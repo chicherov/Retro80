@@ -326,6 +326,9 @@
 				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-2" mask:0x07FF]) == nil)
 					return self = nil;
 
+				if ((self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
+					return self = nil;
+
 				break;
 
 			case 3:

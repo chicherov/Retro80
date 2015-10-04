@@ -7,6 +7,7 @@
 @implementation Orion128Screen
 {
 	uint32_t* bitmap;
+	NSUInteger width;
 }
 
 @synthesize display;
@@ -19,8 +20,8 @@
 {
 	if (memory)
 	{
-		if (bitmap == NULL)
-			bitmap = [self.display setupGraphicsWidth:384 height:256];
+		if (bitmap == NULL || (color & 0x04 && width != 384) || ((color & 0x06) == 0x02 && width != 400))
+			bitmap = [self.display setupGraphicsWidth:width = ((color & 0x06) == 0x02 ? 400 : 384) height:256];
 
 		if (color & 0x04)
 		{
@@ -72,9 +73,9 @@
 			uint32_t c0 = color & 0x02 ? 0xFF000000 : color & 0x01 ? 0xFFFFFF55 : 0xFF000000;
 			uint32_t c1 = color & 0x02 ? 0xFF000000 : color & 0x01 ? 0xFF55FFFF : 0xFF00AA00;
 
-			for (uint16_t addr = 0x0000; addr < 0x3000; addr++)
+			for (uint16_t addr = 0x0000; addr < width * 32; addr++)
 			{
-				uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * 384;
+				uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * width;
 				uint8_t byte = memory[(page << 14) + addr];
 
 				for (uint8_t mask = 0x80; mask; mask >>= 1)
