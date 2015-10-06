@@ -215,10 +215,7 @@
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:22500000 start:0xF800]) == nil)
 		return FALSE;
 
-	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-1" mask:0x07FF]) == nil)
-		return FALSE;
-
-	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
+	if (self.rom == nil || self.ram == nil)
 		return FALSE;
 
 	if (self.crt == nil && (self.crt = [[Orion128Screen alloc] init]) == nil)
@@ -319,6 +316,11 @@
 				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-1" mask:0x07FF]) == nil)
 					return self = nil;
 
+				if ((self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
+					return self = nil;
+
+				self.ram.mutableBytes[0x10000] = 0xFF;
+
 				break;
 
 			case 2:
@@ -340,11 +342,15 @@
 					return self = nil;
 
 				self.isFloppy = TRUE;
+				
 				break;
 		}
 
 		if (![self createObjects])
 			return self = nil;
+
+		self.ext.URL = [[NSBundle mainBundle] URLForResource:type == 1 ? @"ORDOS-2.40" : @"ORDOS-4.03"
+											   withExtension:@"rom"];
 
 		if (![self mapObjects])
 			return self = nil;
