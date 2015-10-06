@@ -133,7 +133,8 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 			pos = 0; if ([@[@"pki", @"gam", @"bss", @"bsm"] containsObject:fileExt])
 			{
 				if (self.buffer.length && *(const uint8_t *)self.buffer.bytes == 0xE6)
-					pos++;
+					self.buffer = [NSData dataWithBytes:(const uint8_t *)self.buffer.bytes + 1
+												 length:self.buffer.length - 1];
 			}
 
 			else if ([@[@"ord", @"bru"] containsObject:fileExt])
