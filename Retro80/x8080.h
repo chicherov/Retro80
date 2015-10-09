@@ -41,6 +41,7 @@
 @interface X8080 : NSObject <Processor, Debug, NSCoding>
 {
 	unsigned quartz;
+	BOOL Z80, WAIT;
 	uint64_t CLK;
 
 	uint8_t PAGE;
@@ -60,7 +61,7 @@
 			uint8_t A;
 		};
 
-	} AF;
+	} AF, AF1;
 
 	union
 	{
@@ -70,7 +71,7 @@
 			uint8_t B;
 		};
 
-	} BC;
+	} BC, BC1;
 
 	union
 	{
@@ -80,9 +81,9 @@
 			uint8_t D;
 		};
 
-	} DE;
+	} DE, DE1;
 
-	union
+	union HL
 	{
 		uint16_t HL; struct
 		{
@@ -90,15 +91,22 @@
 			uint8_t H;
 		};
 		
-	} HL;
+	} HL, HL1, IX, IY;
+
+	uint8_t IR_R;
+	uint8_t IR_I;
 
 	// -------------------------------------------------------------------------
-	// Сигнал IRQ
+	// Сигналы NMI/IRQ
 	// -------------------------------------------------------------------------
+
+	BOOL (*CallNMI) (id, SEL, uint64_t);
+	NSObject<IRQ> *NMI;
 
 	BOOL (*CallIRQ) (id, SEL, uint64_t);
 	NSObject<IRQ> *IRQ;
 	uint8_t RST;
+	uint8_t IM;
 
 	// -------------------------------------------------------------------------
 	// Сигнал INTE
@@ -106,7 +114,7 @@
 
 	void (*CallINTE) (id, SEL, BOOL, uint64_t);
 	NSObject<INTE> *INTE;
-	BOOL IF;
+	BOOL IF, IFF2;
 
 	// -------------------------------------------------------------------------
 	// Сигнал HLDA
@@ -117,38 +125,46 @@
 }
 
 @property unsigned quartz;
-@property uint64_t CLK;
+@property BOOL Z80, WAIT;
 
+@property uint64_t CLK;
 @property uint8_t PAGE;
 
 @property uint16_t PC;
 @property uint16_t SP;
 
-@property uint16_t AF;
-@property uint16_t BC;
-@property uint16_t DE;
-@property uint16_t HL;
+@property uint16_t AF, AF1;
+@property uint16_t BC, BC1;
+@property uint16_t DE, DE1;
+@property uint16_t HL, HL1;
+@property uint16_t IX, IY;
 
-@property uint8_t A;
-@property uint8_t F;
-@property uint8_t B;
-@property uint8_t C;
-@property uint8_t D;
-@property uint8_t E;
-@property uint8_t H;
-@property uint8_t L;
+@property uint8_t A, A1;
+@property uint8_t F, F1;
+@property uint8_t B, B1;
+@property uint8_t C, C1;
+@property uint8_t D, D1;
+@property uint8_t E, E1;
+@property uint8_t H, H1;
+@property uint8_t L, L1;
 
+@property uint8_t IXH, IXL;
+@property uint8_t IYH, IYL;
+
+@property NSObject<IRQ> *NMI;
 @property NSObject<IRQ> *IRQ;
 @property uint8_t RST;
+@property uint8_t IM;
 
 @property NSObject<INTE> *INTE;
-@property BOOL IF;
+@property BOOL IF, IFF2;
 
 @property NSObject<HLDA> *HLDA;
 
 // -----------------------------------------------------------------------------
 
 - (id) initWithQuartz:(unsigned)quartz start:(uint32_t)start;
+- (id) initZ80WithQuartz:(unsigned)quartz wait:(BOOL)wait start:(uint32_t)start;
 
 // -----------------------------------------------------------------------------
 

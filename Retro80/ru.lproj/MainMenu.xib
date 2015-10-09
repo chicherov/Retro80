@@ -180,6 +180,19 @@
                                                             <action selector="newDocument:" target="-1" id="nCL-0I-0yA"/>
                                                         </connections>
                                                     </menuItem>
+                                                    <menuItem isSeparatorItem="YES" id="EX0-9G-MKk"/>
+                                                    <menuItem title="Z80Card V3.2" tag="804" id="4yQ-Xm-KMS">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="GVj-JX-ahj"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Z80Card-II" tag="805" id="Zt8-Tv-QCT">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="TUt-9j-J79"/>
+                                                        </connections>
+                                                    </menuItem>
                                                 </items>
                                             </menu>
                                             <connections>

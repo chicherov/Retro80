@@ -71,6 +71,7 @@
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
 		D9DE3A281B18E84C006B4104 /* UT88.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3E219B4584200C3ED9A /* UT88.m */; };
 		D9DE3A2B1B18EAA2006B4104 /* UT88-F.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9DE3A291B18EAA2006B4104 /* UT88-F.bin */; };
+		D9E7ED591BC42AEC00AA5F43 /* Orion128-Z.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9E7ED581BC42AEC00AA5F43 /* Orion128-Z.bin */; settings = {ASSET_TAGS = (); }; };
 		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
@@ -195,6 +196,7 @@
 		D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_Commander.bin; path = Retro80/ROM/SpecialistMX_Commander.bin; sourceTree = "<group>"; };
 		D9CC91F419BEF8840038106A /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = Retro80/ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D9DE3A291B18EAA2006B4104 /* UT88-F.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "UT88-F.bin"; path = "Retro80/ROM/UT88-F.bin"; sourceTree = "<group>"; };
+		D9E7ED581BC42AEC00AA5F43 /* Orion128-Z.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "Orion128-Z.bin"; path = "Retro80/ROM/Orion128-Z.bin"; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
 		D9EBB61F19B47E1300C833CA /* x8080.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8080.m; sourceTree = "<group>"; };
 		D9EBB62219B47E8B00C833CA /* mem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mem.h; sourceTree = "<group>"; };
@@ -266,6 +268,7 @@
 				D92701891B074B8800CC51BD /* Orion128-1.bin */,
 				D927018A1B074B8800CC51BD /* Orion128-2.bin */,
 				D9462F491B09D1850095D51A /* Orion128-3.bin */,
+				D9E7ED581BC42AEC00AA5F43 /* Orion128-Z.bin */,
 				D9A82D6A1B0C9B0400DC9B5F /* ORDOS-2.40.rom */,
 				D9A82D6B1B0C9B0400DC9B5F /* ORDOS-4.03.rom */,
 			);
@@ -548,6 +551,7 @@
 				D93DC7411AB2CE5B0005D473 /* Partner.bin in Resources */,
 				D93DC7461AB2CE5B0005D473 /* Microsha.bin in Resources */,
 				D92059E81B1C8638009D353D /* UT88-0.bin in Resources */,
+				D9E7ED591BC42AEC00AA5F43 /* Orion128-Z.bin in Resources */,
 				D93DC7471AB2CE5B0005D473 /* Radio86RK.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

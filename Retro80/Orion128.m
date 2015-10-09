@@ -215,7 +215,10 @@
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:22500000 start:0xF800]) == nil)
 		return FALSE;
 
-	if (self.rom == nil || self.ram == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
+		return FALSE;
+
+	if (self.rom == nil)
 		return FALSE;
 
 	if (self.crt == nil && (self.crt = [[Orion128Screen alloc] init]) == nil)
@@ -328,9 +331,6 @@
 				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-2" mask:0x07FF]) == nil)
 					return self = nil;
 
-				if ((self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
-					return self = nil;
-
 				break;
 
 			case 3:
@@ -338,13 +338,30 @@
 				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3" mask:0x07FF]) == nil)
 					return self = nil;
 
-				if ((self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
+				break;
+
+			case 4:
+
+				if ((self.cpu = [[X8080 alloc] initZ80WithQuartz:5000000 wait:TRUE start:0xF800]) == nil)
+					return FALSE;
+
+				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-Z" mask:0x07FF]) == nil)
 					return self = nil;
 
-				self.isFloppy = TRUE;
-				
+				break;
+
+			case 5:
+
+				if ((self.cpu = [[X8080 alloc] initZ80WithQuartz:10000000 wait:FALSE start:0xF800]) == nil)
+					return FALSE;
+
+				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-Z" mask:0x07FF]) == nil)
+					return self = nil;
+
 				break;
 		}
+
+		self.isFloppy = type != 1;
 
 		if (![self createObjects])
 			return self = nil;
