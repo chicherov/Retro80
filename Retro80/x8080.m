@@ -602,83 +602,23 @@ static uint16_t AND[2][0x100][0x100];
 
 		uint8_t CMD; if (Z80)
 		{
-			if (NMI && CallNMI(NMI, @selector(IRQ:), CLK))
-			{
-				CLK += 63; IF = FALSE;
-
-				put(self, --SP, PC >> 8, 0x04);
-				put(self, --SP, PC, 0x04);
-
-				PC = 0x0066;
-				continue;
-			}
-
-			else if (IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK) && IF)
-			{
-				CLK += 63; switch (IM)
-				{
-					case 0:	// IM 0
-
-						IF = IFF2 = FALSE;
-
-						put(self, --SP, PC >> 8, 0x04);
-						put(self, --SP, PC, 0x04);
-
-						PC = RST & 0x0038;
-						continue;
-
-					case 1:	// IM 1
-
-						IF = IFF2 = FALSE;
-
-						put(self, --SP, PC >> 8, 0x04);
-						put(self, --SP, PC, 0x04);
-
-						PC = 0x0038;
-						continue;
-
-					case 2:	// IM 2
-
-						IF = IFF2 = FALSE;
-
-						put(self, --SP, PC >> 8, 0x04);
-						put(self, --SP, PC, 0x04);
-
-						WZ.Z = get(self, ((IR_I << 8) | RST) + 0, 0x82);
-						WZ.W = get(self, ((IR_I << 8) | RST) + 1, 0x82);
-
-						PC = WZ.WZ;
-						continue;
-
-					default:
-
-						CMD = get(self, PC++, 0xA2);
-						CLK += timings[1][CMD];
-				}
-			}
-
-			else
-			{
-				CMD = get(self, PC++, 0xA2);
-				CLK += timings[1][CMD];
-			}
+			CMD = get(self, PC++, 0xA2);
+			CLK += timings[1][CMD];
 		}
-
 		else
 		{
-			CLK += 9;
-
-			if (IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK) && IF)
-				CMD = RST;
-			else
-				CMD = MEMR(self, PC++, CLK, 0xA2);
-
+			CLK += 9; CMD = MEMR(self, PC++, CLK, 0xA2);
 			CLK += 9; CLK += HOLD(self, timings[0][CMD]);
 		}
 
 		union HL *pHL = &HL; while (1)
 		{
-			switch (CMD)
+			if ((IR_R & 0x7F) == 0x7F)
+				IR_R &= 0x80;
+			else
+				IR_R++;
+
+			BOOL HLD = CMD == 0x76; switch (CMD)
 			{
 				case 0x00:	// NOP
 				{
@@ -3554,13 +3494,47 @@ static uint16_t AND[2][0x100][0x100];
 					
 			}
 
+			if (NMI && CallNMI(NMI, @selector(IRQ:), CLK))
+			{
+				CLK += 63; IF = FALSE; PC += HLD;
+
+				put(self, --SP, PC >> 8, 0x04);
+				put(self, --SP, PC, 0x04);
+
+				PC = 0x0066;
+				break;
+			}
+
+			if (IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK) && IF)
+			{
+				CLK += 63; IF = IFF2 = FALSE; PC += HLD;
+				put(self, --SP, PC >> 8, 0x04);
+				put(self, --SP, PC, 0x04);
+
+				switch (IM)
+				{
+					case 0:	// IM 0
+
+						PC = RST & 0x0038;
+						break;
+
+					case 1:	// IM 1
+
+						PC = 0x0038;
+						break;
+
+					case 2:	// IM 2
+
+						WZ.Z = get(self, ((IR_I << 8) | RST) + 0, 0x82);
+						WZ.W = get(self, ((IR_I << 8) | RST) + 1, 0x82);
+
+						PC = WZ.WZ;
+						break;
+				}
+			}
+			
 			break;
 		}
-
-		if ((IR_R & 0x7F) == 0x7F)
-			IR_R &= 0x80;
-		else
-			IR_R++;
 	}
 
 	return TRUE;

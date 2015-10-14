@@ -8,7 +8,7 @@
 {
 	uint32_t* bitmap;
 	NSUInteger width;
-	BOOL IRQ;
+	uint64_t IRQ;
 }
 
 @synthesize display;
@@ -23,7 +23,7 @@
 
 - (void) draw
 {
-	IRQ = IE; if (memory)
+	if (memory)
 	{
 		if (bitmap == NULL || (page & 0x80 ? width != 480 : width == 480) || (color & 0x04 && width == 400) || ((color & 0x06) == 0x02 && width == 384))
 			bitmap = [self.display setupGraphicsWidth:width = (page & 0x80 ? 480 : (color & 0x06) == 0x02 ? 400 : 384) height:256];
@@ -42,12 +42,12 @@
 					uint32_t c0, c1;
 
 					if (byte1 & 0x80)
-						c0 = 0xFF555555 | (byte1 & 0x40 ? 0x000000FF : 0) | (byte1 & 0x20 ? 0x0000FF00 : 0) | (byte1 & 0x10 ? 0x00FF0000 : 0);
+						c0 = 0xFF000000 | (byte1 & 0x40 ? 0x000000FF : 0) | (byte1 & 0x20 ? 0x0000FF00 : 0) | (byte1 & 0x10 ? 0x00FF0000 : 0);
 					else
 						c0 = 0xFF000000 | (byte1 & 0x40 ? 0x000000AA : 0) | (byte1 & 0x20 ? 0x0000AA00 : 0) | (byte1 & 0x10 ? 0x00AA0000 : 0);
 
 					if (byte1 & 0x08)
-						c1 = 0xFF555555 | (byte1 & 0x04 ? 0x000000FF : 0) | (byte1 & 0x02 ? 0x0000FF00 : 0) | (byte1 & 0x01 ? 0x00FF0000 : 0);
+						c1 = 0xFF000000 | (byte1 & 0x04 ? 0x000000FF : 0) | (byte1 & 0x02 ? 0x0000FF00 : 0) | (byte1 & 0x01 ? 0x00FF0000 : 0);
 					else
 						c1 = 0xFF000000 | (byte1 & 0x04 ? 0x000000AA : 0) | (byte1 & 0x02 ? 0x0000AA00 : 0) | (byte1 & 0x01 ? 0x00AA0000 : 0);
 
@@ -114,9 +114,9 @@
 
 - (BOOL) IRQ:(uint64_t)clock
 {
-	if (IRQ)
+	if (IRQ <= clock)
 	{
-		IRQ = FALSE;
+		IRQ += 900000;
 		return IE;
 	}
 

@@ -119,43 +119,15 @@
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(ROMDisk:)) switch (menuItem.tag)
+	if (menuItem.action == @selector(ROMDisk:))
 	{
-		case 0:
-		{
-			menuItem.submenu = [[NSMenu alloc] init];
-			[menuItem.submenu addItemWithTitle:menuItem.title action:@selector(ROMDisk:) keyEquivalent:@""].tag = 1;
-			[menuItem.submenu addItem:[NSMenuItem separatorItem]];
-
-			[menuItem.submenu addItemWithTitle:@"ORDOS 2.40" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 2;
-			[menuItem.submenu addItemWithTitle:@"ORDOS 4.03" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 3;
-
+		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
+		else
 			menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-			menuItem.state = self.ext.URL != nil;
-			return YES;
-		}
 
-		case 1:
-		{
-			if ((menuItem.state = self.ext.URL != nil && ![self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath]))
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingFormat:@": %@", self.ext.URL.lastPathComponent];
-			else
-				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-
-			return YES;
-		}
-
-		case 2:
-		{
-			menuItem.state = [self.ext.URL.lastPathComponent isEqualToString:@"ORDOS-2.40.rom"];
-			return YES;
-		}
-
-		case 3:
-		{
-			menuItem.state = [self.ext.URL.lastPathComponent isEqualToString:@"ORDOS-4.03.rom"];
-			return YES;
-		}
+		menuItem.submenu = nil;
+		return YES;
 	}
 
 	if (menuItem.action == @selector(extraMemory:))
@@ -200,42 +172,20 @@
 
 - (IBAction) ROMDisk:(NSMenuItem *)menuItem;
 {
-	switch (menuItem.tag)
+	NSOpenPanel *panel = [NSOpenPanel openPanel];
+	panel.allowedFileTypes = @[@"rom", @"bin"];
+	panel.canChooseDirectories = TRUE;
+	panel.delegate = self.ext;
+
+	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
-		case 0:
-		case 1:
-		{
-			NSOpenPanel *panel = [NSOpenPanel openPanel];
-			panel.allowedFileTypes = @[@"rom", @"bin"];
-			panel.title = menuItem.title;
-			panel.delegate = self.ext;
-
-			if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
-			{
-				[self.document registerUndoWithMenuItem:menuItem];
-				self.ext.URL = panel.URLs.firstObject;
-			}
-			else if (self.ext.URL != nil)
-			{
-				[self.document registerUndoWithMenuItem:menuItem];
-				self.ext.URL = nil;
-			}
-
-			break;
-		}
-
-		case 2:
-
-			[self.document registerUndoWithMenuItem:menuItem];
-			self.ext.URL = [[NSBundle mainBundle] URLForResource:@"ORDOS-2.40" withExtension:@"rom"];
-			break;
-			
-		case 3:
-
-			[self.document registerUndoWithMenuItem:menuItem];
-			self.ext.URL = [[NSBundle mainBundle] URLForResource:@"ORDOS-4.03" withExtension:@"rom"];
-			break;
-			
+		[self.document registerUndoWithMenuItem:menuItem];
+		self.ext.URL = panel.URLs.firstObject;
+	}
+	else if (self.ext.URL != nil)
+	{
+		[self.document registerUndoWithMenuItem:menuItem];
+		self.ext.URL = nil;
 	}
 }
 
@@ -507,10 +457,6 @@
 		if (![self createObjects])
 			return self = nil;
 
-		if (type)
-			self.ext.URL = [[NSBundle mainBundle] URLForResource:type == 1 ? @"ORDOS-2.40" : @"ORDOS-4.03"
-												   withExtension:@"rom"];
-
 		if (![self mapObjects])
 			return self = nil;
 
@@ -645,9 +591,9 @@
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	cpu.PAGE = (cpu.PAGE & 0x03) | ((~data & 0x80) >> 4) | (data & 0x20) >> 3;
+	cpu.PAGE = ((~data & 0x80) >> 4) | ((data & 0x20) >> 3) | (cpu.PAGE & 0x03);
 	ram.offset = (data & 0x0F) << 14;
-	crt.IE = (data & 0x40) != 0x00;
+	crt.IE = data & 0x40;
 }
 
 @end
