@@ -21,6 +21,7 @@
 
 @synthesize specialist;
 @synthesize flashDisk;
+@synthesize LSB;
 
 // -----------------------------------------------------------------------------
 // encodeWithCoder/initWithCoder
@@ -32,6 +33,7 @@
 	[encoder encodeBool:self.tapeEmulator forKey:@"tapeEmulator"];
 	[encoder encodeBool:self.specialist forKey:@"specialist"];
 	[encoder encodeBool:self.flashDisk forKey:@"flashDisk"];
+	[encoder encodeInt:self.LSB forKey:@"LSB"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
@@ -42,6 +44,7 @@
 		self.tapeEmulator = [decoder decodeBoolForKey:@"tapeEmulator"];
 		self.specialist = [decoder decodeBoolForKey:@"specialist"];
 		self.flashDisk = [decoder decodeBoolForKey:@"flashDisk"];
+		self.LSB = [decoder decodeIntForKey:@"LSB"];
 	}
 
 	return self;
@@ -61,7 +64,7 @@
 			{
 				NSUInteger size = fileSize.unsignedIntegerValue; if (!specialist)
 				{
-					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000);
+					return size == 0x100000 || size == 0x80000 || size == 0x40000 || (size && size <= 0x10000);
 				}
 				else
 				{
@@ -92,7 +95,7 @@
 			{
 				NSUInteger size = fileSize.unsignedIntegerValue; if (!specialist)
 				{
-					return size == 0x80000 || size == 0x40000 || (size && size <= 0x10000);
+					return size == 0x100000 || size == 0x80000 || size == 0x40000 || (size && size <= 0x10000);
 				}
 				else
 				{
@@ -167,6 +170,7 @@
 	}
 
 	[super RESET];
+	LSB = 0x00;
 }
 
 // -----------------------------------------------------------------------------
@@ -178,6 +182,9 @@
 
 	if (flashDisk)
 		addr = ((C & 0x1F) << 16) | (addr & 0xFF00) | B;
+
+	else if (ROM.length == 0x100000)
+		addr = (LSB << 16) | (C << 8) | B;
 
 	else if (ROM.length <= 0x10000)
 		addr = (C << 8) | B;

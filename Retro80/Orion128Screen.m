@@ -8,6 +8,7 @@
 {
 	uint32_t* bitmap;
 	NSUInteger width;
+	BOOL IRQ;
 }
 
 @synthesize display;
@@ -16,22 +17,27 @@
 @synthesize color;
 @synthesize page;
 
+@synthesize IE;
+
+// -----------------------------------------------------------------------------
+
 - (void) draw
 {
-	if (memory)
+	IRQ = IE; if (memory)
 	{
-		if (bitmap == NULL || (color & 0x04 && width != 384) || ((color & 0x06) == 0x02 && width != 400))
-			bitmap = [self.display setupGraphicsWidth:width = ((color & 0x06) == 0x02 ? 400 : 384) height:256];
+		if (bitmap == NULL || (page & 0x80 ? width != 480 : width == 480) || (color & 0x04 && width == 400) || ((color & 0x06) == 0x02 && width == 384))
+			bitmap = [self.display setupGraphicsWidth:width = (page & 0x80 ? 480 : (color & 0x06) == 0x02 ? 400 : 384) height:256];
+
+		const uint8_t *mem = memory + ((~page & 0x03) << 14);
 
 		if (color & 0x04)
 		{
 			if (color & 0x02)
 			{
-				for (uint16_t addr = 0x0000; addr < 0x3000; addr++)
+				for (uint16_t addr = 0x0000; addr < width * 32; addr++)
 				{
-					uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * 384;
-					uint8_t byte0 = memory[0x00000 + (page << 14) + addr];
-					uint8_t byte1 = memory[0x10000 + (page << 14) + addr];
+					uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * width;
+					uint8_t byte0 = mem[addr], byte1 = mem[addr + 0x10000];
 
 					uint32_t c0, c1;
 
@@ -57,11 +63,10 @@
 					0xFFAA00AA, 0xFF0055AA, 0xFFAAAAAA, 0xFFAAAA00
 				};
 
-				for (uint16_t addr = 0x0000; addr < 0x3000; addr++)
+				for (uint16_t addr = 0x0000; addr < width * 32; addr++)
 				{
-					uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * 384;
-					uint8_t byte0 = memory[0x00000 + (page << 14) + addr];
-					uint8_t byte1 = memory[0x10000 + (page << 14) + addr];
+					uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * width;
+					uint8_t byte0 = mem[addr], byte1 = mem[addr + 0x10000];
 
 					for (uint8_t mask = 0x80; mask; mask >>= 1)
 						*ptr++ = colors[color & 1][(byte1 & mask) != 0][(byte0 & mask) != 0];
@@ -76,7 +81,7 @@
 			for (uint16_t addr = 0x0000; addr < width * 32; addr++)
 			{
 				uint32_t* ptr = bitmap + ((addr & 0xFF00) >> 5)  + (addr & 0xFF) * width;
-				uint8_t byte = memory[(page << 14) + addr];
+				uint8_t byte = mem[addr];
 
 				for (uint8_t mask = 0x80; mask; mask >>= 1)
 					*ptr++ = byte & mask ? c1 : c0;
@@ -88,6 +93,37 @@
 }
 
 // -----------------------------------------------------------------------------
+
+- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
+{
+
+}
+
+// -----------------------------------------------------------------------------
+
+- (void) RESET
+{
+	IRQ = IE = FALSE;
+	bitmap = NULL;
+
+	color = 0x00;
+	page = 0x00;
+}
+
+// -----------------------------------------------------------------------------
+
+- (BOOL) IRQ:(uint64_t)clock
+{
+	if (IRQ)
+	{
+		IRQ = FALSE;
+		return IE;
+	}
+
+	return FALSE;
+}
+
+// -----------------------------------------------------------------------------
 // encodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------
 
@@ -95,6 +131,7 @@
 {
 	[encoder encodeInt:color forKey:@"color"];
 	[encoder encodeInt:page forKey:@"page"];
+	[encoder encodeBool:IE forKey:@"IE"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
@@ -103,6 +140,7 @@
 	{
 		color = [decoder decodeIntForKey:@"color"];
 		page = [decoder decodeIntForKey:@"page"];
+		IE = [decoder decodeBoolForKey:@"IE"];
 	}
 
 	return self;

@@ -326,9 +326,6 @@
 
 			if ((data & 0xF0) == 0xD0)	// Принудительное прерывание
 			{
-#ifdef DEBUG
-				NSLog(@"ВГ93 Принудительное прерывание: %02X", data);
-#endif
 				if (started && command.code == 0xF)
 				{
 					length = pos; [self WR:shift clock:DRQ];
@@ -343,46 +340,6 @@
 				command.byte = data;
 				status.byte = 0;
 				started = clock;
-
-#ifdef DEBUG
-				switch (command.code)
-				{
-					case 0x0:	// Восстановление
-						NSLog(@"ВГ93 Восстановление: h=%d, V=%d, r=%d", command.h, command.V, command.r); break;
-
-					case 0x1:	// Поиск
-						NSLog(@"ВГ93 Поиск: h=%d, V=%d, r=%d", command.h, command.V, command.r); break;
-
-					case 0x2:	// Шаг
-					case 0x3:
-						NSLog(@"ВГ93 Шаг: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
-
-					case 0x4:	// Шаг вперед
-					case 0x5:
-						NSLog(@"ВГ93 Шаг вперед: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
-
-					case 0x6:	// Шаг назад
-					case 0x7:
-						NSLog(@"ВГ93 Шаг назад: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
-
-					case 0x8:	// Чтение сектора
-					case 0x9:
-						NSLog(@"ВГ93 Чтение сектора: m=%d, s=%d, E=%d, C=%d", command.m, command.s, command.E, command.C); break;
-
-					case 0xA:	// Запись сектора
-					case 0xB:
-						NSLog(@"ВГ93 Запись сектора: m=%d, s=%d, E=%d, C=%d, a=%d", command.m, command.s, command.E, command.C, command.a); break;
-
-					case 0x0C:	// Чтение адреса
-						NSLog(@"ВГ93 Чтение адреса: E=%d", command.E); break;
-
-					case 0xE:	// Чтение дорожки
-						NSLog(@"ВГ93 Чтение дорожки: E=%d", command.E); break;
-
-					case 0xF:	// Запись дорожки
-						NSLog(@"ВГ93 Запись дорожки: E=%d", command.E);	break;
-				}
-#endif
 
 				if ((command.code & 8) == 0)		// Восстановление, поиск, шаг
 				{
@@ -414,9 +371,6 @@
 
 							if ((command.code & 2) == 0)
 							{
-#ifdef DEBUG
-								NSLog(@"ВГ93 Read from drive %c: track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
-#endif
 								if ((read = [file readDataOfLength:SECSIZE]).length != SECSIZE)
 									read = [[NSMutableData alloc] initWithLength:SECSIZE];
 
@@ -424,9 +378,6 @@
 							}
 							else
 							{
-#ifdef DEBUG
-								NSLog(@"ВГ93 Write to drive %c:  track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
-#endif
 								write = [[NSMutableData alloc] initWithLength:SECSIZE];
 								ptr = write.mutableBytes;
 							}
@@ -470,9 +421,6 @@
 					{
 						if (cylinder == TRACK && TRACK < TRACKS && head < HEADS)
 						{
-#ifdef DEBUG
-							NSLog(@"ВГ93 Write track %d head %d to drive %c", cylinder, head, selected - 1 + 'A');
-#endif
 							write = [[NSMutableData alloc] initWithLength:6250];
 
 							DRQ = started; started = started + ms200 * 2 - started % ms200;

@@ -410,7 +410,7 @@ static unsigned timings[2][256] =
 static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 {
 	cpu->CLK += 9; uint8_t data = MEMR(cpu, addr, cpu->CLK, status);
-	cpu->CLK += cpu->WAIT ? 18 : 9;
+	cpu->CLK += cpu->WAIT ? 9 + 18 : 9;
 	cpu->CLK += cpu->Z80 ? 9 : HOLD(cpu, 9);
 	return data;
 }
@@ -418,14 +418,14 @@ static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 static void put(X8080* cpu, uint16_t addr, uint8_t data, uint8_t status)
 {
 	cpu->CLK += 18; MEMW(cpu, addr, data, cpu->CLK, status);
-	cpu->CLK += cpu->WAIT ? 18 : 9;
+	cpu->CLK += cpu->WAIT ? 9 + 18 : 9;
 	cpu->CLK += cpu->Z80 ? 0 : HOLD(cpu, 0);
 }
 
 static uint8_t inp(X8080* cpu, uint16_t addr)
 {
 	cpu->CLK += 9; uint8_t data = IOR(cpu, addr, cpu->CLK, 0x42);
-	cpu->CLK += cpu->Z80 ? cpu->WAIT ? 27 : 18 : 9;
+	cpu->CLK += cpu->Z80 ? cpu->WAIT ? 18 + 18 : 18 : 9;
 	cpu->CLK += cpu->Z80 ? 9 : HOLD(cpu, 9);
 	return data;
 }
@@ -433,7 +433,7 @@ static uint8_t inp(X8080* cpu, uint16_t addr)
 static void out(X8080* cpu, uint16_t addr, uint8_t data)
 {
 	cpu->CLK += 18; IOW(cpu, addr, data, cpu->CLK, 0x10);
-	cpu->CLK += cpu->Z80 ? cpu->WAIT ? 27 : 18 : 9;
+	cpu->CLK += cpu->Z80 ? cpu->WAIT ? 18 + 18 : 18 : 9;
 	cpu->CLK += cpu->Z80 ? 0 : HOLD(cpu, 0);
 }
 
@@ -604,7 +604,7 @@ static uint16_t AND[2][0x100][0x100];
 		{
 			if (NMI && CallNMI(NMI, @selector(IRQ:), CLK))
 			{
-				IF = FALSE;
+				CLK += 63; IF = FALSE;
 
 				put(self, --SP, PC >> 8, 0x04);
 				put(self, --SP, PC, 0x04);
@@ -613,13 +613,13 @@ static uint16_t AND[2][0x100][0x100];
 				continue;
 			}
 
-			else if (IF && IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK))
+			else if (IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK) && IF)
 			{
-				switch (IM)
+				CLK += 63; switch (IM)
 				{
 					case 0:	// IM 0
 
-						self.IF = FALSE;
+						IF = IFF2 = FALSE;
 
 						put(self, --SP, PC >> 8, 0x04);
 						put(self, --SP, PC, 0x04);
@@ -629,7 +629,7 @@ static uint16_t AND[2][0x100][0x100];
 
 					case 1:	// IM 1
 
-						self.IF = FALSE;
+						IF = IFF2 = FALSE;
 
 						put(self, --SP, PC >> 8, 0x04);
 						put(self, --SP, PC, 0x04);
@@ -639,7 +639,7 @@ static uint16_t AND[2][0x100][0x100];
 
 					case 2:	// IM 2
 
-						self.IF = FALSE;
+						IF = IFF2 = FALSE;
 
 						put(self, --SP, PC >> 8, 0x04);
 						put(self, --SP, PC, 0x04);
@@ -668,7 +668,7 @@ static uint16_t AND[2][0x100][0x100];
 		{
 			CLK += 9;
 
-			if (IF && IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK))
+			if (IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK) && IF)
 				CMD = RST;
 			else
 				CMD = MEMR(self, PC++, CLK, 0xA2);
@@ -2712,7 +2712,7 @@ static uint16_t AND[2][0x100][0x100];
 
 					if (Z80)
 					{
-						CMD = get(self, PC++, 0x82);
+						CMD = get(self, PC++, 0xA2);
 						CLK += timings[1][CMD];
 						continue;
 					}
@@ -3086,6 +3086,8 @@ static uint16_t AND[2][0x100][0x100];
 
 						case 0x4D:	// RETI
 						{
+							IF = IFF2;
+
 							CMD = 0xC9;
 							continue;
 						}
@@ -3148,7 +3150,7 @@ static uint16_t AND[2][0x100][0x100];
 
 						case 0x57:	// LD A,I
 						{
-							AF.F = (AF.F & 0x29) | (IR_I & 0x80) | ((IR_I == 0) << 6) | (IFF2 << 1);
+							AF.F = (AF.F & 0x29) | (IR_I & 0x80) | ((IR_I == 0) << 6) | (IFF2 << 2);
 							AF.A = IR_I;
 
 							CLK += 9;
@@ -3206,7 +3208,7 @@ static uint16_t AND[2][0x100][0x100];
 
 						case 0x5F:	// LD A,R
 						{
-							AF.F = (AF.F & 0x29) | (IR_R & 0x80) | ((IR_R == 0) << 6) | (IFF2 << 1);
+							AF.F = (AF.F & 0x29) | (IR_R & 0x80) | ((IR_R == 0) << 6) | (IFF2 << 2);
 							AF.A = IR_R;
 
 							CLK += 9;

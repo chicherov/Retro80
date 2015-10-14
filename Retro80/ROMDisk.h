@@ -12,5 +12,6 @@
 
 @property BOOL specialist;
 @property BOOL flashDisk;
+@property uint8_t LSB;
 
 @end
