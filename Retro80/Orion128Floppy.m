@@ -30,9 +30,14 @@
 			break;
 
 		case 0xF714:
+
+			self.selected = (data & 0x01) + 1;
+			self.head = (data & 0x10) == 0;
+			break;
+
 		case 0xF720:
 
-			self.selected = data & 2 ? 0 : (data & 1) + 1;
+			self.selected = (data & 0x03) + 1;
 			self.head = (data & 0x10) == 0;
 			break;
 	}

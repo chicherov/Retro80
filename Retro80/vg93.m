@@ -3,13 +3,14 @@
  ******************************************************************************/
 
 #import "vg93.h"
+#undef DEBUG
 
 @implementation VG93
 {
 	unsigned ms200, ms;
-	NSURL *URLs[2];
+	unsigned TRACK[4];
+	NSURL *URLs[4];
 
-	unsigned TRACK;
 	BOOL DIRC;
 
 	uint64_t started;
@@ -42,7 +43,7 @@
 
 - (void) setDisk:(NSInteger)disk URL:(NSURL *)url
 {
-	if (disk == 1 || disk == 2)
+	if (disk >= 1 && disk <= 4)
 	{
 		if (disk != selected)
 			URLs[disk-1] = url;
@@ -57,7 +58,7 @@
 
 - (NSURL *) getDisk:(NSInteger)disk
 {
-	if (disk == 1 || disk == 2)
+	if (disk >= 1 && disk <= 4)
 		return URLs[disk-1];
 
 	return nil;
@@ -87,7 +88,6 @@
 			[file closeFile];
 			file = nil;
 		}
-
 
 		if (disk && URLs[disk - 1] != nil)
 		{
@@ -158,7 +158,7 @@
 				cylinder--;
 		}
 
-		if (TRACK == 0 && DIRC == FALSE)
+		if (selected && TRACK[selected-1] == 0 && DIRC == FALSE)
 		{
 			status.S2 = 1; cylinder = 0;
 		}
@@ -169,13 +169,13 @@
 
 			if (DIRC)
 			{
-				if (TRACK < 83)
-					TRACK++;
+				if (selected && TRACK[selected-1] < 83)
+					TRACK[selected-1]++;
 			}
 			else
 			{
-				if (TRACK)
-					TRACK--;
+				if (selected && TRACK[selected-1])
+					TRACK[selected-1]--;
 			}
 		}
 	}
@@ -184,7 +184,7 @@
 	{
 		started += ms * 15; started += ms200 - started % ms200;
 
-		if (file == nil || cylinder != TRACK || TRACK >= TRACKS)
+		if (file == nil || selected == 0 || cylinder != TRACK[selected-1] || TRACK[selected-1] >= TRACKS)
 			started += ms200 * 8;
 	}
 }
@@ -210,7 +210,7 @@
 
 			if (command.V)
 			{
-				if (cylinder != TRACK || TRACK >= TRACKS)
+				if (selected == 0 || cylinder != TRACK[selected-1] || TRACK[selected-1] >= TRACKS)
 					status.S4 = 1;
 			}
 		}
@@ -326,6 +326,9 @@
 
 			if ((data & 0xF0) == 0xD0)	// Принудительное прерывание
 			{
+#ifdef DEBUG
+				NSLog(@"ВГ93 Принудительное прерывание: %02X", data);
+#endif
 				if (started && command.code == 0xF)
 				{
 					length = pos; [self WR:shift clock:DRQ];
@@ -340,6 +343,46 @@
 				command.byte = data;
 				status.byte = 0;
 				started = clock;
+
+#ifdef DEBUG
+				switch (command.code)
+				{
+					case 0x0:	// Восстановление
+						NSLog(@"ВГ93 Восстановление: h=%d, V=%d, r=%d", command.h, command.V, command.r); break;
+
+					case 0x1:	// Поиск
+						NSLog(@"ВГ93 Поиск: h=%d, V=%d, r=%d", command.h, command.V, command.r); break;
+
+					case 0x2:	// Шаг
+					case 0x3:
+						NSLog(@"ВГ93 Шаг: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
+
+					case 0x4:	// Шаг вперед
+					case 0x5:
+						NSLog(@"ВГ93 Шаг вперед: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
+
+					case 0x6:	// Шаг назад
+					case 0x7:
+						NSLog(@"ВГ93 Шаг назад: u=%d, h=%d, V=%d, r=%d", command.u, command.h, command.V, command.r); break;
+
+					case 0x8:	// Чтение сектора
+					case 0x9:
+						NSLog(@"ВГ93 Чтение сектора: m=%d, s=%d, E=%d, C=%d", command.m, command.s, command.E, command.C); break;
+
+					case 0xA:	// Запись сектора
+					case 0xB:
+						NSLog(@"ВГ93 Запись сектора: m=%d, s=%d, E=%d, C=%d, a=%d", command.m, command.s, command.E, command.C, command.a); break;
+
+					case 0x0C:	// Чтение адреса
+						NSLog(@"ВГ93 Чтение адреса: E=%d", command.E); break;
+
+					case 0xE:	// Чтение дорожки
+						NSLog(@"ВГ93 Чтение дорожки: E=%d", command.E); break;
+
+					case 0xF:	// Запись дорожки
+						NSLog(@"ВГ93 Запись дорожки: E=%d", command.E);	break;
+				}
+#endif
 
 				if ((command.code & 8) == 0)		// Восстановление, поиск, шаг
 				{
@@ -365,12 +408,15 @@
 
 					if ((command.code & 2) == 0 || !readOnly)
 					{
-						if (cylinder == TRACK && TRACK < TRACKS && head < HEADS && sector && sector <= SECTORS)
+						if (selected && cylinder == TRACK[selected-1] && TRACK[selected-1] < TRACKS && head < HEADS && sector && sector <= SECTORS)
 						{
 							[file seekToFileOffset:((cylinder * HEADS + head) * SECTORS + sector - 1) * SECSIZE];
 
 							if ((command.code & 2) == 0)
 							{
+#ifdef DEBUG
+								NSLog(@"ВГ93 Read from drive %c: track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
+#endif
 								if ((read = [file readDataOfLength:SECSIZE]).length != SECSIZE)
 									read = [[NSMutableData alloc] initWithLength:SECSIZE];
 
@@ -378,6 +424,9 @@
 							}
 							else
 							{
+#ifdef DEBUG
+								NSLog(@"ВГ93 Write to drive %c:  track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
+#endif
 								write = [[NSMutableData alloc] initWithLength:SECSIZE];
 								ptr = write.mutableBytes;
 							}
@@ -419,7 +468,7 @@
 
 					if (!readOnly)
 					{
-						if (cylinder == TRACK && TRACK < TRACKS && head < HEADS)
+						if (selected && cylinder == TRACK[selected-1] && TRACK[selected-1] < TRACKS && head < HEADS)
 						{
 							write = [[NSMutableData alloc] initWithLength:6250];
 
@@ -464,11 +513,13 @@
 
 - (void) RESET
 {
+	if (selected)
+		TRACK[selected-1] = 0;
+
 	self.selected = 0;
 
 	command.byte = 0x03; status.byte = 0x04;
-	TRACK = cylinder = shift = 0;
-	sector = 1;
+	cylinder = 0; shift = 0; sector = 1;
 }
 
 //------------------------------------------------------------------------------
@@ -645,12 +696,17 @@
 	[encoder encodeInt:ms200 * 5 forKey:@"quartz"];
 	[encoder encodeObject:URLs[0] forKey:@"urlA"];
 	[encoder encodeObject:URLs[1] forKey:@"urlB"];
+	[encoder encodeObject:URLs[2] forKey:@"urlC"];
+	[encoder encodeObject:URLs[3] forKey:@"urlD"];
+
+	[encoder encodeInt:TRACK[0] forKey:@"TRACKA"];
+	[encoder encodeInt:TRACK[1] forKey:@"TRACKB"];
+	[encoder encodeInt:TRACK[2] forKey:@"TRACKC"];
+	[encoder encodeInt:TRACK[3] forKey:@"TRACKD"];
+	[encoder encodeBool:DIRC forKey:@"DIRC"];
 
 	[encoder encodeInt:selected forKey:@"selected"];
 	[encoder encodeInt:head forKey:@"head"];
-
-	[encoder encodeInt:TRACK forKey:@"TRACK"];
-	[encoder encodeBool:DIRC forKey:@"DIRC"];
 
 	[encoder encodeInt:cylinder forKey:@"cylinder"];
 	[encoder encodeInt:sector forKey:@"sector"];
@@ -663,11 +719,16 @@
 	{
 		URLs[0] = [decoder decodeObjectForKey:@"urlA"];
 		URLs[1] = [decoder decodeObjectForKey:@"urlB"];
+		URLs[2] = [decoder decodeObjectForKey:@"urlC"];
+		URLs[3] = [decoder decodeObjectForKey:@"urlD"];
 
 		self.selected = [decoder decodeIntForKey:@"selected"];
 		head = [decoder decodeIntForKey:@"head"];
 
-		TRACK = [decoder decodeIntForKey:@"TRACK"];
+		TRACK[0] = [decoder decodeIntForKey:@"TRACKA"];
+		TRACK[1] = [decoder decodeIntForKey:@"TRACKB"];
+		TRACK[2] = [decoder decodeIntForKey:@"TRACKC"];
+		TRACK[3] = [decoder decodeIntForKey:@"TRACKD"];
 		DIRC = [decoder decodeBoolForKey:@"DIRC"];
 
 		cylinder = [decoder decodeIntForKey:@"cylinder"];

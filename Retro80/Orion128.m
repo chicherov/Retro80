@@ -468,6 +468,19 @@
 }
 
 // -----------------------------------------------------------------------------
+
+- (id) initWithData:(NSData *)data URL:(NSURL *)url
+{
+	if (self = [self initWithType:3])
+	{
+		self.inpHook.buffer = data;
+		[self.kbd paste:@"\nI\n"];
+	}
+
+	return self;
+}
+
+// -----------------------------------------------------------------------------
 // encodeWithCoder/decodeWithCoder/initWithCoder
 // -----------------------------------------------------------------------------
 

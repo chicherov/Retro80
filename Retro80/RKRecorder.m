@@ -116,7 +116,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 	panel.allowedFileTypes = @[@"wav", @"bin", @"com", @"rk", @"pki", @"gam", @"edm", @"bss", @"bsm", self.extension];
 
 	if ([self.extension isEqualToString:@"rko"])
-		panel.allowedFileTypes = [panel.allowedFileTypes arrayByAddingObjectsFromArray:@[@"ord", @"bru"]];
+		panel.allowedFileTypes = [panel.allowedFileTypes arrayByAddingObjectsFromArray:@[@"ord", @"bru", @"ori"]];
 
 	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 	{
@@ -137,14 +137,20 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 												 length:self.buffer.length - 1];
 			}
 
-			else if ([@[@"ord", @"bru"] containsObject:fileExt])
+			else if ([@[@"ord", @"bru", @"ori"] containsObject:fileExt])
 			{
+				if (self.buffer.length >= 16)
+				{
+					if (memcmp(self.buffer.bytes, "Orion-128 file\r\n", 16) == 0)
+						self.buffer = [NSData dataWithBytes:self.buffer.bytes + 16 length:self.buffer.length - 16];
+				}
+
 				if (self.buffer.length >= 16)
 				{
 					const uint8_t *ptr = self.buffer.bytes;
 
 					uint16_t len = (ptr[0x0A] | (ptr[0x0B] << 8)) + 0x10;
-					if ((len & 0xF) == 0 && self.buffer.length >= len)
+					if (self.buffer.length >= len)
 					{
 						uint8_t buffer[0x4D]; memset(buffer, 0x00, 0x4D);
 						memcpy(buffer, self.buffer.bytes, 8);
@@ -389,7 +395,9 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 						const uint8_t *p = memchr(ptr + 1, 0x20, 8);
 
 						savePanel.nameFieldStringValue = stringFromRK(ptr + 1, p ? p - ptr - 1 : 8);
-						savePanel.allowedFileTypes = [NSArray arrayWithObject:self.extension];
+						savePanel.allowedFileTypes = [NSArray arrayWithObject:@"ord"];
+
+						self.buffer = [NSMutableData dataWithBytes:ptr + 0x4E length:length - 0x4E - 6];
 						break;
 					}
 				}
