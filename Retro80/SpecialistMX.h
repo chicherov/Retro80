@@ -45,9 +45,6 @@
 @property SpecialistMXSystem *sys;
 @property ROMDisk *ext;
 
-@property BOOL isFloppy;
-@property VG93 *fdd;
-
 @end
 
 // -----------------------------------------------------------------------------
@@ -57,6 +54,7 @@
 @interface SpecialistMX_RAMFOS : SpecialistMX_Commander
 
 @property SpecialistMXKeyboard *kbd;
+@property VG93 *fdd;
 
 @end
 

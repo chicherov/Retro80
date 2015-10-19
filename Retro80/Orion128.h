@@ -49,14 +49,13 @@
 @property Orion128SystemFA *sysFA;
 
 @property Orion128Screen *crt;
-@property Orion128Beeper *snd;
+@property Orion128Floppy *fdd;
 
 @property RKKeyboard *kbd;
 @property ROMDisk *ext;
 @property X8255 *prn;
 
-@property Orion128Floppy *fdd;
-@property BOOL isFloppy;
+@property Orion128Beeper *snd;
 
 @property F806 *inpHook;
 @property F80C *outHook;

@@ -68,7 +68,12 @@
 		menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
 
 	if (menuItem.action == @selector(ROMDisk:))
-		menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+	{
+		if (menuItem.tag == 0)
+			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
+		else
+			menuItem.hidden = TRUE;
+	}
 
 	if (menuItem.action == @selector(UT88:))
 		menuItem.hidden = TRUE;

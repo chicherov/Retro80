@@ -31,18 +31,18 @@
 			case 0:
 			{
 				menuItem.submenu = [[NSMenu alloc] init];
-				[menuItem.submenu addItemWithTitle:menuItem.title action:@selector(ROMDisk:) keyEquivalent:@""].tag = 1;
+				[menuItem.submenu addItemWithTitle:menuItem.title action:@selector(ROMDisk:) keyEquivalent:@""].tag = 2;
 				[menuItem.submenu addItem:[NSMenuItem separatorItem]];
 
-				[menuItem.submenu addItemWithTitle:@"SD STARTER ROM" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 2;
-				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 3;
+				[menuItem.submenu addItemWithTitle:@"SD STARTER ROM" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 3;
+				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 4;
 
 				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 				menuItem.state = [(ROMDisk*)self.ext URL] != nil;
 				return YES;
 			}
 
-			case 1:
+			case 2:
 			{
 				NSURL *url = [(ROMDisk*)self.ext URL]; if ((menuItem.state = url != nil))
 					menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
@@ -52,11 +52,11 @@
 				return YES;
 			}
 
-			case 2:
+			case 3:
 				menuItem.state = memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) == 0;
 				return YES;
 
-			case 3:
+			case 4:
 				menuItem.state = [(ROMDisk*)self.ext tapeEmulator];
 				return [[(ROMDisk*)self.ext ROM] length] != 0 && memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) != 0 && self.inpHook.enabled;
 		}
@@ -93,7 +93,7 @@
 		switch (menuItem.tag)
 		{
 			case 0:
-			case 1:
+			case 2:
 			{
 				NSOpenPanel *panel = [NSOpenPanel openPanel];
 				panel.canChooseDirectories = TRUE;
@@ -103,19 +103,25 @@
 
 				if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 				{
-					[self.document registerUndoWithMenuItem:menuItem];
-					romdisk.URL = panel.URLs.firstObject;
+					@synchronized(self.snd.sound)
+					{
+						[self.document registerUndoWithMenuItem:menuItem];
+						romdisk.URL = panel.URLs.firstObject;
+					}
 				}
 				else if (romdisk.URL != nil)
 				{
-					[self.document registerUndoWithMenuItem:menuItem];
-					romdisk.URL = nil;
+					@synchronized(self.snd.sound)
+					{
+						[self.document registerUndoWithMenuItem:menuItem];
+						romdisk.URL = nil;
+					}
 				}
 
 				break;
 			}
 
-			case 2:
+			case 3:
 			{
 				@synchronized(self.snd.sound)
 				{
@@ -141,8 +147,9 @@
 				break;
 			}
 
-			case 3:
+			case 4:
 			{
+				[self.document registerUndoWithMenuItem:menuItem];
 				romdisk.tapeEmulator = !romdisk.tapeEmulator;
 				break;
 			}

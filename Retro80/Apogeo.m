@@ -28,7 +28,7 @@
 		return YES;
 	}
 
-	if (menuItem.action == @selector(ROMDisk:))
+	if (menuItem.action == @selector(ROMDisk:) && menuItem.tag == 0)
 	{
 		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
 			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];

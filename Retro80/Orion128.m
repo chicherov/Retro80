@@ -119,15 +119,10 @@
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(ROMDisk:))
+	if (menuItem.action == @selector(colorModule:) || (menuItem.action == @selector(floppy:) && menuItem.tag == 0))
 	{
-		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
-			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
-		else
-			menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-
-		menuItem.submenu = nil;
-		return YES;
+		menuItem.state = TRUE;
+		return NO;
 	}
 
 	if (menuItem.action == @selector(extraMemory:))
@@ -137,56 +132,41 @@
 		return TRUE;
 	}
 
-	if (menuItem.action == @selector(floppy:))
+	if (menuItem.action == @selector(ROMDisk:) && (menuItem.tag == 0 || menuItem.tag == 1))
 	{
 		if (menuItem.tag == 0)
 		{
-			menuItem.state = self.isFloppy;
-			return YES;
-		}
-
-		else if (self.isFloppy)
-		{
-			NSURL *url = [self.fdd getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
+			if ((menuItem.state = self.ext.URL && ![self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:NSBundle.mainBundle.resourcePath]))
+			{
+				menuItem.title = [([menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", self.ext.URL.lastPathComponent];
+			}
 			else
-				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
+			{
+				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+			}
 
-			return menuItem.tag != self.fdd.selected || !self.fdd.busy;
+			menuItem.submenu = nil;
 		}
-
 		else
 		{
-			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
-			menuItem.state = FALSE;
-			return NO;
+			menuItem.state = [self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath];
+			menuItem.hidden = FALSE; // !(menuItem.state || self.ext.URL == nil);
 		}
+
+		return YES;
 	}
 
+	if (menuItem.action == @selector(floppy:) && (menuItem.tag >= 1 && menuItem.tag <= 4))
+	{
+		NSURL *url = [self.fdd getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
+		else
+			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
+
+		return menuItem.tag != self.fdd.selected || !self.fdd.busy;
+	}
+	
 	return [super validateMenuItem:menuItem];
-}
-
-// -----------------------------------------------------------------------------
-// Внешний ROM-диск
-// -----------------------------------------------------------------------------
-
-- (IBAction) ROMDisk:(NSMenuItem *)menuItem;
-{
-	NSOpenPanel *panel = [NSOpenPanel openPanel];
-	panel.allowedFileTypes = @[@"rom", @"bin"];
-	panel.canChooseDirectories = TRUE;
-	panel.delegate = self.ext;
-
-	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
-	{
-		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.URL = panel.URLs.firstObject;
-	}
-	else if (self.ext.URL != nil)
-	{
-		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.URL = nil;
-	}
 }
 
 // -----------------------------------------------------------------------------
@@ -210,49 +190,73 @@
 }
 
 // -----------------------------------------------------------------------------
+// Внешний ROM-диск
+// -----------------------------------------------------------------------------
+
+- (IBAction) ROMDisk:(NSMenuItem *)menuItem
+{
+	NSOpenPanel *panel = [NSOpenPanel openPanel];
+	panel.allowedFileTypes = @[@"rom", @"bin"];
+	panel.delegate = self.ext;
+
+	if (menuItem.tag == 0)
+	{
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		{
+			[self.document registerUndoWithMenuItem:menuItem];
+			self.ext.URL = panel.URLs.firstObject;
+		}
+		else if (self.ext.URL != nil && ![self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath])
+		{
+			[self.document registerUndoWithMenuItem:menuItem];
+			self.ext.URL = nil;
+		}
+	}
+	else
+	{
+		if (![self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:NSBundle.mainBundle.resourcePath])
+		{
+			BOOL isMonitor1 = memcmp(self.rom.mutableBytes + 0x42, "\x31\xC9\xF3\xAF\x32\x00\xF8", 7) == 0;
+
+			self.ext.URL = [[NSBundle mainBundle] URLForResource:isMonitor1 ? @"ORDOS-2.40" : @"ORDOS-4.03"
+												   withExtension:@"rom"];
+		}
+		else
+		{
+			[self.document registerUndoWithMenuItem:menuItem];
+			self.ext.URL = nil;
+		}
+	}
+}
+
+// -----------------------------------------------------------------------------
 // Модуль контроллера дисковода
 // -----------------------------------------------------------------------------
 
 - (IBAction) floppy:(NSMenuItem *)menuItem
 {
-	if (menuItem.tag)
+	if (menuItem.tag >= 1 && menuItem.tag <= 2)
 	{
-		if (self.isFloppy)
+		NSOpenPanel *panel = [NSOpenPanel openPanel];
+		panel.allowedFileTypes = @[@"odi", @"cpm"];
+		panel.title = menuItem.title;
+		
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
-			NSOpenPanel *panel = [NSOpenPanel openPanel];
-			panel.allowedFileTypes = @[@"odi", @"cpm"];
-			panel.title = menuItem.title;
-
-			if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+			@synchronized(self.snd.sound)
 			{
-				@synchronized(self.snd.sound)
-				{
-					[self.document registerUndoWithMenuItem:menuItem];
-					[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
-				}
-			}
-
-			else if ([self.fdd getDisk:menuItem.tag] != nil)
-			{
-				@synchronized(self.snd.sound)
-				{
-					[self.document registerUndoWithMenuItem:menuItem];
-					[self.fdd setDisk:menuItem.tag URL:nil];
-				}
+				[self.document registerUndoWithMenuItem:menuItem];
+				[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
 			}
 		}
-	}
-
-	else @synchronized(self.snd.sound)
-	{
-		[self.document registerUndoWithMenuItem:menuItem];
-
-		if ((self.isFloppy = !self.isFloppy))
-			self.isFloppy = (self.fdd = [[Orion128Floppy alloc] initWithQuartz:self.cpu.quartz]) != nil;
-		else
-			self.fdd = nil;
-
-		[self mapObjects];
+		else if ([self.fdd getDisk:menuItem.tag] != nil)
+		{
+			@synchronized(self.snd.sound)
+			{
+				[self.document registerUndoWithMenuItem:menuItem];
+				[self.fdd setDisk:menuItem.tag URL:nil];
+			}
+		}
 	}
 }
 
@@ -265,15 +269,16 @@
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:22500000 start:0xF800]) == nil)
 		return FALSE;
 
-	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
 		return FALSE;
-
-	self.ram.mutableBytes[0x10000] = 0xFF;
 
 	if (self.rom == nil)
 		return FALSE;
 
 	if (self.crt == nil && (self.crt = [[Orion128Screen alloc] init]) == nil)
+		return FALSE;
+
+	if (self.fdd == nil && (self.fdd = [[Orion128Floppy alloc] initWithQuartz:self.cpu.quartz]) == nil)
 		return FALSE;
 
 	if (self.kbd == nil && (self.kbd = [[RKKeyboard alloc] init]) == nil)
@@ -284,12 +289,6 @@
 
 	if (self.prn == nil && (self.prn = [[X8255 alloc] init]) == nil)
 		return FALSE;
-
-	if (self.isFloppy)
-	{
-		if (self.fdd == nil && (self.fdd = [[Orion128Floppy alloc] initWithQuartz:self.cpu.quartz]) == nil)
-			return FALSE;
-	}
 
 	return TRUE;
 }
@@ -365,10 +364,7 @@
 			[self.cpu mapObject:self.ext		atPage:page from:0xF500 to:0xF5FF];
 			[self.cpu mapObject:self.prn		atPage:page from:0xF600 to:0xF6FF];
 
-			if (self.isFloppy)
-				[self.cpu mapObject:self.fdd	atPage:page from:0xF700 to:0xF72F];
-			else
-				[self.cpu mapObject:nil			atPage:page from:0xF700 to:0xF72F];
+			[self.cpu mapObject:self.fdd		atPage:page from:0xF700 to:0xF72F];
 
 			[self.cpu mapObject:self.rom		atPage:page from:0xF800 to:0xF8FF WR:self.sysF8];
 			[self.cpu mapObject:self.rom		atPage:page from:0xF900 to:0xF9FF WR:self.sysF9];
@@ -432,31 +428,16 @@
 				break;
 
 			case 5:
-
-				if ((self = [[Orion128Z80CardII alloc] init]) != nil)
-				{
-					if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.2" mask:0x07FF]) == nil)
-						return self = nil;
-				}
-
-				break;
-
 			case 6:
 
-				if ((self = [[Orion128Z80CardII alloc] init]) != nil)
-				{
-					if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.3" mask:0x07FF]) == nil)
-						return self = nil;
-				}
-
-				break;
+				return self = [[Orion128Z80CardII alloc] initWithType:type];
 		}
-
-		self.isFloppy = type != 1;
 
 		if (![self createObjects])
 			return self = nil;
 
+		self.ext.URL = [[NSBundle mainBundle] URLForResource:type == 1 ? @"ORDOS-2.40" : @"ORDOS-4.03"
+											   withExtension:@"rom"];
 		if (![self mapObjects])
 			return self = nil;
 
@@ -492,14 +473,10 @@
 	[encoder encodeObject:self.rom forKey:@"rom"];
 	[encoder encodeObject:self.ram forKey:@"ram"];
 	[encoder encodeObject:self.crt forKey:@"crt"];
+	[encoder encodeObject:self.fdd forKey:@"fdd"];
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 	[encoder encodeObject:self.ext forKey:@"ext"];
 	[encoder encodeObject:self.prn forKey:@"prn"];
-
-	[encoder encodeBool:self.isFloppy forKey:@"isFloppy"];
-
-	if (self.isFloppy)
-		[encoder encodeObject:self.fdd forKey:@"fdd"];
 }
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
@@ -516,6 +493,9 @@
 	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
 		return FALSE;
 
+	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
+		return FALSE;
+
 	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
 		return FALSE;
 
@@ -524,12 +504,6 @@
 
 	if ((self.prn = [decoder decodeObjectForKey:@"prn"]) == nil)
 		return FALSE;
-
-	if ((self.isFloppy = [decoder decodeBoolForKey:@"isFloppy"]))
-	{
-		if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
-			return FALSE;
-	}
 
 	return TRUE;
 }
@@ -637,7 +611,7 @@
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	snd.sound.beeper = (data & 0x10) != 0;
-	ext.LSB = data & 0x0F;
+	ext.MSB = data & 0x0F;
 }
 
 @end
@@ -682,6 +656,40 @@
 //	}
 
 	return [super validateMenuItem:menuItem];
+}
+
+- (id) initWithType:(NSInteger)type
+{
+	if (self = [super init])
+	{
+		switch (type)
+		{
+			case 5:
+
+				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.2" mask:0x07FF]) == nil)
+					return self = nil;
+
+				break;
+
+			case 6:
+
+				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.3" mask:0x07FF]) == nil)
+					return self = nil;
+
+				break;
+		}
+
+		if (![self createObjects])
+			return self = nil;
+
+		if (![self mapObjects])
+			return self = nil;
+
+		self.inpHook.enabled = TRUE;
+		self.outHook.enabled = TRUE;
+	}
+	
+	return self;
 }
 
 - (BOOL) createObjects

@@ -21,7 +21,7 @@
 
 @synthesize specialist;
 @synthesize flashDisk;
-@synthesize LSB;
+@synthesize MSB;
 
 // -----------------------------------------------------------------------------
 // encodeWithCoder/initWithCoder
@@ -33,7 +33,7 @@
 	[encoder encodeBool:self.tapeEmulator forKey:@"tapeEmulator"];
 	[encoder encodeBool:self.specialist forKey:@"specialist"];
 	[encoder encodeBool:self.flashDisk forKey:@"flashDisk"];
-	[encoder encodeInt:self.LSB forKey:@"LSB"];
+	[encoder encodeInt:self.MSB forKey:@"MSB"];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
@@ -44,7 +44,7 @@
 		self.tapeEmulator = [decoder decodeBoolForKey:@"tapeEmulator"];
 		self.specialist = [decoder decodeBoolForKey:@"specialist"];
 		self.flashDisk = [decoder decodeBoolForKey:@"flashDisk"];
-		self.LSB = [decoder decodeIntForKey:@"LSB"];
+		self.MSB = [decoder decodeIntForKey:@"MSB"];
 	}
 
 	return self;
@@ -170,7 +170,7 @@
 	}
 
 	[super RESET];
-	LSB = 0x00;
+	MSB = 0x00;
 }
 
 // -----------------------------------------------------------------------------
@@ -184,7 +184,7 @@
 		addr = ((C & 0x1F) << 16) | (addr & 0xFF00) | B;
 
 	else if (ROM.length == 0x100000)
-		addr = (LSB << 16) | (C << 8) | B;
+		addr = (MSB << 16) | (C << 8) | B;
 
 	else if (ROM.length <= 0x10000)
 		addr = (C << 8) | B;

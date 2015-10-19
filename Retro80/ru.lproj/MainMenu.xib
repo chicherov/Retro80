@@ -158,7 +158,7 @@
                                                 <action selector="newDocument:" target="-1" id="maO-WM-l8u"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Орион-128" tag="801" id="Ccq-IT-d59">
+                                        <menuItem title="Орион-128" tag="802" id="Ccq-IT-d59">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <menu key="submenu" id="3x4-G2-qWR">
                                                 <items>
@@ -326,6 +326,12 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="9JB-dH-wkD"/>
+                            <menuItem title="Системный ROM-диск" tag="1" hidden="YES" enabled="NO" id="TGT-nE-4Kn">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="ROMDisk:" target="-1" id="X9K-TE-CJM"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Внешний ROM-диск" id="xBi-TV-tlo">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
