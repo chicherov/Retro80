@@ -371,7 +371,7 @@
 	if (menuItem.tag >= 1 && menuItem.tag <= 2)
 	{
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
-		panel.allowedFileTypes = @[@"odi", @"cpm"];
+		panel.allowedFileTypes = @[@"odi", @"kdi", @"cpm"];
 		panel.title = menuItem.title;
 
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
