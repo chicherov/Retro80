@@ -54,7 +54,7 @@
 	<key>CFBundleIconFile</key>
 	<string>Retro80</string>
 	<key>CFBundleIdentifier</key>
-	<string>ru.uart.retro80</string>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>

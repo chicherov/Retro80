@@ -34,7 +34,7 @@
 		D94E03B01AD83B0400C1FFBC /* vg93.m in Sources */ = {isa = PBXBuildFile; fileRef = D94E03AF1AD83B0400C1FFBC /* vg93.m */; };
 		D953B74E1AD329A900C99F05 /* Specialist2SD.bin in Resources */ = {isa = PBXBuildFile; fileRef = D953B74D1AD329A900C99F05 /* Specialist2SD.bin */; };
 		D967B3E019B457E000C3ED9A /* Micro80.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3DF19B457E000C3ED9A /* Micro80.m */; };
-		D971486B1A0ED612006348B1 /* QLRetro80.qlgenerator in Copy Files */ = {isa = PBXBuildFile; fileRef = D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */; };
+		D971486B1A0ED612006348B1 /* QLRetro80.qlgenerator in Copy Files */ = {isa = PBXBuildFile; fileRef = D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		D974FCA019ADE9450041DF91 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FC9F19ADE9450041DF91 /* main.m */; };
 		D974FCA719ADE9450041DF91 /* Document.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCA619ADE9450041DF91 /* Document.m */; };
 		D974FCAA19ADE9450041DF91 /* Document.xib in Resources */ = {isa = PBXBuildFile; fileRef = D974FCA819ADE9450041DF91 /* Document.xib */; };
@@ -486,7 +486,7 @@
 		D974FC8819ADE9450041DF91 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0630;
+				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Andrey Chicherov";
 				TargetAttributes = {
 					D974FC8F19ADE9450041DF91 = {
@@ -677,6 +677,7 @@
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
@@ -741,6 +742,7 @@
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
 				INFOPLIST_FILE = "Retro80/Retro80-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.retro80;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -755,6 +757,7 @@
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
 				INFOPLIST_FILE = "Retro80/Retro80-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.retro80;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -774,6 +777,7 @@
 				INSTALL_PATH = /Library/QuickLook;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				MTL_ENABLE_DEBUG_INFO = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.QLRetro80;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = qlgenerator;
 			};
@@ -789,6 +793,7 @@
 				INSTALL_PATH = /Library/QuickLook;
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.QLRetro80;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = qlgenerator;
 			};

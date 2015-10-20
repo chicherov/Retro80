@@ -40,7 +40,7 @@
 
 - (void) performUndo:(NSData *)data
 {
-	[self.windowControllers.firstObject windowWillClose:nil];
+	[self.windowControllers.firstObject windowWillClose:[NSNotification notificationWithName:NSWindowWillCloseNotification object:nil]];
 
 	[self.undoManager registerUndoWithTarget:self
 									selector:lastUndoAction = @selector(performUndo:)
@@ -120,7 +120,7 @@
 		{
 			if (self.computer)
 			{
-				[self.windowControllers.firstObject windowWillClose:nil];
+				[self.windowControllers.firstObject windowWillClose:[NSNotification notificationWithName:NSWindowWillCloseNotification object:nil]];
 				self.computer = object;
 				[self.windowControllers.firstObject windowDidLoad];
 			}

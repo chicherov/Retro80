@@ -136,17 +136,6 @@ NSImage *image;
 // Обработка FullScreen
 // -----------------------------------------------------------------------------
 
-- (void) mouseMoved:(NSEvent *)theEvent
-{
-	[timer invalidate];
-
-	timer = [NSTimer scheduledTimerWithTimeInterval:2.0
-											 target:self
-										   selector:@selector(hideMouse)
-										   userInfo:nil
-											repeats:NO];
-}
-
 - (void) hideMouse
 {
 	[NSCursor setHiddenUntilMouseMoves:YES];
@@ -154,10 +143,23 @@ NSImage *image;
 
 - (void) windowWillEnterFullScreen:(NSNotification *)notification
 {
-	[self mouseMoved:nil];
-	[self.window setAcceptsMouseMovedEvents:YES];
+	timer = [NSTimer scheduledTimerWithTimeInterval:2.0
+											 target:self
+										   selector:@selector(hideMouse)
+										   userInfo:nil
+											repeats:NO];
 
+	[self.window setAcceptsMouseMovedEvents:YES];
 	constraint.constant = 0;
+}
+
+- (void) mouseMoved:(NSEvent *)theEvent
+{
+	timer = [NSTimer scheduledTimerWithTimeInterval:2.0
+											 target:self
+										   selector:@selector(hideMouse)
+										   userInfo:nil
+											repeats:NO];
 }
 
 - (void) windowWillExitFullScreen:(NSNotification *)notification
@@ -254,7 +256,13 @@ NSImage *image;
 - (void) windowDidBecomeKey:(NSNotification *)notification
 {
 	if (self.window.styleMask & NSFullScreenWindowMask)
-		[self mouseMoved:nil];
+	{
+		timer = [NSTimer scheduledTimerWithTimeInterval:2.0
+												 target:self
+											   selector:@selector(hideMouse)
+											   userInfo:nil
+												repeats:NO];
+	}
 
 	[self.kbd keyUp:nil];
 }

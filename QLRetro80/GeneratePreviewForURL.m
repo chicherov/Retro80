@@ -355,7 +355,7 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 
 		NSAttributedString *output = [[NSAttributedString alloc] initWithString:out attributes:@{NSFontAttributeName : [NSFont userFixedPitchFontOfSize: 18.0]}];
 
-		NSData *rtfData = [output RTFFromRange:NSMakeRange(0, output.length) documentAttributes:nil];
+		NSData *rtfData = [output RTFFromRange:NSMakeRange(0, output.length) documentAttributes:@{NSDocumentTypeDocumentAttribute: NSRTFTextDocumentType}];
 
 		QLPreviewRequestSetDataRepresentation(preview,
 											  (__bridge CFDataRef)rtfData,
