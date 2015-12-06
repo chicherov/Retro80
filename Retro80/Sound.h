@@ -1,6 +1,6 @@
+@protocol CentralProcessorUnit;
 @protocol DisplayController;
 @protocol SoundController;
-@protocol Processor;
 @class Document;
 
 // -----------------------------------------------------------------------------
@@ -12,9 +12,9 @@
 @property (weak) IBOutlet Document* document;
 @property IBOutlet NSTextField *textField;
 
+@property (weak) NSObject <CentralProcessorUnit> *cpu;
 @property (weak) NSObject <DisplayController> *crt;
 @property (weak) NSObject <SoundController> *snd;
-@property (weak) NSObject <Processor> *cpu;
 
 @property BOOL debug;
 
@@ -30,3 +30,18 @@
 - (void) stop;
 
 @end
+
+// -----------------------------------------------------------------------------
+// Протокол звукового процессора
+// -----------------------------------------------------------------------------
+
+@protocol SoundController
+
+@property Sound* sound;
+
+@optional
+
+- (SInt8) sample:(uint64_t)clock;
+
+@end
+

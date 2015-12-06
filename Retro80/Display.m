@@ -2,7 +2,24 @@
 #import "Display.h"
 
 @implementation Digit
-@synthesize segments;
+{
+	uint8_t segments;
+}
+
+- (uint8_t) segments
+{
+	return segments;
+}
+
+- (void) setSegments:(uint8_t)value
+{
+	if (segments != value)
+	{
+		self.needsDisplay = TRUE;
+		segments = value;
+	}
+}
+
 NSImage *image;
 
 - (void) drawRect:(NSRect)rect

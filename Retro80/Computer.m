@@ -2,12 +2,12 @@
 
 @implementation Computer
 
-+ (NSString *) title
++ (NSArray<NSString*> *) extensions
 {
 	return nil;
 }
 
-+ (NSArray *) extensions
++ (NSString *) title
 {
 	return nil;
 }

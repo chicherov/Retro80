@@ -518,15 +518,12 @@
 
 @implementation PartnerKeyboard
 
-- (id) init
+- (void) keyboardInit
 {
-	if (self = [super init])
-	{
-		RUSLAT = 0x10;
-		TAPEI = 0x80;
-	}
+	[super keyboardInit];
 
-	return self;
+	RUSLAT = 0x10;
+	TAPEI = 0x80;
 }
 
 - (void) setC:(uint8_t)data

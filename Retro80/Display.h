@@ -2,15 +2,9 @@
 
 @protocol DisplayController;
 @protocol Keyboard;
+
 @class Document;
-
-// -----------------------------------------------------------------------------
-// LCD цифра
-// -----------------------------------------------------------------------------
-
-@interface Digit : NSView
-@property uint8_t segments;
-@end
+@class Digit;
 
 // -----------------------------------------------------------------------------
 // Display - Экран компьютера
@@ -44,3 +38,45 @@
 						   cy:(NSUInteger)cy;
 
 @end
+
+// -----------------------------------------------------------------------------
+// LCD цифра
+// -----------------------------------------------------------------------------
+
+@interface Digit : NSView
+@property uint8_t segments;
+@end
+
+// -----------------------------------------------------------------------------
+// Протокол контролера дисплея
+// -----------------------------------------------------------------------------
+
+@protocol DisplayController
+
+@property Display* display;
+
+@optional
+
+- (unichar) charAtX:(unsigned)x
+				  Y:(unsigned)y;
+
+- (void) draw;
+
+@end
+
+// -----------------------------------------------------------------------------
+// Протокол клавиатуры
+// -----------------------------------------------------------------------------
+
+@protocol Keyboard
+
+- (void) flagsChanged:(NSEvent *)theEvent;
+- (void) keyDown:(NSEvent *)theEvent;
+- (void) keyUp:(NSEvent *)theEvent;
+
+- (void) paste:(NSString *)string;
+
+@property BOOL qwerty;
+
+@end
+

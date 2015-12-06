@@ -33,10 +33,11 @@
 	uint8_t TAPEO;
 }
 
-- (void) scan:(uint64_t)clock;
-
 // Для интерфейса магнитофона
 
 @property (weak) NSObject <SoundController> *snd;
+
+- (void) scan:(uint64_t)clock;
+- (void) keyboardInit;
 
 @end

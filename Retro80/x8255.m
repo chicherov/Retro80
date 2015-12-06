@@ -183,9 +183,7 @@
 - (id) init
 {
 	if (self = [super init])
-	{
 		[self RESET];
-	}
 
 	return self;
 }
@@ -204,7 +202,7 @@
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [self init])
+	if (self = [super initWithCoder:decoder])
 	{
 		mode.byte = [decoder decodeIntForKey:@"mode"];
 		A = [decoder decodeIntForKey:@"A"];

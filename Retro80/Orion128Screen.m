@@ -103,11 +103,11 @@
 
 - (void) RESET
 {
-	IRQ = IE = FALSE;
 	bitmap = NULL;
-
 	color = 0x00;
 	page = 0x00;
+
+	IE = FALSE;
 }
 
 // -----------------------------------------------------------------------------
@@ -131,6 +131,8 @@
 {
 	[encoder encodeInt:color forKey:@"color"];
 	[encoder encodeInt:page forKey:@"page"];
+
+	[encoder encodeInt64:IRQ forKey:@"IRQ"];
 	[encoder encodeBool:IE forKey:@"IE"];
 }
 
@@ -140,6 +142,8 @@
 	{
 		color = [decoder decodeIntForKey:@"color"];
 		page = [decoder decodeIntForKey:@"page"];
+
+		IRQ = [decoder decodeInt64ForKey:@"IRQ"];
 		IE = [decoder decodeBoolForKey:@"IE"];
 	}
 

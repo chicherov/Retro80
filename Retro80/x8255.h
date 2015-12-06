@@ -4,7 +4,7 @@
 
 #import "x8080.h"
 
-@interface X8255 : NSObject<RD, WR, RESET, NSCoding>
+@interface X8255 : NSResponder<RD, WR, RESET, NSCoding>
 {
 	uint64_t current;
 

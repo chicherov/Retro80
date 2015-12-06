@@ -507,13 +507,25 @@
 @implementation UT88Screen
 {
 	uint8_t lcd[3];
+	uint64_t IRQ;
 	BOOL update;
-	int count;
+}
+
+- (void) setDisplay:(Display *)display
+{
+	display.digit1.hidden = FALSE;
+	display.digit2.hidden = FALSE;
+	display.digit3.hidden = FALSE;
+	display.digit4.hidden = FALSE;
+	display.digit5.hidden = FALSE;
+	display.digit6.hidden = FALSE;
+
+	[super setDisplay:display];
 }
 
 - (void) draw
 {
-	count++; if (update)
+	if (update)
 	{
 		static uint8_t mask[] =
 		{
@@ -521,28 +533,11 @@
 		};
 
 		self.display.digit1.segments = mask[lcd[2] >> 4];
-		self.display.digit1.needsDisplay = TRUE;
-		self.display.digit1.hidden = FALSE;
-
 		self.display.digit2.segments = mask[lcd[2] & 15];
-		self.display.digit2.needsDisplay = TRUE;
-		self.display.digit2.hidden = FALSE;
-
 		self.display.digit3.segments = mask[lcd[1] >> 4];
-		self.display.digit3.needsDisplay = TRUE;
-		self.display.digit3.hidden = FALSE;
-
 		self.display.digit4.segments = mask[lcd[1] & 15];
-		self.display.digit4.needsDisplay = TRUE;
-		self.display.digit4.hidden = FALSE;
-
 		self.display.digit5.segments = mask[lcd[0] >> 4];
-		self.display.digit5.needsDisplay = TRUE;
-		self.display.digit5.hidden = FALSE;
-
 		self.display.digit6.segments = mask[lcd[0] & 15];
-		self.display.digit6.needsDisplay = TRUE;
-		self.display.digit6.hidden = FALSE;
 	}
 
 	[super draw];
@@ -565,14 +560,13 @@
 
 - (BOOL) IRQ:(uint64_t)clock
 {
-	if (count >= 50)
+	if (IRQ <= clock)
 	{
-		count = 0; return TRUE;
+		IRQ += 16000000;
+		return TRUE;
 	}
-	else
-	{
-		return FALSE;
-	}
+
+	return FALSE;
 }
 
 - (void) RESET
@@ -594,7 +588,10 @@
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [self init])
+	{
 		[decoder decodeValueOfObjCType:@encode(uint8_t[3]) at:&lcd];
+		IRQ = [decoder decodeInt64ForKey:@"IRQ"];
+	}
 
 	return self;
 }
@@ -602,6 +599,7 @@
 - (void) encodeWithCoder:(NSCoder *)coder
 {
 	[coder encodeValueOfObjCType:@encode(uint8_t[3]) at:&lcd];
+	[coder encodeInt64:IRQ forKey:@"IRQ"];
 }
 
 @end

@@ -38,7 +38,7 @@
 // X8080 - Базовый класс компьютера с процесором i8080
 // -----------------------------------------------------------------------------
 
-@interface X8080 : NSObject <Processor, Debug, NSCoding>
+@interface X8080 : NSObject <CentralProcessorUnit, Debug, NSCoding>
 {
 	unsigned quartz;
 	BOOL Z80, WAIT;

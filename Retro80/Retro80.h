@@ -16,60 +16,13 @@
 // Протокол центрального процессора
 // -----------------------------------------------------------------------------
 
-@protocol Processor
+@protocol CentralProcessorUnit
 
 - (BOOL) execute:(uint64_t)clock;
 - (void) reset;
 
 @property uint32_t quartz;
 @property uint64_t CLK;
-
-@end
-
-// -----------------------------------------------------------------------------
-// Протокол контролера дисплея
-// -----------------------------------------------------------------------------
-
-@protocol DisplayController
-
-@property Display* display;
-
-@optional
-
-- (unichar) charAtX:(unsigned)x
-				  Y:(unsigned)y;
-
-- (void) draw;
-
-@end
-
-// -----------------------------------------------------------------------------
-// Протокол контролера дисплея
-// -----------------------------------------------------------------------------
-
-@protocol SoundController
-
-@property Sound* sound;
-
-@optional
-
-- (SInt8) sample:(uint64_t)clock;
-
-@end
-
-// -----------------------------------------------------------------------------
-// Протокол клавиатуры
-// -----------------------------------------------------------------------------
-
-@protocol Keyboard
-
-- (void) flagsChanged:(NSEvent *)theEvent;
-- (void) keyDown:(NSEvent *)theEvent;
-- (void) keyUp:(NSEvent *)theEvent;
-
-- (void) paste:(NSString *)string;
-
-@property BOOL qwerty;
 
 @end
 
@@ -81,7 +34,10 @@
 
 @property (weak) Document *document;
 
-@property NSObject <Processor> *cpu;
++ (NSArray<NSString*> *) extensions;
++ (NSString *) title;
+
+@property NSObject <CentralProcessorUnit> *cpu;
 
 @property NSObject <DisplayController> *crt;
 @property NSObject <SoundController> *snd;
@@ -96,10 +52,6 @@
 
 - (id) initWithData:(NSData *)data URL:(NSURL *)url;
 - (id) initWithType:(NSInteger)type;
-
-+ (NSString *) title;
-
-+ (NSArray *) extensions;
 
 - (void) start;
 - (void) stop;

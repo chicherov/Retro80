@@ -818,8 +818,13 @@ CCCC[][3] =
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [self init])
+	if (self = [super init])
 	{
+		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"SYMGEN" ofType:@"BIN"]]) == nil)
+			return self = nil;
+
+		bytes = rom.bytes;
+
 		status.byte = [decoder decodeIntForKey:@"status"];
 		IRQ = [decoder decodeBoolForKey:@"IRQ"];
 		*(uint32_t *)config.byte = [decoder decodeInt32ForKey:@"config"];
