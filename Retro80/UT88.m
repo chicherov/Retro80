@@ -80,7 +80,7 @@
 			RAM *ram = [[RAM alloc] initWithLength:0x1800 mask:0xFFF];
 
 			memcpy(ram.mutableBytes + 0x0000, self.ram.mutableBytes + 0x3000, 0x1000);
-			memcpy(ram.mutableBytes + 0x1000, self.ram.mutableBytes + 0xC000, 0x4000);
+			memcpy(ram.mutableBytes + 0x1000, self.ram.mutableBytes + 0xC000, 0x0400);
 			memcpy(ram.mutableBytes + 0x1400, self.ram.mutableBytes + 0xF400, 0x0400);
 
 			self.ram = ram;
