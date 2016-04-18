@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Специалист»
- ******************************************************************************/
+
+ *****/
 
 #import "Specialist.h"
 #import "SpecialistSP580.h"
@@ -103,7 +108,7 @@
 
 				if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 				{
-					@synchronized(self.snd.sound)
+					@synchronized(self.cpu)
 					{
 						[self.document registerUndoWithMenuItem:menuItem];
 						romdisk.URL = panel.URLs.firstObject;
@@ -111,7 +116,7 @@
 				}
 				else if (romdisk.URL != nil)
 				{
-					@synchronized(self.snd.sound)
+					@synchronized(self.cpu)
 					{
 						[self.document registerUndoWithMenuItem:menuItem];
 						romdisk.URL = nil;
@@ -123,7 +128,7 @@
 
 			case 3:
 			{
-				@synchronized(self.snd.sound)
+				@synchronized(self.cpu)
 				{
 					[self.document registerUndoWithMenuItem:menuItem];
 

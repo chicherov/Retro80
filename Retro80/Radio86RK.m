@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Радио-86РК»
- ******************************************************************************/
+
+ *****/
 
 #import "Radio86RK.h"
 
@@ -120,7 +125,7 @@ static uint32_t colors[] =
 
 - (IBAction) floppy:(NSMenuItem *)menuItem;
 {
-	if (menuItem.tag == 0) @synchronized(self.snd.sound)
+	if (menuItem.tag == 0) @synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 

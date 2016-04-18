@@ -1,10 +1,11 @@
-//
-//  main.m
-//  Retro80
-//
-//  Created by Андрей Чичеров on 27.08.14.
-//  Copyright (c) 2014 Andrey Chicherov. All rights reserved.
-//
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ Created by Андрей Чичеров on 27.08.14.
+
+ *****/
 
 #import <Cocoa/Cocoa.h>
 

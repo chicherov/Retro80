@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Микро-80»
- ******************************************************************************/
+
+ *****/
 
 #import "x8080.h"
 #import "mem.h"
@@ -13,7 +18,7 @@
 // Дисплей "Микро-80"
 // -----------------------------------------------------------------------------
 
-@interface Micro80Screen : NSObject <DisplayController>
+@interface Micro80Screen : NSObject <CRT>
 
 @property const uint8_t* memory;
 @property const uint8_t* cursor;
@@ -25,7 +30,7 @@
 // Интерфейс сопряжения "Микро-80"
 // -----------------------------------------------------------------------------
 
-@interface Micro80Recorder : NSObject <SoundController, RD, WR>
+@interface Micro80Recorder : NSObject <SND, RD, WR>
 
 @end
 

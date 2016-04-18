@@ -1,3 +1,10 @@
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ *****/
+
 #import "Retro80.h"
 
 // -----------------------------------------------------------------------------
@@ -56,7 +63,7 @@
 
 - (void) registerUndoWitString:(NSString *)string type:(NSInteger)type
 {
-	@synchronized(self.sound)
+	@synchronized(self.computer.cpu)
 	{
 		if (type != lastUndoType)
 		{
@@ -74,7 +81,7 @@
 
 - (void) registerUndoWithMenuItem:(NSMenuItem *)menuItem
 {
-	@synchronized(self.sound)
+	@synchronized(self.computer.cpu)
 	{
 		if (lastUndoType || menuItem.action != lastUndoAction)
 		{
@@ -94,7 +101,7 @@
 
 - (NSData *) dataOfType:(NSString *)typeName error:(NSError **)outError
 {
-	@synchronized(self.sound)
+	@synchronized(self.computer.cpu)
 	{
 		return [NSKeyedArchiver archivedDataWithRootObject:self.computer];
 	}

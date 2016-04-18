@@ -1,7 +1,14 @@
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ 
+ *****/
+
 #import <OpenGL/gl.h>
 
-@protocol DisplayController;
-@protocol Keyboard;
+@protocol CRT;
+@protocol KBD;
 
 @class Document;
 @class Digit;
@@ -23,8 +30,8 @@
 @property IBOutlet Digit *digit5;
 @property IBOutlet Digit *digit6;
 
-@property (weak) NSObject <DisplayController> *crt;
-@property (weak) NSObject <Keyboard> *kbd;
+@property (weak) NSObject <CRT> *crt;
+@property (weak) NSObject <KBD> *kbd;
 
 - (uint32_t *) setupGraphicsWidth:(NSUInteger)width
 						   height:(NSUInteger)height;
@@ -51,7 +58,7 @@
 // Протокол контролера дисплея
 // -----------------------------------------------------------------------------
 
-@protocol DisplayController
+@protocol CRT
 
 @property Display* display;
 
@@ -68,7 +75,7 @@
 // Протокол клавиатуры
 // -----------------------------------------------------------------------------
 
-@protocol Keyboard
+@protocol KBD
 
 - (void) flagsChanged:(NSEvent *)theEvent;
 - (void) keyDown:(NSEvent *)theEvent;

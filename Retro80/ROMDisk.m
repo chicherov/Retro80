@@ -1,3 +1,10 @@
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ *****/
+
 #import "ROMDisk.h"
 #import "RKRecorder.h"
 
@@ -161,7 +168,7 @@
 // RESET - для TAPE EMULATOR
 // -----------------------------------------------------------------------------
 
-- (void) RESET
+- (void) RESET:(uint64_t)clock
 {
 	if (romMode > 20 && self.tapeEmulator && self.recorder.enabled)
 	{
@@ -169,7 +176,7 @@
 		self.recorder.pos = 0;
 	}
 
-	[super RESET];
+	[super RESET:clock];
 	MSB = 0x00;
 }
 

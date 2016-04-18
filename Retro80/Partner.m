@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Партнер 01.01»
- ******************************************************************************/
+
+ *****/
 
 #import "Partner.h"
 
@@ -55,7 +60,7 @@
 
 - (IBAction) floppy:(NSMenuItem *)menuItem
 {
-	if (menuItem.tag == 0) @synchronized(self.snd.sound)
+	if (menuItem.tag == 0) @synchronized(self.cpu)
 	{
 		if ((self.sys2.slot & 0x02) == 0)
 		{
@@ -71,7 +76,7 @@
 
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
-			@synchronized(self.snd.sound)
+			@synchronized(self.cpu)
 			{
 				[self.document registerUndoWithMenuItem:menuItem];
 				[self.floppy setDisk:menuItem.tag URL:panel.URLs.firstObject];
@@ -79,7 +84,7 @@
 		}
 		else if ([self.floppy getDisk:menuItem.tag] != nil)
 		{
-			@synchronized(self.snd.sound)
+			@synchronized(self.cpu)
 			{
 				[self.document registerUndoWithMenuItem:menuItem];
 				[self.floppy setDisk:menuItem.tag URL:nil];
@@ -94,7 +99,7 @@
 
 - (IBAction) colorModule:(NSMenuItem *)menuItem
 {
-	@synchronized(self.snd.sound)
+	@synchronized(self.cpu)
 	{
 		if ((self.sys2.slot & 0x04) == 0)
 		{

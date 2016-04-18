@@ -1,3 +1,10 @@
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ *****/
+
 #import "x8080.h"
 
 // -----------------------------------------------------------------------------
@@ -17,7 +24,7 @@
 
 @property (weak) X8080 *cpu;
 @property NSObject<RD, BYTE> *mem;
-@property NSObject<SoundController> *snd;
+@property NSObject<SND> *snd;
 
 @property NSString *extension;
 @property unsigned type;
@@ -42,7 +49,7 @@
 
 @property (weak) X8080 *cpu;
 @property NSObject<RD, BYTE> *mem;
-@property NSObject<SoundController> *snd;
+@property NSObject<SND> *snd;
 
 @property NSString *extension;
 @property unsigned type;

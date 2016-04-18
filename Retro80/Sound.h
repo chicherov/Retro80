@@ -1,6 +1,14 @@
-@protocol CentralProcessorUnit;
-@protocol DisplayController;
-@protocol SoundController;
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ *****/
+
+@protocol CRT;
+@protocol SND;
+@protocol CPU;
+
 @class Document;
 
 // -----------------------------------------------------------------------------
@@ -9,12 +17,13 @@
 
 @interface Sound : NSResponder
 
+@property (weak) IBOutlet NSResponder *nextResponder;
 @property (weak) IBOutlet Document* document;
 @property IBOutlet NSTextField *textField;
 
-@property (weak) NSObject <CentralProcessorUnit> *cpu;
-@property (weak) NSObject <DisplayController> *crt;
-@property (weak) NSObject <SoundController> *snd;
+@property (weak) NSObject<CPU> *cpu;
+@property (weak) NSObject<CRT> *crt;
+@property (weak) NSObject<SND> *snd;
 
 @property BOOL debug;
 
@@ -35,7 +44,7 @@
 // Протокол звукового процессора
 // -----------------------------------------------------------------------------
 
-@protocol SoundController
+@protocol SND
 
 @property Sound* sound;
 

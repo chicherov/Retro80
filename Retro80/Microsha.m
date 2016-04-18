@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Микроша»
- ******************************************************************************/
+
+ *****/
 
 #import "Microsha.h"
 
@@ -97,7 +102,7 @@ static uint32_t colors[] =
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	@synchronized(self.snd.sound)
+	@synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -113,7 +118,7 @@ static uint32_t colors[] =
 
 - (IBAction) floppy:(NSMenuItem *)menuItem;
 {
-	if (menuItem.tag == 0) @synchronized(self.snd.sound)
+	if (menuItem.tag == 0) @synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 

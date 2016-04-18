@@ -1,130 +1,61 @@
-/*******************************************************************************
- Микропроцессор КР580ВМ80А (8080A)
- ******************************************************************************/
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ Центральные процессоры КР580ВМ80А (Intel 8080A) и Zilog Z80
+
+ *****/
 
 #import "Retro80.h"
+
+// -----------------------------------------------------------------------------
 
 @protocol RD
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock;
 @end
 
+// -----------------------------------------------------------------------------
+
 @protocol WR
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock;
 @end
+
+// -----------------------------------------------------------------------------
 
 @protocol BYTE
 - (uint8_t *) BYTE:(uint16_t)addr;
 @end
 
+// -----------------------------------------------------------------------------
+
 @protocol RESET
-- (void) RESET;
+- (void) RESET:(uint64_t)clock;
 @end
 
-@class X8080;
+// -----------------------------------------------------------------------------
 
 @protocol HLDA
 - (unsigned) HLDA:(uint64_t)clock;
 @end
 
+// -----------------------------------------------------------------------------
+
 @protocol IRQ
 - (BOOL) IRQ:(uint64_t)clock;
 @end
+
+// -----------------------------------------------------------------------------
 
 @protocol INTE
 - (void) INTE:(BOOL)IF clock:(uint64_t)clock;
 @end
 
 // -----------------------------------------------------------------------------
-// X8080 - Базовый класс компьютера с процесором i8080
-// -----------------------------------------------------------------------------
 
-@interface X8080 : NSObject <CentralProcessorUnit, Debug, NSCoding>
-{
-	unsigned quartz;
-	BOOL Z80, WAIT;
-	uint64_t CLK;
+@interface X8080 : NSObject <CPU, NSCoding, BYTE>
 
-	uint8_t PAGE;
-
-	// -------------------------------------------------------------------------
-	// Регистры процессора
-	// -------------------------------------------------------------------------
-
-	uint16_t PC;
-	uint16_t SP;
-
-	union
-	{
-		uint16_t AF; struct
-		{
-			uint8_t F;
-			uint8_t A;
-		};
-
-	} AF, AF1;
-
-	union
-	{
-		uint16_t BC; struct
-		{
-			uint8_t C;
-			uint8_t B;
-		};
-
-	} BC, BC1;
-
-	union
-	{
-		uint16_t DE; struct
-		{
-			uint8_t E;
-			uint8_t D;
-		};
-
-	} DE, DE1;
-
-	union HL
-	{
-		uint16_t HL; struct
-		{
-			uint8_t L;
-			uint8_t H;
-		};
-		
-	} HL, HL1, IX, IY;
-
-	uint8_t IR_R;
-	uint8_t IR_I;
-
-	// -------------------------------------------------------------------------
-	// Сигналы NMI/IRQ
-	// -------------------------------------------------------------------------
-
-	BOOL (*CallNMI) (id, SEL, uint64_t);
-	NSObject<IRQ> *NMI;
-
-	BOOL (*CallIRQ) (id, SEL, uint64_t);
-	NSObject<IRQ> *IRQ;
-	uint8_t RST;
-	uint8_t IM;
-
-	// -------------------------------------------------------------------------
-	// Сигнал INTE
-	// -------------------------------------------------------------------------
-
-	void (*CallINTE) (id, SEL, BOOL, uint64_t);
-	NSObject<INTE> *INTE;
-	BOOL IF, IFF2;
-
-	// -------------------------------------------------------------------------
-	// Сигнал HLDA
-	// -------------------------------------------------------------------------
-
-	unsigned (*CallHLDA) (id, SEL, uint64_t);
-	NSObject<HLDA> *HLDA;
-}
-
-@property unsigned quartz;
+@property uint32_t quartz;
 @property BOOL Z80, WAIT;
 
 @property uint64_t CLK;
@@ -151,6 +82,9 @@
 @property uint8_t IXH, IXL;
 @property uint8_t IYH, IYL;
 
+@property uint8_t I;
+@property uint8_t R;
+
 @property NSObject<IRQ> *NMI;
 @property NSObject<IRQ> *IRQ;
 @property uint8_t RST;
@@ -163,16 +97,17 @@
 
 // -----------------------------------------------------------------------------
 
-- (id) initWithQuartz:(unsigned)quartz start:(uint32_t)start;
-- (id) initZ80WithQuartz:(unsigned)quartz wait:(BOOL)wait start:(uint32_t)start;
-
-// -----------------------------------------------------------------------------
-
 @property uint8_t RAMDISK;
 @property BOOL M1;
 
 @property BOOL MEMIO;
 @property BOOL FF;
+
+// -----------------------------------------------------------------------------
+
+- (id) initZ80WithQuartz:(unsigned)quartz wait:(BOOL)wait start:(uint32_t)start;
+
+- (id) initWithQuartz:(unsigned)quartz start:(uint32_t)start;
 
 // -----------------------------------------------------------------------------
 
@@ -225,5 +160,10 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
 
 void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
 uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+
+// -----------------------------------------------------------------------------
+
+@property uint8_t *breakpoints;
+@property uint64_t BREAK;
 
 @end

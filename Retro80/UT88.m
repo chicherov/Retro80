@@ -1,3 +1,12 @@
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ ПЭВМ «ЮТ-88»
+
+ *****/
+
 #import "UT88.h"
 
 @implementation UT88
@@ -61,7 +70,7 @@
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	@synchronized(self.snd.sound)
+	@synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -96,7 +105,7 @@
 
 - (IBAction)UT88:(NSMenuItem *)menuItem
 {
-	@synchronized(self.snd.sound)
+	@synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -146,7 +155,7 @@
 
 - (IBAction) reset:(NSMenuItem *)menuItem
 {
-	@synchronized(self.snd.sound)
+	@synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -440,7 +449,7 @@
 	cpu.RAMDISK = data & 0x08 ? data & 0x04 ? data & 0x02 ? data & 0x01 ? 0 : 1 : 2 : 3 : 4;
 }
 
-- (void) RESET
+- (void) RESET:(uint64_t)clock
 {
 	cpu.RAMDISK = 0;
 }
@@ -492,9 +501,9 @@
 		[super WR:addr data:data CLK:clock];
 }
 
-- (void) RESET
+- (void) RESET:(uint64_t)clock
 {
-	[super RESET];
+	[super RESET:clock];
 	key = 0x00;
 }
 
@@ -569,7 +578,7 @@
 	return FALSE;
 }
 
-- (void) RESET
+- (void) RESET:(uint64_t)clock
 {
 	lcd[0] = 0xFF;
 	lcd[1] = 0xFF;
@@ -580,7 +589,7 @@
 - (id) init
 {
 	if (self = [super init])
-		[self RESET];
+		[self RESET:0];
 
 	return self;
 }

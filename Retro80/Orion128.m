@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Орион 128»
- ******************************************************************************/
+
+ *****/
 
 #import "Orion128.h"
 
@@ -177,7 +182,7 @@
 {
 	RAM *ram = [[[self.ram class] alloc] initWithLength:self.ram.length == 0x20000 ? 0x40000 : 0x20000 mask:self.ram.mask];
 
-	if (ram) @synchronized(self.snd.sound)
+	if (ram) @synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -243,7 +248,7 @@
 		
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
-			@synchronized(self.snd.sound)
+			@synchronized(self.cpu)
 			{
 				[self.document registerUndoWithMenuItem:menuItem];
 				[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
@@ -251,7 +256,7 @@
 		}
 		else if ([self.fdd getDisk:menuItem.tag] != nil)
 		{
-			@synchronized(self.snd.sound)
+			@synchronized(self.cpu)
 			{
 				[self.document registerUndoWithMenuItem:menuItem];
 				[self.fdd setDisk:menuItem.tag URL:nil];
@@ -589,11 +594,11 @@
 
 @implementation Orion128SystemFE
 {
-	NSObject<SoundController> *snd;
+	NSObject<SND> *snd;
 	ROMDisk *ext;
 }
 
-- (id) initWithSND:(NSObject<SoundController> *)_snd EXT:(ROMDisk *)_ext
+- (id) initWithSND:(NSObject<SND> *)_snd EXT:(ROMDisk *)_ext
 {
 	if (self = [super init])
 	{
@@ -620,10 +625,10 @@
 
 @implementation Orion128SystemFF
 {
-	NSObject<SoundController> *snd;
+	NSObject<SND> *snd;
 }
 
-- (id) initWithSND:(NSObject<SoundController> *)_snd
+- (id) initWithSND:(NSObject<SND> *)_snd
 {
 	if (self = [super init])
 		snd = _snd;

@@ -1,3 +1,10 @@
+/*****
+ 
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ *****/
+
 #import "Display.h"
 #import "Sound.h"
 #import "Debug.h"
@@ -16,13 +23,17 @@
 // Протокол центрального процессора
 // -----------------------------------------------------------------------------
 
-@protocol CentralProcessorUnit
+@protocol CPU
+
+- (uint32_t) quartz;
+- (uint64_t) CLK;
 
 - (BOOL) execute:(uint64_t)clock;
-- (void) reset;
 
-@property uint32_t quartz;
-@property uint64_t CLK;
+@optional
+
+- (NSObject<Debug> *) debug;
+- (void) reset;
 
 @end
 
@@ -37,11 +48,10 @@
 + (NSArray<NSString*> *) extensions;
 + (NSString *) title;
 
-@property NSObject <CentralProcessorUnit> *cpu;
-
-@property NSObject <DisplayController> *crt;
-@property NSObject <SoundController> *snd;
-@property NSObject <Keyboard> *kbd;
+@property NSObject<CPU> *cpu;
+@property NSObject<CRT> *crt;
+@property NSObject<KBD> *kbd;
+@property NSObject<SND> *snd;
 
 - (BOOL) createObjects;
 - (BOOL) mapObjects;
@@ -56,11 +66,10 @@
 - (void) start;
 - (void) stop;
 
-@property NSObject <Adjustment> *inpHook;
-@property NSObject <Adjustment> *outHook;
+@property NSObject<Adjustment> *inpHook;
+@property NSObject<Adjustment> *outHook;
 
 - (IBAction) reset:(id)sender;
-- (IBAction) debug:(id)sender;
 
 - (IBAction) colorModule:(id)sender;
 - (IBAction) extraMemory:(id)sender;

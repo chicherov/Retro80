@@ -1,11 +1,16 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  Микросхема трехканального таймера КР580ВИ53 (8253)
- ******************************************************************************/
+
+ *****/
 
 #import "Sound.h"
 #import "x8080.h"
 
-@interface X8253 : NSObject <SoundController, RD, WR, INTE, NSCoding>
+@interface X8253 : NSObject <SND, RD, WR, INTE, NSCoding>
 {
 	struct i8253_timer
 	{

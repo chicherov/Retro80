@@ -1,3 +1,10 @@
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ *****/
+
 #import "Retro80.h"
 
 @implementation Computer
@@ -29,10 +36,7 @@
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
 	if (menuItem.action == @selector(reset:))
-		return YES;
-
-	if (menuItem.action == @selector(debug:))
-		return [self.cpu conformsToProtocol:@protocol(Debug)];
+		return [self.cpu respondsToSelector:@selector(reset)];
 
 	if (menuItem.action == @selector(outHook:))
 	{
@@ -120,29 +124,11 @@
 
 - (IBAction) reset:(NSMenuItem *)menuItem
 {
-	@synchronized(self.snd.sound)
+	@synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 		[self.cpu reset];
 	}
-}
-
-// -----------------------------------------------------------------------------
-// Вызов отладчика
-// -----------------------------------------------------------------------------
-
-- (IBAction) debug:(id)sender
-{
-	@synchronized(self.snd.sound)
-	{
-		if ([sender isKindOfClass:[NSMenuItem class]])
-			[self.document registerUndoWithMenuItem:sender];
-
-		self.snd.sound.debug = TRUE;
-	}
-
-	[self.document.debug run:self.cpu];
-	self.snd.sound.debug = FALSE;
 }
 
 // -----------------------------------------------------------------------------

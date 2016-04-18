@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9531" systemVersion="15C50" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9531" systemVersion="15E65" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
         <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9531"/>
@@ -17,6 +17,7 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customObject id="cIB-lr-ra9" customClass="Debug">
             <connections>
+                <outlet property="document" destination="-2" id="72m-Sd-fgy"/>
                 <outlet property="panel" destination="01n-hT-pln" id="yQi-Nc-LMg"/>
                 <outlet property="textView" destination="FeX-Q1-ED0" id="Ri7-gq-ch2"/>
             </connections>
@@ -24,6 +25,7 @@
         <customObject id="43H-H2-5a3" customClass="Sound">
             <connections>
                 <outlet property="document" destination="-2" id="fOa-tp-zfq"/>
+                <outlet property="nextResponder" destination="01n-hT-pln" id="tHa-Kk-nNA"/>
                 <outlet property="textField" destination="ggy-Fu-duH" id="h4r-9z-4l3"/>
             </connections>
         </customObject>
@@ -133,7 +135,7 @@
             </connections>
         </window>
         <window title="Ретро КР580: Отладчик" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
-            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES" utility="YES"/>
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES" utility="YES"/>
             <rect key="contentRect" x="167" y="107" width="783" height="522"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
             <view key="contentView" id="qfh-TF-8L7">
@@ -142,19 +144,19 @@
                 <subviews>
                     <scrollView horizontalLineScroll="10" horizontalPageScroll="10" verticalLineScroll="10" verticalPageScroll="10" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iyn-3Z-4XL">
                         <rect key="frame" x="0.0" y="0.0" width="783" height="522"/>
-                        <clipView key="contentView" id="EOO-jY-kaX">
-                            <rect key="frame" x="1" y="1" width="223" height="133"/>
+                        <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="EOO-jY-kaX">
+                            <rect key="frame" x="1" y="1" width="781" height="520"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
                                 <textView importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" id="FeX-Q1-ED0">
                                     <rect key="frame" x="0.0" y="0.0" width="781" height="520"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                    <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="backgroundColor" red="1" green="1" blue="0.78431372549019607" alpha="0.94999999999999996" colorSpace="calibratedRGB"/>
                                     <size key="minSize" width="781" height="520"/>
-                                    <size key="maxSize" width="1048" height="10000000"/>
+                                    <size key="maxSize" width="10000000" height="10000000"/>
                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
                                     <size key="minSize" width="781" height="520"/>
-                                    <size key="maxSize" width="1048" height="10000000"/>
+                                    <size key="maxSize" width="10000000" height="10000000"/>
                                     <connections>
                                         <outlet property="delegate" destination="cIB-lr-ra9" id="LaI-he-zOY"/>
                                     </connections>

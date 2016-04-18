@@ -2,14 +2,14 @@
 
  Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
  Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
-
- Контроллер НГМД ПЭВМ «Орион-128»
+ 
+ Отладчик для центрального процессора из класса X8080
 
  *****/
 
 #import "x8080.h"
-#import "vg93.h"
+#import "Debug.h"
 
-@interface Orion128Floppy : VG93
+@interface Dbg80 : NSObject <Debug>
 
 @end

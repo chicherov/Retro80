@@ -1,3 +1,10 @@
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
+ *****/
+
 @import AudioToolbox;
 #import "Retro80.h"
 #import "Sound.h"
@@ -77,7 +84,7 @@
 
 				if ((debug = !execute(cpu, @selector(execute:), CLK += clk)))
 				{
-					[self.document.computer performSelectorOnMainThread:@selector(debug:)
+					[self.document.debug performSelectorOnMainThread:@selector(debug:)
 															 withObject:self
 														  waitUntilDone:FALSE];
 
@@ -103,9 +110,9 @@
 
 		if ((debug = !execute(cpu, @selector(execute:), CLK += clk * inBuffer->mAudioDataByteSize)))
 		{
-			[self.document.computer performSelectorOnMainThread:@selector(debug:)
-													 withObject:self
-												  waitUntilDone:FALSE];
+			[self.document.debug performSelectorOnMainThread:@selector(debug:)
+												  withObject:self
+											   waitUntilDone:FALSE];
 
 			CLK = cpu.CLK;
 		}
@@ -125,9 +132,9 @@
 					inBuffer->mAudioDataByteSize += 2; *ptr++ = 0;
 				}
 
-				[self.document.computer performSelectorOnMainThread:@selector(debug:)
-														 withObject:self
-													  waitUntilDone:FALSE];
+				[self.document.debug performSelectorOnMainThread:@selector(debug:)
+													  withObject:self
+												   waitUntilDone:FALSE];
 
 				CLK = cpu.CLK;
 				break;
@@ -191,7 +198,7 @@
 
 static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer)
 {
-	Sound *sound = (__bridge Sound*) inUserData; @synchronized(sound)
+	Sound *sound = (__bridge Sound*) inUserData; @synchronized(sound->cpu)
 	{
 		if (sound->CLK >= 0.00)
 			[sound callback:inBuffer];
@@ -202,7 +209,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (void) timer
 {
-	@synchronized(self)
+	@synchronized(self.cpu)
 	{
 		if (CLK >= 0.00)
 		{
@@ -211,9 +218,9 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 			if (!debug && (debug = !execute(cpu, @selector(execute:), CLK += clk)))
 			{
-				[self.document.computer performSelectorOnMainThread:@selector(debug:)
-														 withObject:self
-													  waitUntilDone:FALSE];
+				[self.document.debug performSelectorOnMainThread:@selector(debug:)
+													  withObject:self
+												   waitUntilDone:FALSE];
 
 				CLK = cpu.CLK;
 			}
@@ -417,7 +424,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (void) stop
 {
-	@synchronized(self)
+	@synchronized(self.cpu)
 	{
 		CLK = -1.0;
 	}
@@ -541,7 +548,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (void) stepBackward:(id)sender
 {
-	@synchronized(self)
+	@synchronized(self.cpu)
 	{
 		if (inAudioFile)
 		{
@@ -555,7 +562,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 - (void) stepForward:(id)sender
 {
-	@synchronized(self)
+	@synchronized(self.cpu)
 	{
 		if (inAudioFile && audioFilePos + streamFormat.mSampleRate < packetCount)
 			audioFilePos += streamFormat.mSampleRate;
@@ -584,7 +591,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 		NSSavePanel *savePanel = [NSSavePanel savePanel];
 		savePanel.allowedFileTypes = @[@"wav"];
 
-		if ([savePanel runModal] == NSFileHandlingPanelOKButton) @synchronized(self)
+		if ([savePanel runModal] == NSFileHandlingPanelOKButton) @synchronized(self.cpu)
 		{
 			OSStatus err; if ((err = AudioFileCreateWithURL((__bridge CFURLRef)savePanel.URL, kAudioFileWAVEType, &streamFormat, kAudioFileFlags_EraseFile, &outAudioFile)) != noErr)
 			{

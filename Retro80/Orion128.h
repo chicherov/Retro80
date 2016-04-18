@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Орион 128»
- ******************************************************************************/
+
+ *****/
 
 #import "x8080.h"
 #import "mem.h"
@@ -16,7 +21,7 @@
 // Системные регистры ПЭВМ "Орион 128"
 // -----------------------------------------------------------------------------
 
-@interface Orion128Beeper : NSObject<SoundController, INTE>
+@interface Orion128Beeper : NSObject<SND, INTE>
 @end
 
 @interface Orion128SystemF8 : NSObject<RD, WR>
@@ -75,11 +80,11 @@
 @end
 
 @interface Orion128SystemFE : NSObject <RD, WR>
-- (id) initWithSND:(NSObject<SoundController> *)snd EXT:(ROMDisk *)ext;
+- (id) initWithSND:(NSObject<SND> *)snd EXT:(ROMDisk *)ext;
 @end
 
 @interface Orion128SystemFF : NSObject <RD, WR>
-- (id) initWithSND:(NSObject<SoundController> *)snd;
+- (id) initWithSND:(NSObject<SND> *)snd;
 @end
 
 // -----------------------------------------------------------------------------

@@ -1,6 +1,11 @@
-/*******************************************************************************
+/*****
+
+ Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
+ Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+
  ПЭВМ «Специалист MX»
- ******************************************************************************/
+
+ *****/
 
 #import "SpecialistMX.h"
 
@@ -97,7 +102,7 @@
 	}
 }
 
-- (void) RESET
+- (void) RESET:(uint64_t)clock
 {
 	fdd.selected = 1;
 }
@@ -190,7 +195,7 @@
 {
 	unsigned size = menuItem.tag == 0 && self.ram.length == 0x20000 ? 0x30000 : 0x10000 + (1 << (menuItem.tag + 16));
 
-	if (self.ram.length != size) @synchronized(self.snd.sound)
+	if (self.ram.length != size) @synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
@@ -373,7 +378,7 @@
 
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
 		{
-			@synchronized(self.snd.sound)
+			@synchronized(self.cpu)
 			{
 				[self.document registerUndoWithMenuItem:menuItem];
 				[self.fdd setDisk:menuItem.tag URL:panel.URLs.firstObject];
@@ -381,7 +386,7 @@
 		}
 		else if ([self.fdd getDisk:menuItem.tag] != nil)
 		{
-			@synchronized(self.snd.sound)
+			@synchronized(self.cpu)
 			{
 				[self.document registerUndoWithMenuItem:menuItem];
 				[self.fdd setDisk:menuItem.tag URL:nil];
@@ -573,10 +578,10 @@
 	}
 }
 
-- (void) RESET
+- (void) RESET:(uint64_t)clock
 {
 	self.kbd.crt = self.crt;
-	[super RESET];
+	[super RESET:clock];
 }
 
 @end
