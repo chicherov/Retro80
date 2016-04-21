@@ -84,14 +84,14 @@ static uint32_t colors[] =
 		if (self.rom.length > 0x2DC && self.rom.mutableBytes[0x2DC] == 0x93)
 			self.rom.mutableBytes[0x2DC] = 0xD3;
 
-		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x00];
+		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x22];
 	}
 	else
 	{
 		if (self.rom.length > 0x2DC && self.rom.mutableBytes[0x2DC] == 0xD3)
 			self.rom.mutableBytes[0x2DC] = 0x93;
 
-		[self.crt setColors:NULL attributesMask:0x22 shiftMask:0x00];
+		[self.crt setColors:NULL attributesMask:0x22 shiftMask:0x22];
 	}
 }
 
@@ -235,9 +235,9 @@ static uint32_t colors[] =
 - (BOOL) mapObjects
 {
 	if (self.isColor)
-		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x00];
+		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x22];
 	else
-		[self.crt setColors:NULL attributesMask:0x22 shiftMask:0x00];
+		[self.crt setColors:NULL attributesMask:0x22 shiftMask:0x22];
 
 	self.cpu.INTE = self.snd;
 	self.snd.ext = self.ext;

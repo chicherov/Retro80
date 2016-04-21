@@ -110,7 +110,7 @@
 			self.snd.channel1 = self.isColor;
 			self.snd.channel2 = self.isColor;
 
-			self.sys2.mcpg = self.sys2.mcpg;
+			self.sys2.mcpg = self.isColor;
 		}
 	}
 }
@@ -288,7 +288,7 @@
 		0x0C00, 0x1C00, 0x0C00, 0x1C00
 	};
 
-	[self.crt setColors:NULL attributesMask:0x3F shiftMask:0x3D];
+	[self.crt setColors:NULL attributesMask:0x3F shiftMask:0x0F];
 	[self.crt setFonts:fonts];
 	
 	// Системный регистр 1
@@ -470,6 +470,12 @@
 	{
 		self.slot = ~(data | 0xF0);
 	}
+}
+
+- (void) RESET:(uint64_t)clock
+{
+	[partner.floppy RESET:clock];
+	self.mcpg = FALSE;
 }
 
 - (void) encodeWithCoder:(NSCoder *)encoder

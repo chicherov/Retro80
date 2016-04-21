@@ -26,7 +26,7 @@
 // Системнный регистр 2 и внешние устройства
 // -----------------------------------------------------------------------------
 
-@interface PartnerSystem2 : NSObject <RD, WR, NSCoding>
+@interface PartnerSystem2 : NSObject <RD, WR, RESET, NSCoding>
 
 @property (weak) Partner *partner;
 @property uint8_t slot;
