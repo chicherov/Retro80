@@ -150,7 +150,7 @@
 - (void) draw
 {
 	if (bitmap == NULL)
-		bitmap = [self.display setupTextWidth:64 height:rows cx:6 cy:8];
+		bitmap = [self.display setupTextWidth:64 height:rows cx:6 cy:10];
 
 	if (bitmap)
 	{
@@ -168,11 +168,11 @@
 					screen[row][col] = ch;
 
 					const uint8_t *fnt = rom.bytes + ((ch & 0x7F) << 3);
-					uint32_t *ptr = bitmap + (row * 64 * 8 + col) * 6;
+					uint32_t *ptr = bitmap + (row * 64 * 10 + col) * 6;
 
-					for (int line = 0; line < 8; line++)
+					for (int line = 0; line < 10; line++)
 					{
-						uint8_t byte = *fnt++; if (ch & 0x80)
+						uint8_t byte = (line == 0 || line == 9) ? 0xFF : *fnt++; if (ch & 0x80)
 							byte ^= 0xFF;
 
 						for (int i = 0; i < 6; i++, byte <<= 1)
