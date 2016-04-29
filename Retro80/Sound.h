@@ -28,7 +28,6 @@
 @property BOOL debug;
 
 @property (readonly) BOOL isOutput;
-@property uint16_t beeper;
 @property BOOL output;
 
 @property (readonly) BOOL isInput;
@@ -50,7 +49,7 @@
 
 @optional
 
-- (SInt8) sample:(uint64_t)clock;
+- (uint16_t) sample:(uint64_t)clock;
 
 @end
 

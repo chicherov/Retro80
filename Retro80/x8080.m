@@ -152,7 +152,7 @@
 - (uint8_t) L { return HL.L; }
 
 
-@synthesize Z80, WAIT;
+@synthesize Z80;
 @synthesize IM, IF, IFF2;
 
 - (void) setAF1:(uint16_t)value { AF1.AF = value; }
@@ -449,7 +449,7 @@ static unsigned timings[2][256] =
 
 		27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
 		27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
-		27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
+		27, 18, 18, 18, 27, 27, 18, 27, 27, 27, 18, 18, 27, 27, 18, 27,
 		27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27
 	},
 
@@ -476,14 +476,42 @@ static unsigned timings[2][256] =
 	}
 };
 
+static uint8_t fetch(X8080* cpu)
+{
+	if (cpu->breakpoints && cpu->breakpoints[cpu->PC] & 0x01 && (cpu->BREAK & ~0xFFFF) == 0)
+		cpu->BREAK |= ((uint64_t)cpu->PC << 16) | 0x0100000000;
+
+	cpu->CLK += 18; uint8_t data = MEMR(cpu, cpu->PC++, cpu->CLK, 0xA2);
+
+	if (cpu->Z80)
+	{
+		cpu->CLK += timings[1][data];
+		cpu->CLK += HOLD(cpu, 0);
+	}
+	else
+	{
+		cpu->CLK += HOLD(cpu, timings[0][data]);
+	}
+
+	return data;
+}
+
 static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 {
 	if (cpu->breakpoints && cpu->breakpoints[addr] & 0x01 && (cpu->BREAK & ~0xFFFF) == 0)
 		cpu->BREAK |= ((uint64_t)addr << 16) | 0x0100000000;
 
-	cpu->CLK += 9; uint8_t data = MEMR(cpu, addr, cpu->CLK, status);
-	cpu->CLK += cpu->WAIT ? 9 + 18 : 9;
-	cpu->CLK += cpu->Z80 ? 9 : HOLD(cpu, 9);
+	cpu->CLK += 18; uint8_t data = MEMR(cpu, addr, cpu->CLK, status);
+
+	if (cpu->Z80)
+	{
+		cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
+	}
+	else
+	{
+		cpu->CLK += HOLD(cpu, 9);
+	}
+
 	return data;
 }
 
@@ -493,8 +521,7 @@ static void put(X8080* cpu, uint16_t addr, uint8_t data, uint8_t status)
 		cpu->BREAK |= ((uint64_t)addr << 16) | 0x0200000000;
 
 	cpu->CLK += 18; MEMW(cpu, addr, data, cpu->CLK, status);
-	cpu->CLK += cpu->WAIT ? 9 + 18 : 9;
-	cpu->CLK += cpu->Z80 ? 0 : HOLD(cpu, 0);
+	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
 }
 
 static uint8_t inp(X8080* cpu, uint16_t addr)
@@ -502,9 +529,17 @@ static uint8_t inp(X8080* cpu, uint16_t addr)
 	if (cpu->breakpoints && cpu->breakpoints[addr] & 0x04 && (cpu->BREAK & ~0xFFFF) == 0)
 		cpu->BREAK |= ((uint64_t)addr << 16) | 0x0400000000;
 
-	cpu->CLK += 9; uint8_t data = IOR(cpu, addr, cpu->CLK, 0x42);
-	cpu->CLK += cpu->Z80 ? cpu->WAIT ? 18 + 18 : 18 : 9;
-	cpu->CLK += cpu->Z80 ? 9 : HOLD(cpu, 9);
+	cpu->CLK += cpu->Z80 ? 27 : 18; uint8_t data = IOR(cpu, addr, cpu->CLK, 0x42);
+
+	if (cpu->Z80)
+	{
+		cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
+	}
+	else
+	{
+		cpu->CLK += HOLD(cpu, 9);
+	}
+
 	return data;
 }
 
@@ -513,9 +548,8 @@ static void out(X8080* cpu, uint16_t addr, uint8_t data)
 	if (cpu->breakpoints && cpu->breakpoints[addr] & 0x08 && (cpu->BREAK & ~0xFFFF) == 0)
 		cpu->BREAK |= ((uint64_t)addr << 16) | 0x0800000000;
 
-	cpu->CLK += 18; IOW(cpu, addr, data, cpu->CLK, 0x10);
-	cpu->CLK += cpu->Z80 ? cpu->WAIT ? 18 + 18 : 18 : 9;
-	cpu->CLK += cpu->Z80 ? 0 : HOLD(cpu, 0);
+	cpu->CLK += cpu->Z80 ? 27 : 18; IOW(cpu, addr, data, cpu->CLK, 0x10);
+	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -692,8 +726,6 @@ static uint16_t AND[2][0x100][0x100];
 	
 	while (CLK < CLKI)
 	{
-		BREAK = PC;
-
 		union
 		{
 			uint16_t WZ; struct
@@ -704,19 +736,7 @@ static uint16_t AND[2][0x100][0x100];
 
 		} WZ;
 
-		uint8_t CMD; if (Z80)
-		{
-			CMD = get(self, PC++, 0xA2);
-			CLK += timings[1][CMD];
-		}
-		else
-		{
-			if (breakpoints && breakpoints[PC] & 0x01)
-				BREAK |= ((uint64_t)PC << 16) | 0x0100000000;
-
-			CLK += 9; CMD = MEMR(self, PC++, CLK, 0xA2);
-			CLK += 9; CLK += HOLD(self, timings[0][CMD]);
-		}
+		BREAK = PC; uint8_t CMD = fetch(self);
 
 		union HL *pHL = &HL; while (1)
 		{
@@ -3691,12 +3711,10 @@ static uint16_t AND[2][0x100][0x100];
 // Инициализация Z80
 // -----------------------------------------------------------------------------
 
-- (id) initZ80WithQuartz:(unsigned)freq wait:(BOOL)wait start:(uint32_t)start
+- (id) initZ80WithQuartz:(unsigned)freq start:(uint32_t)start
 {
 	if (self = [self initWithQuartz:freq * 9 start:start])
-	{
-		Z80 = TRUE; WAIT = wait;
-	}
+		Z80 = TRUE;
 
 	return self;
 }
@@ -3726,7 +3744,6 @@ static uint16_t AND[2][0x100][0x100];
 
 	if (Z80)
 	{
-		[encoder encodeBool:WAIT forKey:@"WAIT"];
 		[encoder encodeBool:IFF2 forKey:@"IFF2"];
 		[encoder encodeInt:IM forKey:@"IM"];
 
@@ -3760,7 +3777,6 @@ static uint16_t AND[2][0x100][0x100];
 
 		if ((Z80 = [decoder decodeBoolForKey:@"Z80"]))
 		{
-			WAIT = [decoder decodeBoolForKey:@"WAIT"];
 			IFF2 = [decoder decodeBoolForKey:@"IFF2"];
 			IM = [decoder decodeIntForKey:@"IM"];
 

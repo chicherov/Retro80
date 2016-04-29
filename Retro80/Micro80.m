@@ -227,11 +227,6 @@
 
 @synthesize sound;
 
-- (SInt8) sample:(uint64_t)clock
-{
-	return 0;
-}
-
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	*data = sound.input;

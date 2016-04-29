@@ -17,12 +17,11 @@
 #import "RKRecorder.h"
 #import "ROMDisk.h"
 
+#import "x8253.h"
+
 // -----------------------------------------------------------------------------
 // Системные регистры ПЭВМ "Орион 128"
 // -----------------------------------------------------------------------------
-
-@interface Orion128Beeper : NSObject<SND, INTE>
-@end
 
 @interface Orion128SystemF8 : NSObject<RD, WR>
 - (id) initWithCRT:(Orion128Screen *)crt;
@@ -60,7 +59,7 @@
 @property ROMDisk *ext;
 @property X8255 *prn;
 
-@property Orion128Beeper *snd;
+@property X8253 *snd;
 
 @property F806 *inpHook;
 @property F80C *outHook;
@@ -80,11 +79,11 @@
 @end
 
 @interface Orion128SystemFE : NSObject <RD, WR>
-- (id) initWithSND:(NSObject<SND> *)snd EXT:(ROMDisk *)ext;
+- (id) initWithX8253:(X8253 *)snd EXT:(ROMDisk *)ext;
 @end
 
 @interface Orion128SystemFF : NSObject <RD, WR>
-- (id) initWithSND:(NSObject<SND> *)snd;
+- (id) initWithX8253:(X8253 *)snd;
 @end
 
 // -----------------------------------------------------------------------------

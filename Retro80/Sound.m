@@ -23,7 +23,7 @@
 	Float64 clk;
 
 	BOOL (*execute)(id, SEL, uint64_t);
-	SInt8 (*sample)(id, SEL, uint64_t);
+	uint16_t (*sample)(id, SEL, uint64_t);
 
 	NSRunLoop *runLoop;
 
@@ -41,7 +41,6 @@
 @synthesize debug;
 
 @synthesize output;
-@synthesize beeper;
 @synthesize input;
 
 // -----------------------------------------------------------------------------
@@ -140,14 +139,14 @@
 				break;
 			}
 
-			if (outAudioFile)
+			if (!outAudioFile)
 			{
-				*ptr = output ? +20000 : -20000;
-				if (output) out = TRUE;
+				*ptr = (output ? 6500 : 0) + (sample ? sample(snd, @selector(sample:), CLK) : 0);
 			}
 			else
 			{
-				*ptr = ((output ? 25 : 0) + (beeper && (beeper == 1 || (uint64_t)CLK % beeper > (beeper / 2)) ? 25 : 0) + (sample ? sample(snd, @selector(sample:), CLK) : 0)) << 8;
+				*ptr = output ? +20000 : -20000;
+				if (output) out = TRUE;
 			}
 		}
 
@@ -342,7 +341,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 
 	if (inAudioFile == 0)
 	{
-		streamFormat.mSampleRate = 44100;
+		streamFormat.mSampleRate = 48000;
 		streamFormat.mFormatID = kAudioFormatLinearPCM;
 		streamFormat.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger | kLinearPCMFormatFlagIsPacked;
 		streamFormat.mBitsPerChannel = 16;
@@ -364,7 +363,7 @@ static void OutputCallback(void *inUserData, AudioQueueRef inAQ, AudioQueueBuffe
 	execute = (BOOL (*) (id, SEL, uint64_t)) [self.cpu methodForSelector:@selector(execute:)];
 
 	if ([self.snd respondsToSelector:@selector(sample:)])
-		sample = (SInt8 (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
+		sample = (uint16_t (*) (id, SEL, uint64_t)) [self.snd methodForSelector:@selector(sample:)];
 	else
 		sample = 0;
 

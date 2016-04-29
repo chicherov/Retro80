@@ -56,7 +56,7 @@
 @interface X8080 : NSObject <CPU, NSCoding, BYTE>
 
 @property uint32_t quartz;
-@property BOOL Z80, WAIT;
+@property BOOL Z80;
 
 @property uint64_t CLK;
 @property uint8_t PAGE;
@@ -105,7 +105,7 @@
 
 // -----------------------------------------------------------------------------
 
-- (id) initZ80WithQuartz:(unsigned)quartz wait:(BOOL)wait start:(uint32_t)start;
+- (id) initZ80WithQuartz:(unsigned)quartz start:(uint32_t)start;
 
 - (id) initWithQuartz:(unsigned)quartz start:(uint32_t)start;
 

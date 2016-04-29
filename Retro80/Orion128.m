@@ -13,19 +13,6 @@
 // Системные регистры ПЭВМ "Орион 128"
 // =============================================================================
 
-@implementation Orion128Beeper
-
-@synthesize sound;
-
-- (void) INTE:(BOOL)IF clock:(uint64_t)clock
-{
-	sound.beeper = IF;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-
 @implementation Orion128SystemF8
 {
 	Orion128Screen *crt;
@@ -295,6 +282,12 @@
 	if (self.prn == nil && (self.prn = [[X8255 alloc] init]) == nil)
 		return FALSE;
 
+	if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
+		return FALSE;
+
+	self.snd.channel0 = TRUE;
+	self.snd.rkmode = TRUE;
+
 	return TRUE;
 }
 
@@ -311,14 +304,8 @@
 	if (self.sysFA == nil && (self.sysFA = [[Orion128SystemFA alloc] initWithCRT:self.crt]) == nil)
 		return FALSE;
 
-	if (self.snd == nil)
-	{
-		if ((self.snd = [[Orion128Beeper alloc] init]) == nil)
-			return FALSE;
-
-		self.cpu.INTE = self.snd;
-		self.kbd.snd = self.snd;
-	}
+	self.cpu.INTE = self.snd;
+	self.kbd.snd = self.snd;
 
 	self.cpu.FF = TRUE;
 
@@ -370,6 +357,8 @@
 			[self.cpu mapObject:self.prn		atPage:page from:0xF600 to:0xF6FF];
 
 			[self.cpu mapObject:self.fdd		atPage:page from:0xF700 to:0xF72F];
+
+			[self.cpu mapObject:self.snd		atPage:page from:0xF740 to:0xF75F];
 
 			[self.cpu mapObject:self.rom		atPage:page from:0xF800 to:0xF8FF WR:self.sysF8];
 			[self.cpu mapObject:self.rom		atPage:page from:0xF900 to:0xF9FF WR:self.sysF9];
@@ -427,7 +416,7 @@
 				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.2" mask:0x07FF]) == nil)
 					return self = nil;
 
-				if ((self.cpu = [[X8080 alloc] initZ80WithQuartz:5000000 wait:TRUE start:0xF800]) == nil)
+				if ((self.cpu = [[X8080 alloc] initZ80WithQuartz:5000000 start:0xF800]) == nil)
 					return FALSE;
 
 				break;
@@ -482,6 +471,7 @@
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
 	[encoder encodeObject:self.ext forKey:@"ext"];
 	[encoder encodeObject:self.prn forKey:@"prn"];
+	[encoder encodeObject:self.snd forKey:@"snd"];
 }
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
@@ -508,6 +498,9 @@
 		return FALSE;
 
 	if ((self.prn = [decoder decodeObjectForKey:@"prn"]) == nil)
+		return FALSE;
+
+	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
 		return FALSE;
 
 	return TRUE;
@@ -594,16 +587,16 @@
 
 @implementation Orion128SystemFE
 {
-	NSObject<SND> *snd;
+	X8253 *snd;
 	ROMDisk *ext;
 }
 
-- (id) initWithSND:(NSObject<SND> *)_snd EXT:(ROMDisk *)_ext
+- (id) initWithX8253:(X8253 *)s EXT:(ROMDisk *)e
 {
 	if (self = [super init])
 	{
-		snd = _snd;
-		ext = _ext;
+		snd = s;
+		ext = e;
 	}
 
 	return self;
@@ -615,7 +608,7 @@
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	snd.sound.beeper = (data & 0x10) != 0;
+	[snd setBeeper:data & 0x10 clock:clock];
 	ext.MSB = data & 0x0F;
 }
 
@@ -625,13 +618,14 @@
 
 @implementation Orion128SystemFF
 {
-	NSObject<SND> *snd;
+	BOOL beeper;
+	X8253 *snd;
 }
 
-- (id) initWithSND:(NSObject<SND> *)_snd
+- (id) initWithX8253:(X8253 *)s
 {
 	if (self = [super init])
-		snd = _snd;
+		snd = s;
 
 	return self;
 }
@@ -642,7 +636,7 @@
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	snd.sound.beeper = snd.sound.beeper == FALSE;
+	[snd setBeeper:beeper = !beeper clock:clock];
 }
 
 @end
@@ -699,7 +693,7 @@
 
 - (BOOL) createObjects
 {
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initZ80WithQuartz:5000000 wait:FALSE start:0xF800]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initZ80WithQuartz:5000000 start:0xF800]) == nil)
 		return FALSE;
 
 	if (self.ram == nil && (self.ram = [[Orion128RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
@@ -710,21 +704,13 @@
 
 - (BOOL) mapObjects
 {
-	if (self.snd == nil)
-	{
-		if ((self.snd = [[Orion128Beeper alloc] init]) == nil)
-			return FALSE;
-
-		self.kbd.snd = self.snd;
-	}
-
 	if (self.sysFB == nil && (self.sysFB = [[Orion128SystemFB alloc] initWithCPU:self.cpu RAM:self.ram CRT:self.crt]) == nil)
 		return FALSE;
 
-	if (self.sysFE == nil && (self.sysFE = [[Orion128SystemFE alloc] initWithSND:self.snd EXT:self.ext]) == nil)
+	if (self.sysFE == nil && (self.sysFE = [[Orion128SystemFE alloc] initWithX8253:self.snd EXT:self.ext]) == nil)
 		return FALSE;
 
-	if (self.sysFF == nil && (self.sysFF = [[Orion128SystemFF alloc] initWithSND:self.snd]) == nil)
+	if (self.sysFF == nil && (self.sysFF = [[Orion128SystemFF alloc] initWithX8253:self.snd]) == nil)
 		return FALSE;
 
 	if ([super mapObjects])
@@ -740,6 +726,7 @@
 		self.cpu.IRQ = self.crt;
 		self.cpu.RST = 0xFF;
 
+		self.cpu.INTE = nil;
 		return TRUE;
 	}
 

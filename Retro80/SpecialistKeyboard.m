@@ -62,8 +62,9 @@
 
 - (void) setC:(uint8_t)data
 {
+	[self.snd setBeeper:data & 0x20 clock:current];
+
 	self.snd.sound.output = data & 0x80;
-	self.snd.sound.beeper = data & 0x20;
 
 	if (self.crt)
 	{

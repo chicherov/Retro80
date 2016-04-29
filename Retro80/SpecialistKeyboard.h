@@ -9,10 +9,13 @@
 
 #import "SpecialistScreen.h"
 #import "RKKeyboard.h"
+#import "x8253.h"
 
 @interface SpecialistKeyboard : RKKeyboard
 
 @property SpecialistScreen *crt;
 @property BOOL four;
+
+@property (weak) X8253* snd;
 
 @end

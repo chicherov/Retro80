@@ -539,7 +539,7 @@
 
 - (void) setC:(uint8_t)data
 {
-	self.snd.sound.beeper = data & 0x02 ? 0 : 4000 * 9;
+	[self.snd setTone:data & 0x02 ? 0 : 4000 * 9 clock:current];
 	[super setC:data];
 }
 

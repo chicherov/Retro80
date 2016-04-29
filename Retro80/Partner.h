@@ -50,6 +50,8 @@
 
 @interface PartnerKeyboard : RKKeyboard
 
+@property (weak) X8253 *snd;
+
 @end
 
 // -----------------------------------------------------------------------------
