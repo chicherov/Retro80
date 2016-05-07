@@ -275,7 +275,7 @@ static uint32_t foreground[] =
 		{
 			*data = status.byte;
 
-			IRQ = status.IR = FALSE;
+			status.IR = FALSE;
 
 			status.IC = 0;
 			status.DU = 0;
@@ -320,7 +320,7 @@ static uint32_t foreground[] =
 			{
 				case 0x00:					// Команда Reset
 				{
-					IRQ = status.IR = FALSE;
+					status.IR = FALSE;
 
 					status.VE = 0;
 					status.IE = 0;
@@ -428,8 +428,6 @@ static uint32_t foreground[] =
 
 				if (row == config.R && status.IE)
 					IRQ = status.IR = TRUE;
-				else
-					IRQ = FALSE;
 
 				union i8275_char ch2;
 				BOOL EoR = FALSE;
@@ -447,8 +445,12 @@ static uint32_t foreground[] =
 							ch.attr |= attr & ~attrShift;
 							ch2.attr = attr & attrShift;
 
-							if (config.U & 0x08)
+							if (ch2.B && (frame & 0x10) == 0x00)
+								ch2.vsp = -1;
+
+							else if (config.U & 0x08)
 								ch2.vsp = (1 << config.L) | 1;
+
 						}
 
 						else if ((ch2.byte & 0xC0) == 0x80)					// 10xxxxxx
@@ -461,6 +463,9 @@ static uint32_t foreground[] =
 
 								ch.attr |= attr & ~attrShift;
 								ch2.attr = attr & attrShift;
+
+								if (ch2.B && (frame & 0x10) == 0x00)
+									ch2.vsp = -1;
 
 								if (config.U & 0x08)
 									ch2.vsp = (1 << config.L) | 1;
@@ -486,8 +491,8 @@ static uint32_t foreground[] =
 
 						else												// 11xxxxxx
 						{
-							ch.attr |= ch2.byte & attrMask & 0x03 & ~attrShift;
-							ch2.attr = ch2.byte & attrMask & 0x03 & attrShift;
+							ch.attr |= ((attr & ~0x03) | (ch2.byte & attrMask & 0x03)) & ~attrShift;
+							ch2.attr = ((attr & ~0x03) | (ch2.byte & attrMask & 0x03)) & attrShift;
 
 							struct pseudographics *p = pseudographics[(ch2.byte >> 2) & 0x0F];
 
@@ -498,6 +503,9 @@ static uint32_t foreground[] =
 								else
 									ch.U = 1;
 							}
+
+							if (ch2.B && (frame & 0x10) == 0x00)
+								ch2.vsp = -1;
 
 							if (p[2].VSP)
 								ch2.vsp |= -1 << (config.U + 1);
@@ -562,9 +570,6 @@ static uint32_t foreground[] =
 						}
 					}
 
-					if (ch.B && (frame & 0x10) == 0x00)
-						ch.vsp = -1;
-
 					if (col && screen[page][row][col-1].value != ch.value)
 					{
 						screen[page][row][col-1].value = ch.value;
@@ -587,7 +592,7 @@ static uint32_t foreground[] =
 							}
 						}
 
-						uint32_t b0 = colors ? colors[0x0F & attrMask] : fonts == NULL && ch.H ? 0xFF555555 : 0xFF000000;
+						uint32_t b0 = colors ? colors[0x0F & attrMask] : /*fonts == NULL && ch.H ? 0xFF555555 :*/ 0xFF000000;
 						uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
 
 						if (page)
@@ -601,9 +606,9 @@ static uint32_t foreground[] =
 
 						uint16_t mask = 1; for (unsigned L = 0; L <= config.L; L++, mask <<= 1)
 						{
-							uint8_t byte = ch.vsp & mask ? 0x00 : fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
+							uint8_t byte = ch.U && L == config.U ? 0xFF : ch.vsp & mask ? 0x00 : fnt[(config.M ? (L ? L - 1 : config.L) : L) & 7];
 
-							if (ch.R ? !(ch.U && L == config.U) : ch.U && L == config.U)
+							if (ch.R)
 								byte ^= 0xFF;
 
 							for (int i = 0; i < 6; i++, byte <<= 1)

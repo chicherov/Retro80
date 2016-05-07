@@ -3632,7 +3632,7 @@ static uint16_t AND[2][0x100][0x100];
 				break;
 			}
 
-			if (IRQ && CallIRQ(IRQ, @selector(IRQ:), CLK) && IF)
+			if (IRQ && IF && CallIRQ(IRQ, @selector(IRQ:), CLK))
 			{
 				CLK += 63; IF = IFF2 = FALSE; PC += HLD;
 				put(self, --SP, PC >> 8, 0x04);

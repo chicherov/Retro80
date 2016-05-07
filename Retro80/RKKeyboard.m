@@ -159,6 +159,9 @@
 			if (pos == paste.length)
 				paste = nil;
 
+			else if (pasteClock == 0)
+				pasteClock = clock;
+
 			else
 			{
 				NSString *chr = [paste substringWithRange:NSMakeRange(pos++, 1)];
