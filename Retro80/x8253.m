@@ -17,7 +17,7 @@
 
 	struct i8253_timer
 	{
-		uint64_t clk;
+		uint32_t clk;
 
 		BOOL enable;
 		BOOL gate;
@@ -136,7 +136,7 @@ static void change_gate(X8253 *sound, struct i8253_timer *timer, BOOL gate, uint
 
 				if (gate)
 				{
-					timer->zero = clock + timer->count * timer->clk;
+					timer->zero = clock + (uint64_t) timer->count * timer->clk;
 
 					if (timer->output == FALSE)
 						timer->reload = timer->zero;
@@ -184,7 +184,7 @@ static void change_gate(X8253 *sound, struct i8253_timer *timer, BOOL gate, uint
 
 				if (gate)
 				{
-					timer->reload = timer->zero = clock + timer->count * timer->clk;
+					timer->reload = timer->zero = clock + (uint64_t) timer->count * timer->clk;
 				}
 				else
 				{
@@ -397,7 +397,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 		else
 		{
 			if ((timer->mode.MODE == 1 || timer->mode.MODE == 5) && (timer->zero == 0))
-				timer->zero = clock + (timer->count + 3) * timer->clk;
+				timer->zero = clock + (uint64_t) (timer->count + 3) * timer->clk;
 
 			if (timer->mode.RL == 3)
 			{
@@ -426,7 +426,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 
 					change_output(self, timer, FALSE, clock);
 
-					timer->zero = clock + (timer->count ? timer->count + 3 : 0x10003) * timer->clk;
+					timer->zero = clock + (uint64_t) (timer->count ? timer->count + 3 : 0x10003) * timer->clk;
 
 					if (timer->gate)
 						timer->reload = timer->zero;
@@ -435,13 +435,13 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 
 				case 1:
 
-					timer->reloadLo = (timer->count ? timer->count : 0x10000) * timer->clk;
+					timer->reloadLo = (uint64_t) (timer->count ? timer->count : 0x10000) * timer->clk;
 					break;
 
 				case 2:
 				case 6:
 
-					timer->reloadHi = (timer->count ? timer->count - 1 : timer->mode.BCD ? 9999 : 0xFFFF) * timer->clk;
+					timer->reloadHi = (uint64_t) (timer->count ? timer->count - 1 : timer->mode.BCD ? 9999 : 0xFFFF) * timer->clk;
 					timer->reloadLo = timer->clk;
 
 					if (timer->zero == 0)
@@ -457,7 +457,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 				case 3:
 				case 7:
 
-					timer->reloadLo = (timer->count > 1 ? timer->count >> 1 : timer->mode.BCD ? 5000 : 0x8000) * timer->clk;
+					timer->reloadLo = (uint64_t) (timer->count > 1 ? timer->count >> 1 : timer->mode.BCD ? 5000 : 0x8000) * timer->clk;
 					timer->reloadHi = timer->reloadLo + (timer->count & 1) * timer->clk;
 
 					if (timer->zero == 0)
@@ -472,7 +472,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 
 				case 4:
 
-					timer->zero = clock + ((timer->count ? timer->count : timer->mode.BCD ? 10000 : 0x10000) + 3) * timer->clk;
+					timer->zero = clock + (uint64_t) ((timer->count ? timer->count : timer->mode.BCD ? 10000 : 0x10000) + 3) * timer->clk;
 					timer->reloadLo = timer->clk;
 
 					if (timer->gate)
@@ -482,7 +482,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 
 				case 5:
 
-					timer->reloadLo = (timer->count ? timer->count : 0x10000) * timer->clk;
+					timer->reloadLo = (uint64_t) (timer->count ? timer->count : 0x10000) * timer->clk;
 
 					break;
 					

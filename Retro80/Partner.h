@@ -16,7 +16,7 @@
 // Системнный регистр 1 - выбор станицы адресного простарнства
 // -----------------------------------------------------------------------------
 
-@interface PartnerSystem1 : NSObject <WR>
+@interface PartnerSystem1 : NSObject <WR, DMA>
 
 @property (weak) X8080 *cpu;
 

@@ -664,14 +664,14 @@
 // HLDA
 //------------------------------------------------------------------------------
 
-- (unsigned) HLDA:(uint64_t)clock
+- (unsigned) HLDA:(uint64_t)clock clk:(unsigned int)clk
 {
 	if (HOLD)
 	{
 		HOLD = FALSE; if (DRQ == -1 || DRQ < clock)
 			return 0;
 
-		unsigned clk = (unsigned) (DRQ - clock);
+		clk = (unsigned) (DRQ - clock);
 		clk += 9 - clk % 9; return clk;
 	}
 

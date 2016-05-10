@@ -83,7 +83,7 @@
 	// Сигнал HLDA
 	// -------------------------------------------------------------------------
 
-	unsigned (*CallHLDA) (id, SEL, uint64_t);
+	unsigned (*CallHLDA) (id, SEL, uint64_t, unsigned);
 	NSObject<HLDA> *HLDA;
 
 	// -------------------------------------------------------------------------
@@ -273,18 +273,12 @@
 
 - (void) setHLDA:(NSObject<HLDA> *)object
 {
-	CallHLDA = (unsigned (*) (id, SEL, uint64_t)) [HLDA = object methodForSelector:@selector(HLDA:)];
+	CallHLDA = (unsigned (*) (id, SEL, uint64_t, unsigned)) [HLDA = object methodForSelector:@selector(HLDA:clk:)];
 }
 
 - (NSObject<HLDA> *)HLDA
 {
 	return HLDA;
-}
-
-static unsigned HOLD(X8080* cpu, unsigned clk)
-{
-	unsigned clkHOLD = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:), cpu->CLK) : 0;
-	return clk > clkHOLD ? clk : clkHOLD;
 }
 
 // -----------------------------------------------------------------------------
@@ -450,7 +444,7 @@ static unsigned timings[2][256] =
 		27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
 		27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27,
 		27, 18, 18, 18, 27, 27, 18, 27, 27, 27, 18, 18, 27, 27, 18, 27,
-		27, 18, 18, 18, 27, 27, 18, 27, 27, 18, 18, 18, 27, 27, 18, 27
+		27, 18, 18, 18, 27, 27, 18, 27, 27, 27, 18, 18, 27, 27, 18, 27
 	},
 
 	{
@@ -485,12 +479,12 @@ static uint8_t fetch(X8080* cpu)
 
 	if (cpu->Z80)
 	{
-		cpu->CLK += timings[1][data];
-		cpu->CLK += HOLD(cpu, 0);
+		cpu->CLK += timings[1][data] + 9;
 	}
 	else
 	{
-		cpu->CLK += HOLD(cpu, timings[0][data]);
+		unsigned clk = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:clk:), cpu->CLK - 9, 9) : 0;
+		cpu->CLK += clk ? clk - 9 : timings[0][data];
 	}
 
 	return data;
@@ -505,11 +499,12 @@ static uint8_t get(X8080* cpu, uint16_t addr, uint8_t status)
 
 	if (cpu->Z80)
 	{
-		cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
+		cpu->CLK += 9;
 	}
 	else
 	{
-		cpu->CLK += HOLD(cpu, 9);
+		unsigned clk = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:clk:), cpu->CLK - 9, 9) : 0;
+		cpu->CLK += clk ? clk - 9 : 9;
 	}
 
 	return data;
@@ -521,7 +516,16 @@ static void put(X8080* cpu, uint16_t addr, uint8_t data, uint8_t status)
 		cpu->BREAK |= ((uint64_t)addr << 16) | 0x0200000000;
 
 	cpu->CLK += 18; MEMW(cpu, addr, data, cpu->CLK, status);
-	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
+
+	if (cpu->Z80)
+	{
+		cpu->CLK += 9;
+	}
+	else
+	{
+		unsigned clk = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:clk:), cpu->CLK - 9, 18) : 0;
+		cpu->CLK += clk ? clk - 9 : 9;
+	}
 }
 
 static uint8_t inp(X8080* cpu, uint16_t addr)
@@ -533,11 +537,12 @@ static uint8_t inp(X8080* cpu, uint16_t addr)
 
 	if (cpu->Z80)
 	{
-		cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
+		cpu->CLK += 9;
 	}
 	else
 	{
-		cpu->CLK += HOLD(cpu, 9);
+		unsigned clk = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:clk:), cpu->CLK - 9, 9) : 0;
+		cpu->CLK += clk ? clk - 9 : 9;
 	}
 
 	return data;
@@ -549,7 +554,16 @@ static void out(X8080* cpu, uint16_t addr, uint8_t data)
 		cpu->BREAK |= ((uint64_t)addr << 16) | 0x0800000000;
 
 	cpu->CLK += cpu->Z80 ? 27 : 18; IOW(cpu, addr, data, cpu->CLK, 0x10);
-	cpu->CLK += 9; cpu->CLK += HOLD(cpu, 0);
+
+	if (cpu->Z80)
+	{
+		cpu->CLK += 9;
+	}
+	else
+	{
+		unsigned clk = cpu->HLDA ? cpu->CallHLDA(cpu->HLDA, @selector(HLDA:clk:), cpu->CLK - 9, 18) : 0;
+		cpu->CLK += clk ? clk - 9 : 9;
+	}
 }
 
 // -----------------------------------------------------------------------------
@@ -816,8 +830,13 @@ static uint16_t AND[2][0x100][0x100];
 
 					if (!Z80)
 					{
-						CLK += 18; CLK += HOLD(self, 9);
-						CLK += 18; CLK += HOLD(self, 9);
+						CLK += 18;
+						unsigned clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
+
+						CLK += 18;
+						clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
 					}
 
 					pHL->HL = sum;
@@ -940,8 +959,13 @@ static uint16_t AND[2][0x100][0x100];
 
 					if (!Z80)
 					{
-						CLK += 18; CLK += HOLD(self, 9);
-						CLK += 18; CLK += HOLD(self, 9);
+						CLK += 18;
+						unsigned clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
+
+						CLK += 18;
+						clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
 					}
 
 					pHL->HL = sum;
@@ -1072,8 +1096,13 @@ static uint16_t AND[2][0x100][0x100];
 
 					if (!Z80)
 					{
-						CLK += 18; CLK += HOLD(self, 9);
-						CLK += 18; CLK += HOLD(self, 9);
+						CLK += 18;
+						unsigned clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
+
+						CLK += 18;
+						clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
 					}
 
 					pHL->HL = sum;
@@ -1243,8 +1272,13 @@ static uint16_t AND[2][0x100][0x100];
 
 					if (!Z80)
 					{
-						CLK += 18; CLK += HOLD(self, 9);
-						CLK += 18; CLK += HOLD(self, 9);
+						CLK += 18;
+						unsigned clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
+
+						CLK += 18;
+						clk = HLDA ? CallHLDA(HLDA, @selector(HLDA:clk:), CLK - 9, 18) : 0;
+						CLK += clk ? clk - 9 : 9;
 					}
 
 					pHL->HL = sum;

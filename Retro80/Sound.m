@@ -120,6 +120,7 @@
 	else
 	{
 		SInt16 *ptr = inBuffer->mAudioData;
+		BOOL lastOutput = output;
 		BOOL out = FALSE;
 
 		for (inBuffer->mAudioDataByteSize = 0; inBuffer->mAudioDataByteSize < inBuffer->mAudioDataBytesCapacity; inBuffer->mAudioDataByteSize += 2, ptr++)
@@ -146,7 +147,9 @@
 			else
 			{
 				*ptr = output ? +20000 : -20000;
-				if (output) out = TRUE;
+
+				if (lastOutput != output)
+					out = TRUE;
 			}
 		}
 

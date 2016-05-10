@@ -69,6 +69,8 @@ NSImage *image;
 
 	NSPoint mark;
 	BOOL isMark;
+
+	unsigned blank;
 }
 
 // -----------------------------------------------------------------------------
@@ -358,6 +360,11 @@ NSImage *image;
 	}
 }
 
+- (void) blank
+{
+	blank = 3; self.needsDisplay = TRUE;
+}
+
 // -----------------------------------------------------------------------------
 // drawRect
 // -----------------------------------------------------------------------------
@@ -371,7 +378,7 @@ NSImage *image;
 		backingPixelHeight = (GLsizei)(backingBounds.size.height);
 		glViewport(0, 0, backingPixelWidth, backingPixelHeight);
 
-		if (data1)
+		if (!blank && data1)
 		{
 			glEnable(GL_TEXTURE_2D);
 
@@ -434,6 +441,7 @@ NSImage *image;
 		else
 		{
 			glClear(GL_COLOR_BUFFER_BIT);
+			if (blank) blank--;
 		}
 		
 		glFlush();

@@ -367,8 +367,8 @@ static uint32_t foreground[] =
 				{
 					if (status.VE)
 					{
-						dmaTimer = -2;
-						EoS = TRUE;
+						row = 0; rowTimer = clock + rowClock + 24 - clock % 12;
+						[self.display blank];
 					}
 
 					break;
@@ -401,7 +401,7 @@ static uint32_t foreground[] =
 // Переодические вызовы из модуля CPU
 // -----------------------------------------------------------------------------
 
-- (unsigned) HLDA:(uint64_t)clock
+- (unsigned) HLDA:(uint64_t)clock clk:(unsigned int)clk
 {
 	if (rowClock) @synchronized(self)
 	{
@@ -673,8 +673,8 @@ static uint32_t foreground[] =
 			{
 				if (status.VE && (row < config.R || row == config.R + config.V + 1))
 				{
-					dmaTimer = rowTimer + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
-					memset(buffer, 0, sizeof(buffer)); bpos = 0; fpos = 0;
+					dmaTimer = rowTimer; bpos = 0; fpos = 0;
+					memset(buffer, 0, sizeof(buffer));
 				}
 				else
 				{
@@ -704,66 +704,42 @@ static uint32_t foreground[] =
 
 - (void) WR:(uint8_t)data clock:(uint64_t)clock
 {
-	BOOL burst = bpos != config.H && (bpos + 1) % (1 << mode.B);
+	dmaTimer = bpos == config.H ? -1 : (bpos + 1) % (1 << mode.B) ? 0 : clock + (mode.S ? mode.S << 3 : 1) * 12 - clock % 12;
 
-	if ((buffer[bpos] & 0xC0) == 0x80 && config.F == 0)
+	if ((buffer[bpos] & 0xF1) == 0xF1)
 	{
-		fifo[fpos++ & 0x0F] = data & 0x7F;
-		if (fpos == 17) status.FO = 1;
-	}
-	else if ((buffer[bpos] & 0xF3) == 0xF1)
-	{
+		dmaTimer = buffer[bpos] & 0x02 ? -2 : -1;
 		bpos = config.H + 1;
-		dmaTimer = -1;
-		return;
 	}
 
-	else if ((buffer[bpos] & 0xF3) == 0xF3)
-	{
-		bpos = config.H + 1;
-		dmaTimer = -2;
-		return;
-	}
 	else
 	{
-		buffer[bpos] = data; if ((data & 0xC0) == 0x80 && config.F == 0)
+		if ((buffer[bpos] & 0xC0) == 0x80 && config.F == 0)
 		{
-			return;
-		}
-
-		if ((data & 0xF3) == 0xF1)
-		{
-			if (!burst)
-			{
-				bpos = config.H + 1;
-				dmaTimer = -1;
-			}
-
-			return;
-		}
-
-		if ((data & 0xF3) == 0xF3)
-		{
-			if (!burst)
-			{
-				bpos = config.H + 1;
-				dmaTimer = -2;
-			}
-
-			return;
-		}
-	}
-
-	bpos++; if (!burst)
-	{
-		if (bpos <= config.H)
-		{
-			dmaTimer = clock + (mode.S ? (mode.S << 3) - 1 : 0) * 12;
-			dmaTimer += 12 - (dmaTimer % 12);
+			fifo[fpos++ & 0x0F] = data & 0x7F;
+			if (fpos == 17) status.FO = 1;
+			bpos++;
 		}
 		else
 		{
-			dmaTimer = -1;
+			if (((buffer[bpos] = data) & 0xC0) == 0x80 && config.F == 0)
+			{
+				dmaTimer = 0;
+			}
+
+			else if ((buffer[bpos] & 0xF1) == 0xF1)
+			{
+				if (dmaTimer)
+				{
+					dmaTimer = buffer[bpos] & 0x02 ? -2 : -1;
+					bpos = config.H + 1;
+				}
+			}
+
+			else
+			{
+				bpos++;
+			}
 		}
 	}
 }

@@ -158,6 +158,8 @@
 	self.snd.channel1 = TRUE;
 	self.snd.channel2 = TRUE;
 
+	self.dma.tick = 12;
+
 	self.isFloppy = TRUE;
 	self.isColor = TRUE;
 
@@ -172,13 +174,13 @@
 {
 	// Системный регистр 1 и окошки для внешних устройств
 
-	if ((self.sys1 = [[PartnerSystem1 alloc] init]) == nil)
+	if (self.sys1 == nil && (self.sys1 = [[PartnerSystem1 alloc] init]) == nil)
 		return FALSE;
 
-	if ((self.win1 = [[PartnerExternal alloc] init]) == nil)
+	if (self.win1 == nil && (self.win1 = [[PartnerExternal alloc] init]) == nil)
 		return FALSE;
 
-	if ((self.win2 = [[PartnerExternal alloc] init]) == nil)
+	if (self.win2 == nil && (self.win2 = [[PartnerExternal alloc] init]) == nil)
 		return FALSE;
 
 	// Магнитофон
@@ -310,6 +312,9 @@
 
 	self.dma.DMA0 = self.floppy;
 
+	self.dma.DMA3 = self.sys1;
+	self.cpu.FF = TRUE;
+
 	return [super mapObjects];
 }
 
@@ -367,12 +372,29 @@
 // -----------------------------------------------------------------------------
 
 @implementation PartnerSystem1
+{
+	uint64_t DRQ;
+}
 
 @synthesize cpu;
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	cpu.PAGE = data >> 4;
+}
+
+- (void) RD:(uint8_t *)data clock:(uint64_t)clock
+{
+}
+
+- (void) WR:(uint8_t)data clock:(uint64_t)clock
+{
+	DRQ = clock + 192;
+}
+
+- (uint64_t *) DRQ
+{
+	return &DRQ;
 }
 
 @end
