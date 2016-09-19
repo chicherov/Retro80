@@ -409,10 +409,8 @@ static uint32_t foreground[] =
 		{
 			if (++row >= config.R + config.V + 2)
 			{
+				[self.display draw:frame++ & 1 || colors == NULL];
 				row = 0; attr = 0x00; EoS = FALSE;
-
-				if (frame++ & 1 || colors == NULL)
-					self.display.needsDisplay = TRUE;
 			}
 
 			if (row <= config.R)

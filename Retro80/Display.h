@@ -44,6 +44,8 @@
 						   cx:(NSUInteger)cx
 						   cy:(NSUInteger)cy;
 
+- (void) draw:(BOOL)page;
+
 - (void) blank;
 
 @end

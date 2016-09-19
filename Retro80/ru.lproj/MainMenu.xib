@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="8191" systemVersion="15A284" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9531" systemVersion="15F34" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="8191"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9531"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
@@ -231,17 +231,6 @@
                                 </menu>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="m54-Is-iLE"/>
-                            <menuItem title="Вызвать отладчик" keyEquivalent="d" id="x0q-7h-V3k">
-                                <connections>
-                                    <action selector="debug:" target="-1" id="Uxx-PV-ZV2"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Reset" keyEquivalent="r" id="oJh-0b-1KT">
-                                <connections>
-                                    <action selector="reset:" target="-1" id="tDb-oq-TYJ"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem isSeparatorItem="YES" id="1QV-9V-Ts6"/>
                             <menuItem title="Закрыть" keyEquivalent="w" id="DVo-aG-piG">
                                 <connections>
                                     <action selector="performClose:" target="-1" id="HmO-Ls-i7Q"/>
@@ -264,6 +253,17 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="aJh-i4-bef"/>
+                            <menuItem title="Вызвать отладчик" keyEquivalent="d" id="x0q-7h-V3k">
+                                <connections>
+                                    <action selector="debug:" target="-1" id="Uxx-PV-ZV2"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Reset" keyEquivalent="r" id="oJh-0b-1KT">
+                                <connections>
+                                    <action selector="reset:" target="-1" id="tDb-oq-TYJ"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="1QV-9V-Ts6"/>
                             <menuItem title="Раскладка клавиатуры QWERTY" keyEquivalent="k" id="UZU-CA-0Zr">
                                 <connections>
                                     <action selector="qwerty:" target="-1" id="vq2-rF-akY"/>
@@ -326,16 +326,16 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="9JB-dH-wkD"/>
-                            <menuItem title="Системный ROM-диск" tag="1" hidden="YES" enabled="NO" id="TGT-nE-4Kn">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="ROMDisk:" target="-1" id="X9K-TE-CJM"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Внешний ROM-диск" id="xBi-TV-tlo">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="ROMDisk:" target="-1" id="W81-70-B1a"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Системный ROM-диск" tag="1" hidden="YES" enabled="NO" alternate="YES" id="TGT-nE-4Kn">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES"/>
+                                <connections>
+                                    <action selector="ROMDisk:" target="-1" id="X9K-TE-CJM"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Дисковод A:" tag="1" keyEquivalent="" id="32q-No-bpF">
@@ -346,19 +346,6 @@
                             <menuItem title="Дисковод B:" tag="2" keyEquivalent="" id="KIo-98-FP3">
                                 <connections>
                                     <action selector="floppy:" target="-1" id="vYC-jI-NAz"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem isSeparatorItem="YES" id="ozI-j0-Wca"/>
-                            <menuItem title="Параметры страницы…" keyEquivalent="P" id="qIS-W8-SiK">
-                                <modifierMask key="keyEquivalentModifierMask" shift="YES" command="YES"/>
-                                <connections>
-                                    <action selector="runPageLayout:" target="-1" id="Din-rz-gC5"/>
-                                </connections>
-                            </menuItem>
-                            <menuItem title="Напечатать…" id="aTl-1u-JFS">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="printDocument:" target="-1" id="qaZ-4w-aoO"/>
                                 </connections>
                             </menuItem>
                         </items>
@@ -453,6 +440,43 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="fDU-PB-X5w"/>
+                            <menuItem title="Режим «старый телевизор»" id="ivY-yC-aa7">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="tvnoise:" target="-1" id="BKY-JU-qag"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Режим «старый телевизор» по умолчанию" tag="1" alternate="YES" id="XTT-dY-hlE">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES"/>
+                                <connections>
+                                    <action selector="tvnoise:" target="-1" id="BAH-fx-OPg"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Черно-белый режим" id="Dmv-5T-vdy">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="grayscale:" target="-1" id="su7-cP-xtN"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Черно-белый режим по умолчанию" tag="1" alternate="YES" id="6ik-YZ-TGm">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES"/>
+                                <connections>
+                                    <action selector="grayscale:" target="-1" id="TMC-Ms-RRB"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Режим gigascreen" id="PTy-i5-Zhk">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="gigaScreen:" target="-1" id="kvd-YJ-rAl"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Режим gigascreen по умолчанию" tag="1" alternate="YES" id="nAz-wp-Z1n">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES"/>
+                                <connections>
+                                    <action selector="gigaScreen:" target="-1" id="gBm-2T-1An"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="1Yb-7L-gtE"/>
                             <menuItem title="Полноэкранный режим" id="cKm-q9-U1r">
                                 <string key="keyEquivalent" base64-UTF8="YES">
 DQ

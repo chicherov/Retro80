@@ -128,7 +128,7 @@
 	{
 		if (menuItem.tag == 0)
 		{
-			if ((menuItem.state = self.ext.URL && ![self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:NSBundle.mainBundle.resourcePath]))
+			if ((menuItem.state = self.ext.URL != nil) && ![self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:NSBundle.mainBundle.resourcePath])
 			{
 				menuItem.title = [([menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", self.ext.URL.lastPathComponent];
 			}
@@ -136,13 +136,11 @@
 			{
 				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 			}
-
-			menuItem.submenu = nil;
 		}
 		else
 		{
 			menuItem.state = [self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath];
-			menuItem.hidden = FALSE; // !(menuItem.state || self.ext.URL == nil);
+			menuItem.hidden = FALSE;
 		}
 
 		return YES;

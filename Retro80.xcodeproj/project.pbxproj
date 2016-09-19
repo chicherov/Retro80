@@ -45,6 +45,8 @@
 		D974FCE219AE08190041DF91 /* Microsha.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCE119AE08190041DF91 /* Microsha.m */; };
 		D974FCEA19AE10500041DF91 /* Apogeo.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCE919AE10500041DF91 /* Apogeo.m */; };
 		D977B7D319FD724A003A5FB6 /* DocumentController.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCD419ADF2310041DF91 /* DocumentController.m */; };
+		D97AD7CF1CE9246000015D1C /* tvnoise.fs in Resources */ = {isa = PBXBuildFile; fileRef = D97AD7CE1CE9246000015D1C /* tvnoise.fs */; };
+		D97AD7D11CE925D300015D1C /* tvnoise.vs in Resources */ = {isa = PBXBuildFile; fileRef = D97AD7D01CE925D300015D1C /* tvnoise.vs */; };
 		D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E319BCACFE005350CC /* Radio86RK.m */; };
 		D982B4E719BCB62C005350CC /* Floppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E619BCB62C005350CC /* Floppy.m */; };
 		D988F7BE1A091D5A00079E0A /* GenerateThumbnailForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */; };
@@ -159,6 +161,8 @@
 		D974FCE819AE10500041DF91 /* Apogeo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Apogeo.h; sourceTree = "<group>"; };
 		D974FCE919AE10500041DF91 /* Apogeo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Apogeo.m; sourceTree = "<group>"; };
 		D974FCEC19AE1D3D0041DF91 /* Retro80.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Retro80.h; sourceTree = "<group>"; };
+		D97AD7CE1CE9246000015D1C /* tvnoise.fs */ = {isa = PBXFileReference; explicitFileType = sourcecode.glsl; fileEncoding = 4; path = tvnoise.fs; sourceTree = "<group>"; };
+		D97AD7D01CE925D300015D1C /* tvnoise.vs */ = {isa = PBXFileReference; explicitFileType = sourcecode.glsl; fileEncoding = 4; path = tvnoise.vs; sourceTree = "<group>"; };
 		D982B4E219BCACFE005350CC /* Radio86RK.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Radio86RK.h; sourceTree = "<group>"; };
 		D982B4E319BCACFE005350CC /* Radio86RK.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Radio86RK.m; sourceTree = "<group>"; };
 		D982B4E519BCB62C005350CC /* Floppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Floppy.h; sourceTree = "<group>"; };
@@ -324,6 +328,8 @@
 				D9FE179C19B9F874008EBD32 /* Computer.m */,
 				D974FCCA19ADEA080041DF91 /* Display.h */,
 				D974FCCB19ADEA080041DF91 /* Display.m */,
+				D97AD7D01CE925D300015D1C /* tvnoise.vs */,
+				D97AD7CE1CE9246000015D1C /* tvnoise.fs */,
 				D907F01E1B1BB45500616107 /* digits.png */,
 				D91FBD7C19AE60A70002128E /* Sound.h */,
 				D91FBD7D19AE60A70002128E /* Sound.m */,
@@ -562,6 +568,8 @@
 				D92059E81B1C8638009D353D /* UT88-0.bin in Resources */,
 				D9E7ED591BC42AEC00AA5F43 /* Orion128-3.2.bin in Resources */,
 				D93DC7471AB2CE5B0005D473 /* Radio86RK.bin in Resources */,
+				D97AD7D11CE925D300015D1C /* tvnoise.vs in Resources */,
+				D97AD7CF1CE9246000015D1C /* tvnoise.fs in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

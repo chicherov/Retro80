@@ -8,6 +8,10 @@
 #import "Retro80.h"
 #import "Display.h"
 
+// -----------------------------------------------------------------------------
+// LCD цифра
+// -----------------------------------------------------------------------------
+
 @implementation Digit
 {
 	uint8_t segments;
@@ -43,6 +47,10 @@ NSImage *image;
 
 @end
 
+// -----------------------------------------------------------------------------
+// Display - Экран компьютера
+// -----------------------------------------------------------------------------
+
 @implementation Display
 {
 	IBOutlet NSLayoutConstraint *constraint;
@@ -71,6 +79,13 @@ NSImage *image;
 	BOOL isMark;
 
 	unsigned blank;
+	unsigned mode;
+
+	BOOL gigaScreen;
+	BOOL grayscale;
+	BOOL tvnoise;
+
+	GLuint shaderProgram;
 }
 
 // -----------------------------------------------------------------------------
@@ -123,6 +138,47 @@ NSImage *image;
 	if (menuItem.action == @selector(paste:))
 	{
 		return self.kbd && [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] != nil;
+	}
+
+	if (menuItem.action == @selector(gigaScreen:))
+	{
+		if (menuItem.tag)
+		{
+			menuItem.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"gigaScreen"];
+			return YES;
+		}
+
+		if (graphics.width == overlay.width && graphics.height == overlay.height)
+		{
+			menuItem.state = gigaScreen;
+			return YES;
+		}
+
+		return menuItem.state = NO;
+	}
+
+	if (menuItem.action == @selector(grayscale:))
+	{
+		if (menuItem.tag)
+			menuItem.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"grayscale"];
+		else
+			menuItem.state = grayscale;
+
+		return YES;
+	}
+
+	if (menuItem.action == @selector(tvnoise:))
+	{
+		if (menuItem.tag)
+		{
+			menuItem.state = [[NSUserDefaults standardUserDefaults] boolForKey:@"tvnoise"];
+			return YES;
+		}
+		else
+		{
+			menuItem.state = tvnoise && shaderProgram != 0;
+			return shaderProgram != 0;
+		}
 	}
 
 	return NO;
@@ -304,6 +360,51 @@ NSImage *image;
 }
 
 // -----------------------------------------------------------------------------
+// Реежим gigascreen
+// -----------------------------------------------------------------------------
+
+- (IBAction)gigaScreen:(NSMenuItem *)menuItem
+{
+	@synchronized(self)
+	{
+		if (menuItem.tag)
+			[NSUserDefaults.standardUserDefaults setBool:gigaScreen = ![NSUserDefaults.standardUserDefaults boolForKey:@"gigaScreen"] forKey:@"gigaScreen"];
+		else
+			gigaScreen = !gigaScreen;
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Черно-белый режим
+// -----------------------------------------------------------------------------
+
+- (IBAction)grayscale:(NSMenuItem *)menuItem
+{
+	@synchronized(self)
+	{
+		if (menuItem.tag)
+			[NSUserDefaults.standardUserDefaults setBool:grayscale = ![NSUserDefaults.standardUserDefaults boolForKey:@"grayscale"] forKey:@"grayscale"];
+		else
+			grayscale = !grayscale;
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Режим «старый телевизор»
+// -----------------------------------------------------------------------------
+
+- (IBAction)tvnoise:(NSMenuItem *)menuItem
+{
+	@synchronized(self)
+	{
+		if (menuItem.tag)
+			[NSUserDefaults.standardUserDefaults setBool:tvnoise = ![NSUserDefaults.standardUserDefaults boolForKey:@"tvnoise"] forKey:@"tvnoise"];
+		else
+			tvnoise = !tvnoise;
+	}
+}
+
+// -----------------------------------------------------------------------------
 // setupGraphics/setupText
 // -----------------------------------------------------------------------------
 
@@ -366,6 +467,29 @@ NSImage *image;
 }
 
 // -----------------------------------------------------------------------------
+// draw
+// -----------------------------------------------------------------------------
+
+- (void) draw:(BOOL)page
+{
+	if (page)
+	{
+		if (data2 && (gigaScreen || graphics.width != overlay.width || graphics.height != overlay.height))
+		{
+			mode = 3; self.needsDisplay = TRUE;
+		}
+		else
+		{
+			mode = 1; self.needsDisplay = TRUE;
+		}
+	}
+	else if (!gigaScreen)
+	{
+		mode = 2; self.needsDisplay = TRUE;
+	}
+}
+
+// -----------------------------------------------------------------------------
 // drawRect
 // -----------------------------------------------------------------------------
 
@@ -378,28 +502,83 @@ NSImage *image;
 		backingPixelHeight = (GLsizei)(backingBounds.size.height);
 		glViewport(0, 0, backingPixelWidth, backingPixelHeight);
 
-		if (!blank && data1)
+		if (!blank && ((mode & 1) == 0 || data1) && ((mode & 2) == 0 || data2))
 		{
+			if (grayscale && !(tvnoise && shaderProgram))
+			{
+				static float mat[] =
+				{
+					0.30, 0.30, 0.30, 0.00,
+					0.59, 0.59, 0.58, 0.00,
+					0.11, 0.11, 0.11, 0.00,
+					0.00, 0.00, 0.00, 1.00
+				};
+
+				glMatrixMode(GL_COLOR);
+				glPushMatrix(); glLoadMatrixf(mat);
+				glMatrixMode(GL_MODELVIEW);
+			}
+			
 			glEnable(GL_TEXTURE_2D);
 
+			GLuint tex[2]; glGenTextures(2, tex);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, tex[0]);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.bytes);
+			if (mode != 2)
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)graphics.width, (GLsizei)graphics.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data1.bytes);
 
-			glBegin(GL_QUADS);
-			glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
-			glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
-			glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
-			glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
-			glEnd();
-
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-			if (data2)
+			if (mode == 3)
 			{
+				glBindTexture(GL_TEXTURE_2D, tex[1]);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			}
+
+			if (mode != 1)
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)overlay.width, (GLsizei)overlay.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2.bytes);
+
+			if (grayscale && !(tvnoise && shaderProgram))
+			{
+				glMatrixMode(GL_COLOR);
+				glPopMatrix();
+				glMatrixMode(GL_MODELVIEW);
+			}
+
+			if (tvnoise && shaderProgram)
+			{
+				glUseProgram(shaderProgram);
+
+				GLint location;
+
+				if ((location = glGetUniformLocation(shaderProgram, "time")) != -1)
+					glUniform1f(location, (float)[[NSProcessInfo processInfo] systemUptime]);
+
+				if ((location = glGetUniformLocation(shaderProgram, "resolution")) != -1)
+					glUniform2f(location, graphics.width, graphics.height);
+
+				if ((location = glGetUniformLocation(shaderProgram, "tex0")) != -1)
+				{
+					glActiveTexture(GL_TEXTURE0);
+					glBindTexture(GL_TEXTURE_2D, tex[0]);
+					glUniform1i(location, 0);
+				}
+
+				if (mode == 3 && (location = glGetUniformLocation(shaderProgram, "tex1")) != -1)
+				{
+					glActiveTexture(GL_TEXTURE1);
+					glBindTexture(GL_TEXTURE_2D, tex[1]);
+					glUniform1i(location, 1);
+				}
+
+				if ((location = glGetUniformLocation(shaderProgram, "blend")) != -1)
+					glUniform1i(location, mode == 3);
+
+				if ((location = glGetUniformLocation(shaderProgram, "grayscale")) != -1)
+					glUniform1i(location, grayscale);
 
 				glBegin(GL_QUADS);
 				glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
@@ -408,14 +587,52 @@ NSImage *image;
 				glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
 				glEnd();
 
+				glUseProgram(0);
 			}
 
+			else
+			{
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, tex[0]);
+
+				glBegin(GL_QUADS);
+				glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+				glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+				glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+				glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+				glEnd();
+
+				if (mode == 3)
+				{
+					glBindTexture(GL_TEXTURE_2D, tex[1]);
+
+					glEnable(GL_BLEND);
+					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+					glBegin(GL_QUADS);
+					glTexCoord2f(0.0, 0.0); glVertex2f(-1.0,  1.0);
+					glTexCoord2f(1.0, 0.0); glVertex2f( 1.0,  1.0);
+					glTexCoord2f(1.0, 1.0); glVertex2f( 1.0, -1.0);
+					glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
+					glEnd();
+
+					glDisable(GL_BLEND);
+				}
+			}
+
+			glActiveTexture(0);
+
+			glBindTexture(GL_TEXTURE_2D, 0);
+			glDeleteTextures(2, tex);
 			glDisable(GL_TEXTURE_2D);
 
 			if (isSelected)
 			{
-				glBegin(GL_QUADS);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 				glColor4f(1.0, 1.0, 1.0, 0.5);
+
+				glBegin(GL_QUADS);
 
 				if (isText)
 				{
@@ -432,18 +649,18 @@ NSImage *image;
 					glVertex2f(selected.origin.x / graphics.width * 2 - 1, 1 - (selected.origin.y + selected.size.height) / graphics.height * 2);
 				}
 
-				glColor4f(1.0, 1.0, 1.0, 1.0);
 				glEnd();
-			}
 
-			glDisable(GL_BLEND);
+				glColor4f(1.0, 1.0, 1.0, 1.0);
+				glDisable(GL_BLEND);
+			}
 		}
 		else
 		{
 			glClear(GL_COLOR_BUFFER_BIT);
 			if (blank) blank--;
 		}
-		
+
 		glFlush();
 	}
 }
@@ -621,7 +838,7 @@ NSImage *image;
 				glTexCoord2f(0.0, 1.0); glVertex2f(-1.0, -1.0);
 				glEnd();
 
-				if (data2)
+				if (data2 && (gigaScreen || graphics.width != overlay.width || graphics.height != overlay.height))
 				{
 					glEnable(GL_BLEND);
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -733,6 +950,44 @@ NSImage *image;
 // Инициализация
 // -----------------------------------------------------------------------------
 
+static GLuint createShader(GLenum shaderType)
+{
+	const GLchar *source = (GLchar *)[[NSString stringWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"tvnoise" ofType:shaderType == GL_VERTEX_SHADER ? @"vs" : @"fs"] encoding:NSASCIIStringEncoding error:nil] cStringUsingEncoding:NSASCIIStringEncoding];
+
+	if (source == 0)
+		return 0;
+
+	GLuint shader = glCreateShader(shaderType);
+
+	if (shader == 0)
+		return 0;
+
+	glShaderSource(shader, 1, &source, NULL);
+	glCompileShader(shader);
+
+#if defined(DEBUG)
+	GLint logLength; glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+
+	if (logLength > 0)
+	{
+		GLchar *log = malloc((size_t)logLength);
+		glGetShaderInfoLog(shader, logLength, &logLength, log);
+		NSLog(@"Shader compilation failed:\n%s", log);
+		free(log);
+	}
+#endif
+
+	GLint status; glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+
+	if (!status)
+	{
+		glDeleteShader(shader);
+		return 0;
+	}
+
+	return shader;
+}
+
 - (void) awakeFromNib
 {
 	[self setWantsBestResolutionOpenGLSurface:YES];
@@ -740,18 +995,68 @@ NSImage *image;
 	if (self.document.isInViewingMode)
 		constraint.constant = 0;
 
+	gigaScreen = [NSUserDefaults.standardUserDefaults boolForKey:@"gigaScreen"];
+	grayscale = [NSUserDefaults.standardUserDefaults boolForKey:@"grayscale"];
+	tvnoise = [NSUserDefaults.standardUserDefaults boolForKey:@"tvnoise"];
+
+	[[self openGLContext] makeCurrentContext];
+
+	GLuint fragmentShader = createShader(GL_FRAGMENT_SHADER);  if (fragmentShader)
+	{
+		GLuint vertexShader = createShader(GL_VERTEX_SHADER); if (vertexShader)
+		{
+			shaderProgram = glCreateProgram();
+
+			glAttachShader(shaderProgram, fragmentShader);
+			glAttachShader(shaderProgram, vertexShader);
+
+			glLinkProgram(shaderProgram);
+
+#if defined(DEBUG)
+			GLint logLength; glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &logLength);
+
+			if (logLength > 0)
+			{
+				GLchar *log = malloc((size_t)logLength);
+				glGetProgramInfoLog(shaderProgram, logLength, &logLength, log);
+				NSLog(@"Shader program linking failed:\n%s", log);
+				free(log);
+			}
+#endif
+
+			GLint status; glGetProgramiv(shaderProgram, GL_LINK_STATUS, &status);
+
+			if (!status)
+			{
+				glDeleteProgram(shaderProgram);
+				shaderProgram = 0;
+			}
+
+			glDeleteShader(vertexShader);
+		}
+
+		glDeleteShader(fragmentShader);
+	}
+
 	scale = 2;
+	mode = 1;
 }
 
 // -----------------------------------------------------------------------------
 // DEBUG: dealloc
 // -----------------------------------------------------------------------------
 
-#ifdef DEBUG
 - (void) dealloc
 {
+#ifdef DEBUG
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
-}
 #endif
+
+	if (shaderProgram)
+	{
+		[[self openGLContext] makeCurrentContext];
+		glDeleteProgram(shaderProgram);
+	}
+}
 
 @end
