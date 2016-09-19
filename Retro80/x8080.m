@@ -619,10 +619,10 @@ static uint16_t AND[2][0x100][0x100];
 			for (int data = 0x00; data <= 0xFF; data++)
 			{
 				ADD[z80][byte][data] = ((byte + data) << 8) | flags[z80][(byte + data) & 0xFF] | ((byte & 0x0F) + (data & 0x0F) > 0x0F ? 0x10 : 0x00) | (byte + data > 0xFF ? 0x01 : 0x00);
-				if (z80) ADD[z80][byte][data] = (ADD[z80][byte][data] & 0xFFFB) | ((ADD[z80][byte][data] & 1) << 2) ^ (((byte ^ data ^ (byte + data)) & 0x80) >> 5);
+				if (z80) ADD[z80][byte][data] = (ADD[z80][byte][data] & 0xFFFB) | (((ADD[z80][byte][data] & 1) << 2) ^ (((byte ^ data ^ (byte + data)) & 0x80) >> 5));
 
 				ADC[z80][byte][data] = ((byte + data + 1) << 8) | flags[z80][(byte + data + 1) & 0xFF] | ((byte & 0x0F) + (data & 0x0F) + 1 > 0x0F ? 0x10 : 0x00) | (byte + data + 1 > 0xFF ? 0x01 : 0x00);
-				if (z80) ADC[z80][byte][data] = (ADC[z80][byte][data] & 0xFFFB) | ((ADC[z80][byte][data] & 1) << 2) ^ (((byte ^ data ^ (byte + data + 1)) & 0x80) >> 5);
+				if (z80) ADC[z80][byte][data] = (ADC[z80][byte][data] & 0xFFFB) | (((ADC[z80][byte][data] & 1) << 2) ^ (((byte ^ data ^ (byte + data + 1)) & 0x80) >> 5));
 
 				SUB[z80][byte][data] = ((byte - data) << 8) | flags[z80][(byte - data) & 0xFF] | ((byte & 0x0F) < (data & 0x0F) ? 0x00 : 0x10) | (byte < data ? 0x01 : 0x00);
 				if (z80) SUB[z80][byte][data] = (SUB[z80][byte][data] & 0xFFEB) | (((SUB[z80][byte][data] & 1) << 2) ^ (((byte ^ data ^ (byte - data)) & 0x80) >> 5)) | ((byte ^ data ^ (byte - data)) & 0x10) | 0x02;

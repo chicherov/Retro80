@@ -1,8 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9531" systemVersion="15F34" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11201" systemVersion="16A323" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9531"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11201"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
@@ -92,10 +92,26 @@
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="Vjz-mJ-sxq"/>
-                                        <menuItem title="Микро-80" tag="500" id="w0W-To-G4c">
+                                        <menuItem title="Микро-80" tag="501" id="icv-w3-YhX">
                                             <modifierMask key="keyEquivalentModifierMask"/>
+                                            <menu key="submenu" title="Микро-80" id="sRy-Ed-2sG">
+                                                <items>
+                                                    <menuItem title="Оригинальный монитор" tag="501" id="w0W-To-G4c">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="9VT-gG-e0j"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Монитор М/80К" tag="502" id="Vct-S7-dDx">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="cmJ-Zx-0pb"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                </items>
+                                            </menu>
                                             <connections>
-                                                <action selector="newDocument:" target="-1" id="9VT-gG-e0j"/>
+                                                <action selector="newDocument:" target="-1" id="Tv6-Pc-iKZ"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem title="ЮТ-88" tag="600" id="fMK-1j-gIa">
@@ -282,12 +298,6 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="4lE-Wa-aOw"/>
-                            <menuItem title="Дисплейный модуль" tag="3" hidden="YES" id="ob0-pc-BBT">
-                                <modifierMask key="keyEquivalentModifierMask"/>
-                                <connections>
-                                    <action selector="UT88:" target="-1" id="YK6-Gk-3Jd"/>
-                                </connections>
-                            </menuItem>
                             <menuItem title="Модуль цветности" id="wQj-w4-Ogq">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -306,7 +316,7 @@
                                     <action selector="extraMemory:" target="-1" id="4Jx-Mx-6ZC"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="RAM диск" tag="4" hidden="YES" id="kGa-EI-EE0">
+                            <menuItem title="RAM диск" tag="3" hidden="YES" id="kGa-EI-EE0">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="UT88:" target="-1" id="mPA-al-ICi"/>

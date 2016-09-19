@@ -427,7 +427,9 @@ static uint32_t foreground[] =
 				if (row == config.R && status.IE)
 					IRQ = status.IR = TRUE;
 
-				union i8275_char ch2;
+                union i8275_char ch2;
+                ch2.value = 0;
+                
 				BOOL EoR = FALSE;
 
 				for (uint8_t col = 0, f = 0; col < config.H + 2; col++)
