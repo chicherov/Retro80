@@ -64,8 +64,8 @@
 			{
 				static uint32_t colors[2][2][2] =
 				{
-					0xFF000000, 0xFF00AA00, 0xFF0000AA, 0xFFAA0000,
-					0xFFAA00AA, 0xFF0055AA, 0xFFAAAAAA, 0xFFAAAA00
+                        0xFF000000, 0xFF00AA00, 0xFF0000AA, 0xFFAA0000,
+						0xFFAAAA00, 0xFF00AAAA, 0xFFAAAAAA, 0xFFAA00AA
 				};
 
 				for (uint16_t addr = 0x0000; addr < width * 32; addr++)

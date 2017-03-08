@@ -238,7 +238,7 @@ static uint32_t foreground[] =
 {
     @synchronized(self)
     {
-        font = offset; bitmap[0] = bitmap[1] = NULL;
+        font = offset;
         memset(screen, -1, sizeof(screen));
     }
 }
