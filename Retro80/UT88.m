@@ -9,6 +9,8 @@
 
 #import "UT88.h"
 
+// -----------------------------------------------------------------------------
+
 @implementation UT88
 
 + (NSString *) title
@@ -29,43 +31,115 @@
 {
 	if (menuItem.action == @selector(UT88:))
 	{
-		menuItem.hidden = menuItem.tag < 1 || menuItem.tag > 4;
-
 		switch (menuItem.tag)
 		{
 			case 1:	// Монитор 0
 
-				menuItem.state = self.cpu.PAGE & 0x01;
+				menuItem.state = (self.cpu.PAGE & 0x01) != 0;
+                menuItem.hidden = FALSE;
 				return YES;
 
-			case 2:	// Монитор F
+            case 2:	// Монитор F
+                
+                menuItem.state = (self.cpu.PAGE & 0x02) != 0;
+                menuItem.hidden = FALSE;
+                return (self.cpu.PAGE & 0x04) != 0;
+                
+            case 3:	// Дисплейный модуль
+                
+                menuItem.state = (self.cpu.PAGE & 0x04) != 0;
+                menuItem.hidden = FALSE;
+                return YES;
+                
+            case 4: // Старт с F800
+                
+                menuItem.state = (self.cpu.START & 0xFFFF) == 0xF800;
+                menuItem.alternate = TRUE;
+                menuItem.hidden = FALSE;
+                return YES;
+                
+            case 5: // Старт с 0000
+                
+                menuItem.state = (self.cpu.START & 0xFFFF) == 0x0000;
+                menuItem.alternate = TRUE;
+                menuItem.hidden = FALSE;
+                return YES;
+                
+            default:
 
-                menuItem.state = self.cpu.PAGE & 0x02;
-				return YES;
-
-			case 3:	// RAM диск
-
-				menuItem.state = self.ram.length > 0x10000;
-				return YES;
+                menuItem.state = FALSE;
+                menuItem.hidden = TRUE;
+                return NO;
 		}
 	}
 
-    if (menuItem.action == @selector(ROMDisk:) && menuItem.tag == 0)
+    if (menuItem.action == @selector(extraMemory:))
     {
-        NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
-            menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
-        else
-            menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+        switch (menuItem.tag)
+        {
+            case 1:
+            {
+                menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+
+                if (self.ram.length > 0x10800)
+                    menuItem.title = [menuItem.title stringByAppendingFormat:@": 64K + %luK", (self.ram.length >> 10) - 66];
+                else if (self.ram.length == 0x10800)
+                    menuItem.title = [menuItem.title stringByAppendingString:@": 64K"];
+                else if (self.ram.length == 0x1800)
+                    menuItem.title = [menuItem.title stringByAppendingString:@": 4K"];
+                
+                menuItem.state = FALSE;
+                break;
+            }
+                
+                
+            case 2: case 6:
+            
+                menuItem.state = self.ram.length == menuItem.tag * 1024;
+                break;
+
+            case 64000: case 64064: case 64128: case 64192: case 64256:
+                
+                menuItem.state = self.ram.length == (66 + menuItem.tag - 64000) * 1024;
+                break;
+                
+            default:
+                
+                menuItem.state = FALSE;
+                menuItem.hidden = TRUE;
+                return NO;
+        }
         
-        menuItem.submenu = nil;
+        menuItem.hidden = FALSE;
         return YES;
+    }
+
+    if (menuItem.action == @selector(ROMDisk:))
+    {
+        if (menuItem.tag == 0)
+        {
+            NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
+                menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingFormat:@": %@", url.lastPathComponent];
+            else
+                menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+
+            menuItem.hidden = FALSE;
+            return YES;
+        }
+        
+        else
+        {
+            menuItem.state = FALSE;
+            menuItem.hidden = TRUE;
+            return NO;
+        }
     }
 
     return [super validateMenuItem:menuItem];
 }
 
 // -----------------------------------------------------------------------------
-// Монитор 0/Монитор F/RAM диск
+// Монитор 0, монитор F и дисплейный модуль
 // -----------------------------------------------------------------------------
 
 - (IBAction)UT88:(NSMenuItem *)menuItem
@@ -78,24 +152,81 @@
 		{
 			case 1:
                 
-                self.cpu.PAGE ^= 0x01;
+                self.cpu.START = ((self.cpu.PAGE ^= 0x01) << 16) | (self.cpu.START & 0xFFFF);
 				break;
 
 			case 2:
 
-                self.cpu.PAGE ^= 0x02;
+                self.cpu.START = ((self.cpu.PAGE ^= 0x02) << 16) | (self.cpu.START & 0xFFFF);
 				break;
 
-			case 3:
-            {
-                RAM *ram = [[RAM alloc] initWithLength:self.ram.length == 0x10000 ? 0x50000 : 0x10000 mask:0xFFFF];
-                memcpy(ram.mutableBytes, self.ram.mutableBytes, 0x10000);
-                self.ram = ram; [self mapObjects];
-            }
+            case 3:
+                
+                if (self.cpu.PAGE & 0x04)
+                {
+                    self.cpu.START = ((self.cpu.PAGE &= ~0x06) << 16) | (self.cpu.START & 0xFFFF);
+                    memset(self.crt.mutableBytes, 0x80, 0x800);
+                }
+                else
+                {
+                    self.cpu.START = ((self.cpu.PAGE |= 0x06) << 16) | (self.cpu.START & 0xFFFF);
+                    memset(self.crt.mutableBytes, 0x01, 0x800);
+                }
 
+                break;
+                
+            case 4:
+                
+                self.cpu.START = (self.cpu.PAGE << 16) | 0xF800;
+                break;
+                
+            case 5:
+                
+                self.cpu.START = self.cpu.PAGE << 16;
+                break;
+                
 		}
-
 	}
+}
+
+// -----------------------------------------------------------------------------
+// Модуль ОЗУ
+// -----------------------------------------------------------------------------
+
+- (IBAction) extraMemory:(NSMenuItem *)menuItem
+{
+    @synchronized(self.cpu)
+    {
+        NSUInteger newLength = self.ram.length;
+
+        switch (menuItem.tag)
+        {
+            case 1:
+                
+                newLength = newLength < 66 * 1024 ? 66 * 1024 : 6 * 1024;
+                break;
+                
+            case 2: case 6:
+                
+                newLength = menuItem.tag * 1024;
+                break;
+                
+            case 64000: case 64064: case 64128: case 64192: case 64256:
+                
+                newLength = (66 + menuItem.tag - 64000) * 1024;
+                break;
+        }
+        
+        if (self.ram.length != newLength)
+        {
+            [self.document registerUndoWithMenuItem:menuItem];
+            
+            if ((self.ram.length = newLength) < 0x10800)
+                self.cpu.START = ((self.cpu.PAGE = self.cpu.PAGE & ~0x08) << 16) | (self.cpu.START & 0xFFFF);
+            else
+                self.cpu.START = ((self.cpu.PAGE = self.cpu.PAGE | 0x08) << 16) | (self.cpu.START & 0xFFFF);
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -123,57 +254,50 @@
 }
 
 // -----------------------------------------------------------------------------
-// reset
-// -----------------------------------------------------------------------------
-
-- (IBAction) reset:(NSMenuItem *)menuItem
-{
-	@synchronized(self.cpu)
-	{
-		[self.document registerUndoWithMenuItem:menuItem];
-
-        uint8_t page = self.cpu.PAGE; [self.cpu reset];
-
-        if ((self.cpu.PAGE = page) & 0x01)
-            self.cpu.PC = 0x0000;
-	}
-}
-
-
-// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
 {
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000 start:0x2F800]) == nil)
-		return FALSE;
-
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000 start:0xEF800]) == nil)
+            return FALSE;
+        
     if (self.monitor0 == nil && (self.monitor0 = [[ROM alloc] initWithContentsOfResource:@"UT88-0" mask:0x03FF]) == nil)
         return FALSE;
-    
+
     if (self.monitorF == nil && (self.monitorF = [[ROM alloc] initWithContentsOfResource:@"UT88-F" mask:0x07FF]) == nil)
         return FALSE;
-    
-	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
-		return FALSE;
 
-	if (self.kbd == nil && (self.kbd = [[UT88Keyboard alloc] init]) == nil)
+	if (self.ram == nil)
+    {
+        if ((self.ram = [[RAM alloc] initWithLength:0x10800]) == nil)
+            return FALSE;
+
+        self.ram.offset = 0x0800;
+    }
+
+    if (self.kbd == nil && (self.kbd = [[UT88Keyboard alloc] init]) == nil)
 		return FALSE;
 
 	if (self.crt == nil && (self.crt = [[UT88Screen alloc] init]) == nil)
 		return FALSE;
     
+    if (self.sys == nil && (self.sys = [[UT88System alloc] init]) == nil)
+        return FALSE;
+    
     if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
         return FALSE;
 
-    if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
-        return FALSE;
+    if (self.snd == nil)
+    {
+        if ((self.snd = [[X8253 alloc] init]) == nil)
+            return FALSE;
+        
+        self.snd.channel0 = TRUE;
+        self.snd.channel1 = TRUE;
+        self.snd.channel2 = TRUE;
+    }
     
-    self.snd.channel0 = TRUE;
-    self.snd.channel1 = TRUE;
-    self.snd.channel2 = TRUE;
-
 	return TRUE;
 }
 
@@ -181,48 +305,26 @@
 
 - (BOOL) mapObjects
 {
-	if (self.sys == nil && (self.sys = [[UT88Port40 alloc] init]) == nil)
-		return FALSE;
-    
-	self.sys.cpu = self.cpu;
+    self.sys.cpu = self.cpu;
+    self.cpu.IRQ = self.sys;
+    self.cpu.RST = 0xFF;
 
-    self.crt.ram = self.ram;
-    
-	self.cpu.IRQ = self.crt;
-	self.cpu.RST = 0xFF;
-	self.cpu.FF = TRUE;
-    
+    self.crt.mem = self.ram;
+
     self.kbd.snd = self.snd;
     
-    [self.cpu mapObject:self.ram atPage:0 from:0x0000 to:0xFFFF];
-    [self.cpu mapObject:self.ram atPage:1 from:0x0000 to:0xFFFF];
-    [self.cpu mapObject:self.ram atPage:2 from:0x0000 to:0xFFFF];
-    [self.cpu mapObject:self.ram atPage:3 from:0x0000 to:0xFFFF];
-
-    // 0000-0FFF
+    MEM *mem_C000; if ((mem_C000 = [self.ram memoryAtOffest:0x0000 mask:0x03FF]) == nil)
+        return FALSE;
     
-    [self.cpu mapObject:self.monitor0 atPage:1 from:0x0000 to:0x0FFF WR:nil];
-    [self.cpu mapObject:self.monitor0 atPage:3 from:0x0000 to:0x0FFF WR:nil];
+    MEM *mem_F400; if ((mem_F400 = [self.ram memoryAtOffest:0x0400 mask:0x03FF]) == nil)
+        return FALSE;
 
-	// 9000-9FFF
-
-    [self.cpu mapObject:self.crt atPage:0 from:0x9000 to:0x9FFF RD:self.ram];
-    [self.cpu mapObject:self.crt atPage:1 from:0x9000 to:0x9FFF RD:self.ram];
-    [self.cpu mapObject:self.crt atPage:2 from:0x9000 to:0x9FFF RD:self.ram];
-    [self.cpu mapObject:self.crt atPage:3 from:0x9000 to:0x9FFF RD:self.ram];
+    MEM *mem_3000; if ((mem_3000 = [self.ram memoryAtOffest:0x0800 mask:0x0FFF]) == nil)
+        return FALSE;
     
-	// E800-EFFF
-
-    [self.cpu mapObject:self.crt atPage:0 from:0xE800 to:0xEFFF RD:self.ram];
-    [self.cpu mapObject:self.crt atPage:1 from:0xE800 to:0xEFFF RD:self.ram];
-    [self.cpu mapObject:self.crt atPage:2 from:0xE800 to:0xEFFF RD:self.ram];
-    [self.cpu mapObject:self.crt atPage:3 from:0xE800 to:0xEFFF RD:self.ram];
-
-	// F800-FFFF
-
-    [self.cpu mapObject:self.monitorF atPage:2 from:0xF800 to:0xFFFF WR:nil];
-    [self.cpu mapObject:self.monitorF atPage:3 from:0xF800 to:0xFFFF WR:nil];
-
+    MEM *mem_0000; if ((mem_0000 = [self.ram memoryAtOffest:0x1800 mask:0xFFFF]) == nil)
+        return FALSE;
+    
     if (self.inpHook == nil)
     {
         self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
@@ -235,9 +337,6 @@
         self.inpHook.enabled = TRUE;
     }
 
-    [self.cpu mapObject:self.inpHook atPage:2 from:0xFF69 to:0xFF69 WR:nil];
-    [self.cpu mapObject:self.inpHook atPage:3 from:0xFF69 to:0xFF69 WR:nil];
-    
     if (self.outHook == nil)
     {
         self.outHook = [[F80C alloc] initWithX8080:self.cpu];
@@ -249,29 +348,50 @@
         
         self.outHook.enabled = TRUE;
     }
+    
+    for (uint8_t page = 0; page < 16; page++)
+    {
+        if (page & 8)
+        {
+            [self.cpu mapObject:mem_0000 atPage:page from:0x0000 to:0x2FFF];
+            [self.cpu mapObject:self.ram atPage:page from:0x4000 to:0xFFFF];
+        }
 
-    [self.cpu mapObject:self.outHook atPage:2 from:0xFF77 to:0xFF77 WR:nil];
-    [self.cpu mapObject:self.outHook atPage:3 from:0xFF77 to:0xFF77 WR:nil];
+        else if (page & 1)
+            [self.cpu mapObject:mem_C000 atPage:page from:0xC000 to:0xCFFF];
+        else
+            [self.cpu mapObject:mem_C000 atPage:page from:0x0000 to:0x0FFF];
+        
+        [self.cpu mapObject:self.crt atPage:page from:0x9000 to:0x9FFF RD:self.ram];
+        [self.cpu mapObject:mem_3000 atPage:page from:0x3000 to:0x3FFF];
+        
+        if (page & 4)
+        {
+            [self.cpu mapObject:self.crt atPage:page from:0xE000 to:0xEFFF];
 
-    [self.cpu mapObject:self.kbd atPort:0x04 count:0x04];
+            if (page & 2)
+            {
+                [self.cpu mapObject:self.monitorF atPage:page from:0xF800 to:0xFFFF WR:nil];
+                [self.cpu mapObject:self.inpHook atPage:page from:0xFF69 to:0xFF69 WR:nil];
+                [self.cpu mapObject:self.outHook atPage:page from:0xFF77 to:0xFF77 WR:nil];
+                [self.cpu mapObject:mem_F400 atPage:page from:0xF000 to:0xF7FF];
+            }
+        }
+
+        if (page & 1)
+            [self.cpu mapObject:self.monitor0 atPage:page from:0x0000 to:0x0FFF WR:nil];
+    }
+    
+    [self.cpu mapObject:[self.sys RAMDISK:self.ram] atPage:8 from:0x0000 to:0xFFFF];
+    
+    [self.cpu mapObject:self.kbd atPort:0x00 count:0x10];
+    [self.cpu mapObject:self.sys atPort:0x40 count:0x10];
     [self.cpu mapObject:self.snd atPort:0x50 count:0x10];
-	[self.cpu mapObject:self.crt atPort:0x90 count:0x10];
-    [self.cpu mapObject:self.kbd atPort:0xA0 count:0x02];
-    [self.cpu mapObject:self.ext atPort:0xF8 count:0x04];
+//	[self.cpu mapObject:self.crt atPort:0x90 count:0x10];
+    [self.cpu mapObject:self.kbd atPort:0xA0 count:0x10];
+    [self.cpu mapObject:self.ext atPort:0xF0 count:0x10];
 
-	if (self.ram.length > 0x10000)
-	{
-		[self.cpu mapObject:self.sys atPort:0x40 count:0x01];
-
-		for (unsigned page = 4; page <= 7; page++)
-			[self.cpu mapObject:[self.ram memoryAtOffest:page << 16 length:0x10000 mask:0xFFFF]
-						 atPage:page from:0x0000 to:0xFFFF];
-	}
-	else
-	{
-		[self.cpu mapObject:nil atPort:0x40 count:0x10];
-	}
-
+    self.cpu.FF = TRUE;
 	return TRUE;
 }
 
@@ -304,6 +424,8 @@
 	[encoder encodeObject:self.kbd forKey:@"kbd"];
     [encoder encodeObject:self.crt forKey:@"crt"];
 
+    [encoder encodeObject:self.sys forKey:@"sys"];
+
     [encoder encodeObject:self.ext forKey:@"ext"];
     [encoder encodeObject:self.snd forKey:@"snd"];
 }
@@ -331,6 +453,9 @@
 		return FALSE;
 
     if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
+        return FALSE;
+    
+    if ((self.sys = [decoder decodeObjectForKey:@"sys"]) == nil)
         return FALSE;
     
     if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)

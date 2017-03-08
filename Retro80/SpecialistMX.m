@@ -10,117 +10,6 @@
 #import "SpecialistMX.h"
 
 // =============================================================================
-// Интерфейс клавиатуры ПЭВМ "Специалист MX"
-// =============================================================================
-
-@implementation SpecialistMXKeyboard
-
-- (void) keyboardInit
-{
-	[super keyboardInit];
-
-	kbdmap = @[
-			   @53,  @109, @122, @120, @99,  @118, @96,  @97,  @98,  @100, @101, @51,
-			   @10,  @18,  @19,  @20,  @21,  @23,  @22,  @26,  @28,  @25,  @29,  @27,
-			   @12,  @13,  @14,  @15,  @17,  @16,  @32,  @34,  @31,  @35,  @33,  @30,
-			   @0,   @1,   @2,   @3,   @5,   @4,   @38,  @40,  @37,  @41,  @39,  @42,
-			   @6,   @7,   @8,   @9,   @11,  @45,  @46,  @43,  @47,  @44,  @50,  @117,
-			   @999, @115, @126, @125, @999, @999, @49,  @123, @48,  @124, @76,  @36
-			   ];
-
-	chr1Map = @"\x1B\x7F;1234567890-jcukeng[]zh:fywaproldv\\.q^smitxb@,/_\0\0\0 \t\x03\r";
-	chr2Map = @"\x1B\x7F+!\"#$%&'() =JCUKENG{}ZH*FYWAPROLDV|>Q~SMITXB`<?\0\0\0\0 \t\x03\r";
-
-	upperCase = FALSE;
-}
-
-@end
-
-// =============================================================================
-// Системный регистр ПЭВМ "Специалист MX"
-// =============================================================================
-
-@implementation SpecialistMXSystem
-
-@synthesize cpu;
-@synthesize crt;
-@synthesize fdd;
-
-- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
-{
-}
-
-- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
-{
-	switch (addr & 0x1F)
-	{
-		case 0x10:	// D3.1 (pF0 - захват)
-
-			fdd.HOLD = TRUE;
-			break;
-
-		case 0x11:	// D3.2	(pF1 - мотор)
-
-			break;
-			
-		case 0x12:	// D4.2	(pF2 - сторона)
-
-			if (fdd.selected == 0)
-				fdd.selected = 1;
-
-			fdd.head = data & 1;
-			break;
-
-		case 0x13:	// D4.1	(pF3 - дисковод)
-
-			fdd.selected = (data & 1) + 1;
-			break;
-
-		case 0x18:	// Регистр цвета
-		case 0x19:
-		case 0x1A:
-		case 0x1B:
-
-			crt.color = data;
-			break;
-
-		case 0x1C:	// Выбрать RAM
-
-			cpu.PAGE = 0;
-			break;
-
-		case 0x1D:	// Выбрать RAM-диск
-
-			cpu.PAGE = 1 + (data & 7);
-			break;
-
-		case 0x1E:	// Выбрать ROM-диск
-		case 0x1F:
-
-			cpu.PAGE = 9;
-			break;
-	}
-}
-
-- (void) RESET:(uint64_t)clock
-{
-	fdd.selected = 1;
-}
-
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
-
-#ifdef DEBUG
-- (void) dealloc
-{
-	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
-}
-#endif
-
-@end
-
-// =============================================================================
 // ПЭВМ "Специалист MX" с MXOS (Commander)
 // =============================================================================
 
@@ -139,32 +28,36 @@
 {
 	if (menuItem.action == @selector(extraMemory:))
 	{
-		switch (menuItem.tag)
-		{
-			case 0:
+        switch (menuItem.tag)
+        {
+            case 1:
+            {
+                menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+				menuItem.title = [menuItem.title stringByAppendingFormat:@": 64K + %luK", (self.ram.length >> 10) - 64];
 
-				menuItem.submenu = [[NSMenu alloc] init];
-				[menuItem.submenu addItemWithTitle:@"64K + 128K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 1;
-				[menuItem.submenu addItemWithTitle:@"64K + 256K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 2;
-				[menuItem.submenu addItemWithTitle:@"64K + 512K" action:@selector(extraMemory:) keyEquivalent:@""].tag = 3;
+                menuItem.state = FALSE;
+                break;
+            }
 
-				menuItem.state = self.ram.length != 0x20000;
-				break;
+            case 6464:
 
-			case 1:
-				menuItem.state = self.ram.length == 0x30000;
-				break;
+                menuItem.state = self.ram.length == 128 * 1024;
+                break;
 
-			case 2:
-				menuItem.state = self.ram.length == 0x50000;
-				break;
+            case 64128: case 64256: case 64512:
 
-			case 3:
-				menuItem.state = self.ram.length == 0x90000;
-				break;
-		}
+                menuItem.state = self.ram.length == (64 + menuItem.tag - 64000) * 1024;
+                break;
 
-		return YES;
+            default:
+
+                menuItem.state = FALSE;
+                menuItem.hidden = TRUE;
+                return NO;
+        }
+
+        menuItem.hidden = FALSE;
+        return YES;
 	}
 
 	if (menuItem.action == @selector(colorModule:))
@@ -193,15 +86,43 @@
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	unsigned size = menuItem.tag == 0 && self.ram.length == 0x20000 ? 0x30000 : 0x10000 + (1 << (menuItem.tag + 16));
+    NSUInteger length = self.ram.length;
 
-	if (self.ram.length != size) @synchronized(self.cpu)
+    switch (menuItem.tag)
+    {
+        case 1:
+
+            if (length == 128 * 1024)
+                length = 576 * 1024;
+            else
+                length = 128 * 1024;
+
+            break;
+
+        case 6464:
+
+            length = 128 * 1024;
+            break;
+
+        case 64128: case 64256: case 64512:
+
+            length = (NSUInteger) (64 + menuItem.tag - 64000) * 1024;
+            break;
+
+        default:
+
+            return;
+    }
+
+	if (self.ram.length != length) @synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
-		RAM *ram = [[RAM alloc] initWithLength:size mask:0xFFFF];
-		memcpy(ram.mutableBytes, self.ram.mutableBytes, size < self.ram.length ? size : self.ram.length);
-		self.ram = ram; [self mapObjects]; [self.cpu reset];
+        self.ram.length = length;
+		self.ram.offset = 0x10000;
+
+		self.crt.screen = *self.ram.pMutableBytes + 0x9000;
+		[self.cpu reset];
 	}
 }
 
@@ -245,7 +166,7 @@
 
 - (BOOL) createObjects
 {
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0x90000]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0x20000]) == nil)
 		return FALSE;
 
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX_Commander" mask:0xFFFF]) == nil)
@@ -253,6 +174,8 @@
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
 		return FALSE;
+
+    self.ram.offset = 0x10000;
 
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
 		return FALSE;
@@ -271,40 +194,25 @@
 
 - (BOOL) mapObjects
 {
-	self.crt.screen = self.ram.mutableBytes + 0x9000;
+	self.crt.screen = *self.ram.pMutableBytes + 0x9000;
 
-	[self.cpu mapObject:self.ram atPage:0 from:0x0000 to:0x8FFF];
-	[self.cpu mapObject:self.crt atPage:0 from:0x9000 to:0xBFFF RD:self.ram];
-	[self.cpu mapObject:self.ram atPage:0 from:0xC000 to:0xFFBF];
+    MEM *mem = [self.ram memoryAtOffest:0x0000];
 
-	[self.cpu mapObject:self.rom atPage:9 from:0x0000 to:0xBFFF WR:nil];
-	[self.cpu mapObject:self.ram atPage:9 from:0xC000 to:0xFFBF];
+	[self.cpu mapObject:mem			atPage:0 from:0x0000 to:0x8FFF];
+	[self.cpu mapObject:self.crt	atPage:0 from:0x9000 to:0xBFFF RD:mem];
+	[self.cpu mapObject:mem			atPage:0 from:0xC000 to:0xFFBF];
 
-	if (self.ram.length != 0x20000)
-	{
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF] atPage:1 from:0x0000 to:0xFFBF];
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x20000 length:0x10000 mask:0xFFFF] atPage:2 from:0x0000 to:0xFFBF];
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x30000 length:0x10000 mask:0xFFFF] atPage:3 from:0x0000 to:0xFFBF];
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x40000 length:0x10000 mask:0xFFFF] atPage:4 from:0x0000 to:0xFFBF];
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x50000 length:0x10000 mask:0xFFFF] atPage:5 from:0x0000 to:0xFFBF];
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x60000 length:0x10000 mask:0xFFFF] atPage:6 from:0x0000 to:0xFFBF];
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x70000 length:0x10000 mask:0xFFFF] atPage:7 from:0x0000 to:0xFFBF];
-		[self.cpu mapObject:[self.ram memoryAtOffest:0x80000 length:0x10000 mask:0xFFFF] atPage:8 from:0x0000 to:0xFFBF];
-	}
-	else
-	{
-		MEM* mem = [self.ram memoryAtOffest:0x10000 length:0x10000 mask:0xFFFF];
+    [self.cpu mapObject:self.ram	atPage:1 from:0x0000 to:0xFFBF];
 
-		for (uint8_t page = 1; page <= 8; page++)
-			[self.cpu mapObject:mem atPage:page from:0x0000 to:0xFFBF];
-	}
+	[self.cpu mapObject:self.rom	atPage:2 from:0x0000 to:0xBFFF WR:nil];
+	[self.cpu mapObject:mem			atPage:2 from:0xC000 to:0xFFBF];
 
 	if (self.sys == nil && (self.sys = [[SpecialistMXSystem alloc] init]) == nil)
 		return FALSE;
 
-	for (uint8_t page = 0; page <= 9; page++)
+	for (uint8_t page = 0; page <= 2; page++)
 	{
-		[self.cpu mapObject:self.ram	atPage:page from:0xFFC0 to:0xFFDF];
+		[self.cpu mapObject:mem			atPage:page from:0xFFC0 to:0xFFDF];
 		[self.cpu mapObject:self.kbd	atPage:page from:0xFFE0 to:0xFFE3];		// U7
 		[self.cpu mapObject:self.ext	atPage:page from:0xFFE4 to:0xFFE7];		// U6
 		[self.cpu mapObject:nil			atPage:page from:0xFFE8 to:0xFFEB];		// U5
@@ -316,6 +224,7 @@
 	}
 
 	self.sys.cpu = self.cpu;
+    self.sys.ram = self.ram;
 	self.sys.crt = self.crt;
 	self.kbd.snd = self.snd;
 	return TRUE;
@@ -460,7 +369,7 @@
 			scanner.scanLocation = 3; if (![scanner scanHexInt:&addr] || addr + data.length > 0xFFBF)
 				return self = nil;
 
-			memcpy(self.ram.mutableBytes + addr, data.bytes, data.length);
+			memcpy(*self.ram.pMutableBytes + addr, data.bytes, data.length);
 			self.crt.color = 0x70;
 			self.cpu.PC = addr;
 		}
@@ -492,7 +401,7 @@
 				scanner.scanLocation = 3; if (![scanner scanHexInt:&addr] || addr + bios.length > 0xFFBF)
 					return self = nil;
 
-				memcpy(self.ram.mutableBytes + addr, bios.bytes, bios.length);
+                memcpy(*self.ram.pMutableBytes + addr, bios.bytes, bios.length);
 
 				self.cpu.PC = addr;
 				self.cpu.PAGE = 0;
@@ -504,7 +413,7 @@
 			if (![[NSScanner scannerWithString:cpu[0]] scanHexInt:&addr] || addr + data.length > 0xFFBF)
 				return self = nil;
 
-			memcpy(self.ram.mutableBytes + addr, data.bytes, data.length);
+			memcpy(*self.ram.pMutableBytes + addr, data.bytes, data.length);
 
 			if (![[NSScanner scannerWithString:cpu[2]] scanHexInt:&addr] || addr + data.length > 0xFFBF)
 				return self = nil;
@@ -516,72 +425,6 @@
 	}
 	
 	return self;
-}
-
-@end
-
-// =============================================================================
-// Системный регистр ПЭВМ "Специалист MX2"
-// =============================================================================
-
-@implementation SpecialistMX2System
-
-- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
-{
-	switch (addr & 0x1F)
-	{
-		case 0x18:
-		case 0x19:
-		case 0x1A:
-		case 0x1B:
-
-			if ((self.cpu.PAGE & ~1) == 0xA)
-			{
-				self.cpu.PAGE = 0xA | (data & 1);
-				self.kbd.four = (data & 2) == 0;
-			}
-			else
-			{
-				self.crt.color = data;
-			}
-
-			break;
-
-		case 0x1C:	// Выбрать RAM
-
-			self.cpu.PAGE = 0;
-			self.kbd.crt = nil;
-			break;
-
-		case 0x1D:	// Выбрать RAM-диск
-
-			self.cpu.PAGE = 1 + (data & 7);
-			self.kbd.crt = nil;
-			break;
-
-		case 0x1E:	// Выбрать ROM-диск
-
-			self.cpu.PAGE = 9;
-			self.kbd.crt = nil;
-			break;
-
-		case 0x1F:	// Выбрать STD
-
-			self.kbd.crt = self.crt;
-			self.cpu.PAGE = 0xA;
-			break;
-
-		default:
-
-			[super WR:addr data:data CLK:clock];
-
-	}
-}
-
-- (void) RESET:(uint64_t)clock
-{
-	self.kbd.crt = self.crt;
-	[super RESET:clock];
 }
 
 @end
@@ -603,22 +446,22 @@
 	if (self.rom.length <= 0x8000)
 		return FALSE;
 
-	MEM *mem = [[MEM alloc] initWithMemory:self.rom.mutableBytes + 0x8000
-									length:self.rom.length - 0x8000
-									  mask:0x7FFF];
+    MEM *mem = [self.ram memoryAtOffest:0x0000];
 
-	[self.cpu mapObject:mem			atPage:9 from:0x0000 to:0x7FFF WR:nil];
-	[self.cpu mapObject:self.ram	atPage:9 from:0x8000 to:0x8FFF];
-	[self.cpu mapObject:self.crt	atPage:9 from:0x9000 to:0xBFFF RD:self.ram];
+	[self.cpu mapObject:[self.rom memoryAtOffest:0x8000 mask:0x7FFF]
+                 atPage:2 from:0x0000 to:0x7FFF WR:nil];
 
-	[self.cpu mapObject:self.rom	atPage:0xA from:0x0000 to:0x7FFF WR:nil];
-	[self.cpu mapObject:self.ram	atPage:0xB from:0x0000 to:0x7FFF];
+	[self.cpu mapObject:mem			atPage:2 from:0x8000 to:0x8FFF];
+	[self.cpu mapObject:self.crt	atPage:2 from:0x9000 to:0xBFFF RD:mem];
 
-	for (uint8_t page = 0xA; page <= 0xB; page++)
+	[self.cpu mapObject:self.rom	atPage:4 from:0x0000 to:0x7FFF WR:nil];
+	[self.cpu mapObject:mem			atPage:5 from:0x0000 to:0x7FFF];
+
+	for (uint8_t page = 4; page <= 5; page++)
 	{
-		[self.cpu mapObject:self.ram atPage:page from:0x8000 to:0x8FFF];
-		[self.cpu mapObject:self.crt atPage:page from:0x9000 to:0xBFFF RD:self.ram];
-		[self.cpu mapObject:self.ram atPage:page from:0xC000 to:0xEFFF];
+		[self.cpu mapObject:mem      atPage:page from:0x8000 to:0x8FFF];
+		[self.cpu mapObject:self.crt atPage:page from:0x9000 to:0xBFFF RD:mem];
+		[self.cpu mapObject:mem      atPage:page from:0xC000 to:0xEFFF];
 
 		for (uint16_t addr = 0xF000; addr < 0xF800; addr += 32)
 		{
@@ -635,7 +478,7 @@
 		[self.cpu mapObject:self.kbd atPage:page from:0xF800 to:0xFFFF];
 	}
 
-	if ((self.cpu.PAGE & ~1) == 0xA)
+	if ((self.cpu.PAGE & ~1) == 4)
 		self.kbd.crt = self.crt;
 	else
 		self.kbd.crt = nil;
@@ -650,7 +493,7 @@
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX2" mask:0x7FFF]) == nil)
 		return FALSE;
 
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0xA0000]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0x40000]) == nil)
 		return FALSE;
 
 	if (![super createObjects])

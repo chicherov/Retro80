@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11201" systemVersion="16A323" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11762" systemVersion="16D32" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11201"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11762"/>
     </dependencies>
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
@@ -316,23 +316,148 @@
                                     <action selector="extraMemory:" target="-1" id="4Jx-Mx-6ZC"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="RAM диск" tag="3" hidden="YES" id="kGa-EI-EE0">
+                            <menuItem title="Модуль ОЗУ" tag="1" id="OWe-9z-FdZ">
                                 <modifierMask key="keyEquivalentModifierMask"/>
+                                <menu key="submenu" title="Модуль ОЗУ" id="oLs-70-r13">
+                                    <items>
+                                        <menuItem title="SRAM: 2K" tag="2" id="l5M-Cl-Iye">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="4pb-fm-acI"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="SRAM: 2K + 4K" tag="6" id="S6o-Ch-Roz">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="TfS-ek-Euf"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="64K + 64K" tag="6464" id="cRB-1M-OTI">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="WOG-4H-jaw"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem isSeparatorItem="YES" id="5dV-QD-4Gk"/>
+                                        <menuItem title="SRAM: 2K + DRAM: 16K" tag="18" id="k6s-FB-EsS">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="D7l-dj-RYJ"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="SRAM: 2K + DRAM: 32K" tag="34" id="h9M-fN-3LS">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="c6E-qc-xRN"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="SRAM: 2K + DRAM: 48K" tag="50" id="1VJ-vM-W94">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="tWY-LN-uPO"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="SRAM: 2K + DRAM: 60K" tag="62" id="gxZ-SO-d4T">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="DgI-m3-0oR"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="128K" tag="128" id="S1K-H7-gzq">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="FhZ-E1-lnS"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="192K" tag="192" id="33W-HY-I3V">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="5D8-uo-DRd"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="256K" tag="256" id="1uG-Cr-fcx">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="s5R-Nf-UY0"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="512K" tag="512" id="dtl-S9-znd">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="j5w-oL-6zp"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="64K" tag="64000" id="fUX-YG-g9D">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="Hha-p7-BrP"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="64K + 64K" tag="64064" id="shr-rB-9kX">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="hkY-VN-wQa"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="64K + 128K" tag="64128" id="IZR-hU-7Zp">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="LFh-i9-2AP"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="64K + 192K" tag="64192" id="rRW-ax-ReU">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="nSD-Cb-iSc"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="64K + 256K" tag="64256" id="F7N-Se-FRV">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="Wr7-TB-OgH"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="64K + 512K" tag="64512" id="T3m-Pg-hET">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="extraMemory:" target="-1" id="gFL-yp-56t"/>
+                                            </connections>
+                                        </menuItem>
+                                    </items>
+                                </menu>
                                 <connections>
-                                    <action selector="UT88:" target="-1" id="mPA-al-ICi"/>
+                                    <action selector="extraMemory:" target="-1" id="FfK-Hw-fVU"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="pCQ-yc-aSC"/>
-                            <menuItem title="Монитор 0" tag="1" hidden="YES" id="DP4-YP-cW1">
+                            <menuItem title="Дисплейный модуль" tag="3" hidden="YES" id="ceP-qt-Ch5">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
-                                    <action selector="UT88:" target="-1" id="Z98-my-vI8"/>
+                                    <action selector="UT88:" target="-1" id="zvV-5z-5km"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Монитор F" tag="2" hidden="YES" id="gLD-lZ-Pnh">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="UT88:" target="-1" id="VG9-Ya-la3"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Старт с F800" tag="4" hidden="YES" alternate="YES" id="VDZ-Ut-odq">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES"/>
+                                <connections>
+                                    <action selector="UT88:" target="-1" id="qIM-2z-vd9"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Монитор 0" tag="1" hidden="YES" id="DP4-YP-cW1">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="UT88:" target="-1" id="Z98-my-vI8"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Старт с 0000" tag="5" hidden="YES" alternate="YES" id="V3m-RX-Mn4">
+                                <modifierMask key="keyEquivalentModifierMask" option="YES"/>
+                                <connections>
+                                    <action selector="UT88:" target="-1" id="W1M-bY-t4Y"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="9JB-dH-wkD"/>

@@ -11,45 +11,21 @@
 
 @implementation UT88Screen
 {
-    uint8_t lcd[3];
-    uint64_t IRQ;
-    BOOL update;
+    uint8_t segments[6];
 }
 
 // -----------------------------------------------------------------------------
 
 - (void) setDisplay:(Display *)display
 {
-    display.digit1.hidden = FALSE;
-    display.digit2.hidden = FALSE;
-    display.digit3.hidden = FALSE;
-    display.digit4.hidden = FALSE;
-    display.digit5.hidden = FALSE;
-    display.digit6.hidden = FALSE;
+    display.digit1.hidden = FALSE; display.digit1.segments = segments[0];
+    display.digit2.hidden = FALSE; display.digit2.segments = segments[1];
+    display.digit3.hidden = FALSE; display.digit3.segments = segments[2];
+    display.digit4.hidden = FALSE; display.digit4.segments = segments[3];
+    display.digit5.hidden = FALSE; display.digit5.segments = segments[4];
+    display.digit6.hidden = FALSE; display.digit6.segments = segments[5];
 
     [super setDisplay:display];
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) draw
-{
-    if (update)
-    {
-        static uint8_t mask[] =
-        {
-            0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71
-        };
-        
-        self.display.digit1.segments = mask[lcd[2] >> 4];
-        self.display.digit2.segments = mask[lcd[2] & 15];
-        self.display.digit3.segments = mask[lcd[1] >> 4];
-        self.display.digit4.segments = mask[lcd[1] & 15];
-        self.display.digit5.segments = mask[lcd[0] >> 4];
-        self.display.digit6.segments = mask[lcd[0] & 15];
-    }
-    
-    [super draw];
 }
 
 // -----------------------------------------------------------------------------
@@ -58,38 +34,44 @@
 {
     if (addr >= 0x9000 && addr <= 0x9FFF)
     {
-        lcd[addr & 2 ? 2 : addr & 1] = data; update = TRUE;
+        if (*pMutableBytes != mutableBytes && offset + (addr & mask) < *pLength)
+            (*pMutableBytes) [offset + (addr & mask)] = data;
+
+        static uint8_t lcd_mask[] =
+        {
+            0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71
+        };
+
+        if ((addr & 3) == 0)
+        {
+            segments[4] = self.display.digit5.segments = lcd_mask[data >> 4];
+            segments[5] = self.display.digit6.segments = lcd_mask[data & 15];
+        }
+
+        if ((addr & 3) == 1)
+        {
+            segments[2] = self.display.digit3.segments = lcd_mask[data >> 4];
+            segments[3] = self.display.digit4.segments = lcd_mask[data & 15];
+        }
+
+        if ((addr & 2) == 2)
+        {
+            segments[0] = self.display.digit1.segments = lcd_mask[data >> 4];
+            segments[1] = self.display.digit2.segments = lcd_mask[data & 15];
+        }
     }
     
     else
     {
         mutableBytes[addr & 0x7FF] = data;
     }
-    
-    [self.ram WR:addr data:data CLK:clock];
 }
 
 // -----------------------------------------------------------------------------
 
-- (BOOL) IRQ:(uint64_t)clock
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-    if (IRQ <= clock)
-    {
-        IRQ += 16000000;
-        return TRUE;
-    }
-    
-    return FALSE;
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) RESET:(uint64_t)clock
-{
-    lcd[0] = 0xFF;
-    lcd[1] = 0xFF;
-    lcd[2] = 0xFF;
-    update = TRUE;
+    *data = mutableBytes[addr & 0x7FF];
 }
 
 // -----------------------------------------------------------------------------
@@ -97,7 +79,14 @@
 - (id) init
 {
     if (self = [super init])
-        [self RESET:0];
+    {
+        segments[0] = 0x71;
+        segments[1] = 0x71;
+        segments[2] = 0x71;
+        segments[3] = 0x71;
+        segments[4] = 0x71;
+        segments[5] = 0x71;
+    }
     
     return self;
 }
@@ -107,10 +96,7 @@
 - (id) initWithCoder:(NSCoder *)decoder
 {
     if (self = [super initWithCoder:decoder])
-    {
-        [decoder decodeValueOfObjCType:@encode(uint8_t[3]) at:&lcd];
-        IRQ = [decoder decodeInt64ForKey:@"IRQ"];
-    }
+        [decoder decodeValueOfObjCType:@encode(uint8_t[6]) at:&segments];
     
     return self;
 }
@@ -120,8 +106,7 @@
 - (void) encodeWithCoder:(NSCoder *)coder
 {
     [super encodeWithCoder:coder];
-    [coder encodeValueOfObjCType:@encode(uint8_t[3]) at:&lcd];
-    [coder encodeInt64:IRQ forKey:@"IRQ"];
+    [coder encodeValueOfObjCType:@encode(uint8_t[6]) at:&segments];
 }
 
 @end

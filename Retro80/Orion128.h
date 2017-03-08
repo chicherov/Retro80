@@ -28,7 +28,7 @@
 @end
 
 @interface Orion128SystemF9 : NSObject<RD, WR>
-- (id) initWithCPU:(X8080 *)cpu;
+- (id) initWithRAM:(RAM *)ram;
 @end
 
 @interface Orion128SystemFA : NSObject<RD, WR>
@@ -40,13 +40,11 @@
 // -----------------------------------------------------------------------------
 
 @interface Orion128 : Computer
-{
-	MEM *mem[4];
-}
 
 @property X8080 *cpu;
 @property ROM *rom;
 @property RAM *ram;
+@property MEM *mem;
 
 @property Orion128SystemF8 *sysF8;
 @property Orion128SystemF9 *sysF9;
@@ -70,12 +68,8 @@
 // Системные регистры Z80Card-II
 // -----------------------------------------------------------------------------
 
-@interface Orion128RAM : RAM
-@property uint32_t offset;
-@end
-
 @interface Orion128SystemFB : NSObject<RD, WR>
-- (id) initWithCPU:(X8080 *)cpu RAM:(Orion128RAM *)ram CRT:(Orion128Screen *)crt;
+- (id) initWithCPU:(X8080 *)cpu MEM:(MEM *)mem CRT:(Orion128Screen *)crt;
 @end
 
 @interface Orion128SystemFE : NSObject <RD, WR>
@@ -91,8 +85,6 @@
 // -----------------------------------------------------------------------------
 
 @interface Orion128Z80CardII : Orion128
-
-@property Orion128RAM *ram;
 
 @property Orion128SystemFB *sysFB;
 @property Orion128SystemFE *sysFE;

@@ -258,8 +258,8 @@
 
 	// Страница 7, ОЗУ1 и ОЗУ2 меняются местами
 
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x8000 length:0x8000 mask:0x7FFF]	atPage:7 from:0x0000 to:0x7FFF];
-	[self.cpu mapObject:[self.ram memoryAtOffest:0x0000 length:0x8000 mask:0x7FFF]	atPage:7 from:0x8000 to:0xD7FF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x8000 mask:0x7FFF]	atPage:7 from:0x0000 to:0x7FFF];
+	[self.cpu mapObject:[self.ram memoryAtOffest:0x0000 mask:0x7FFF]	atPage:7 from:0x8000 to:0xD7FF];
 
 	// Страница 8, ПЗУ Бейсика подключается по адресам A000-9FFF
 	// Кроме того, внешние окошко 1 подключается 8000-BFFF

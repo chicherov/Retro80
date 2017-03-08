@@ -17,15 +17,18 @@
 
 - (BOOL) validateMenuItem:(NSMenuItem *)menuItem
 {
-    if (menuItem.action == @selector(ROMDisk:) && menuItem.tag == 0)
+    if (menuItem.action == @selector(ROMDisk:))
     {
-        NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
-            menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
-        else
-            menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-        
-        menuItem.submenu = nil;
-        return YES;
+        if (menuItem.tag == 0)
+        {
+            NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
+                menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingFormat:@": %@", url.lastPathComponent];
+            else
+                menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+            
+            menuItem.hidden = FALSE;
+            return YES;
+        }
     }
 
     return [super validateMenuItem:menuItem];
@@ -63,10 +66,10 @@
 {
     if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"M80RK86" mask:0x07FF]) == nil)
         return FALSE;
-    
+
     if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
         return FALSE;
-    
+
     return [super createObjects];
 }
 
@@ -78,6 +81,8 @@
         return FALSE;
     
     [self.cpu mapObject:self.ext atPort:0xA0 count:0x04];
+
+    [self.cpu mapObject:self.crt from:0xE000 to:0xEFFF];
     
     self.inpHook.type = 1;
     self.outHook.type = 1;

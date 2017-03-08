@@ -2,29 +2,33 @@
 
  Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
  Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
-
+ 
+ Модули ОЗУ и ПЗУ
+ 
  *****/
 
 #import "x8080.h"
 
 // -----------------------------------------------------------------------------
-// MEM - базовый класс для RAM, так же часть памяти RAM
+// MEM - базовый класс для RAM/ROM, так же часть памяти RAM
 // -----------------------------------------------------------------------------
 
 @interface MEM : NSObject <RD, WR, BYTE>
 {
-	uint8_t *mutableBytes;
-	NSUInteger length;
-	uint16_t mask;
+    uint8_t **pMutableBytes;
+	NSUInteger *pLength;
+    
+    NSUInteger offset;
+    uint16_t mask;
 }
 
-- (MEM *) memoryAtOffest:(NSUInteger)offset length:(NSUInteger)len mask:(uint16_t)msk;
+- (MEM *) memoryAtOffest:(NSUInteger)offset mask:(uint16_t)mask;
+- (MEM *) memoryAtOffest:(NSUInteger)offset;
 
-- (id) initWithMemory:(uint8_t *)ptr length:(NSUInteger)len mask:(uint16_t)msk;
+@property (readonly) uint8_t **pMutableBytes;
+@property (readonly) NSUInteger *pLength;
 
-@property (readonly) uint8_t *mutableBytes;
-@property (readonly) NSUInteger length;
-@property (readonly) uint16_t mask;
+@property NSUInteger offset;
 
 @end
 
@@ -33,8 +37,18 @@
 // -----------------------------------------------------------------------------
 
 @interface RAM : MEM <NSCoding>
+{
+    NSMutableData *mutableData;
 
-- (id) initWithLength:(unsigned)len mask:(uint16_t)msk;
+    uint8_t *mutableBytes;
+    NSUInteger length;
+}
+
+- (id) initWithLength:(unsigned)length mask:(uint16_t)mask;
+- (id) initWithLength:(unsigned)length;
+
+@property (readonly) uint8_t *mutableBytes;
+@property NSUInteger length;
 
 @end
 
@@ -42,13 +56,9 @@
 // ROM
 // -----------------------------------------------------------------------------
 
-@interface ROM : NSObject <RD, BYTE, NSCoding>
+@interface ROM : RAM
 
 - (id) initWithContentsOfResource:(NSString *)name mask:(uint16_t)mask;
 - (id) initWithData:(NSData *)data mask:(uint16_t)mask;
-
-@property (readonly) uint8_t *mutableBytes;
-@property (readonly) NSUInteger length;
-@property (readonly) uint16_t mask;
 
 @end

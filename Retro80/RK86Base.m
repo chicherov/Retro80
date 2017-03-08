@@ -68,12 +68,9 @@
 		NSString *pathExtension = url.pathExtension.lowercaseString;
 
 		if (([pathExtension isEqualToString:@"gam"] || [pathExtension isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6)
-		{
-			data = [NSData dataWithBytes:(const uint8_t *)data.bytes + 1
-								  length:data.length - 1];
-		}
+			data = [NSData dataWithBytes:(const uint8_t *)data.bytes + 1 length:data.length - 1];
 
-		self.inpHook.buffer = data;
+        self.inpHook.buffer = data;
 		[self.kbd paste:@"I\n"];
 	}
 

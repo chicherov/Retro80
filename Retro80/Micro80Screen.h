@@ -8,12 +8,12 @@
  *****/
 
 #import "x8080.h"
+#import "mem.h"
 
-@interface Micro80Screen : NSObject <CRT, RD, WR, NSCoding>
-{
-	uint8_t *mutableBytes;
-}
+@interface Micro80Screen : RAM <CRT>
 
-@property NSObject<RD, WR> *ram;
+- (void) setMem:(MEM *)mem;
+
+@property NSData *font;
+
 @end
-

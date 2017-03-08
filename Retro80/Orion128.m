@@ -41,13 +41,13 @@
 
 @implementation Orion128SystemF9
 {
-	X8080 __weak *cpu;
+	RAM __weak *ram;
 }
 
-- (id) initWithCPU:(X8080 *)_cpu
+- (id) initWithRAM:(RAM *)_ram
 {
 	if (self = [super init])
-		cpu = _cpu;
+		ram = _ram;
 
 	return self;
 }
@@ -58,7 +58,7 @@
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	cpu.PAGE = (cpu.PAGE & ~0x03) | (data & 0x03);
+    ram.offset = (data & 0x0F) << 16;
 }
 
 @end
@@ -119,9 +119,31 @@
 
 	if (menuItem.action == @selector(extraMemory:))
 	{
-		menuItem.state = self.ram.length != 0x20000;
-		menuItem.submenu = nil;
-		return TRUE;
+		switch (menuItem.tag)
+		{
+			case 1:
+			{
+				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+				menuItem.title = [menuItem.title stringByAppendingFormat:@": %luK", self.ram.length >> 10];
+
+				menuItem.state = FALSE;
+				break;
+			}
+
+			case 128: case 192: case 256: case 512: case 1024:
+
+				menuItem.state = menuItem.tag == self.ram.length >> 10;
+				break;
+
+			default:
+
+				menuItem.state = FALSE;
+				menuItem.hidden = TRUE;
+				return NO;
+		}
+
+		menuItem.hidden = FALSE;
+		return YES;
 	}
 
 	if (menuItem.action == @selector(ROMDisk:) && (menuItem.tag == 0 || menuItem.tag == 1))
@@ -165,16 +187,35 @@
 
 - (IBAction) extraMemory:(NSMenuItem *)menuItem
 {
-	RAM *ram = [[[self.ram class] alloc] initWithLength:self.ram.length == 0x20000 ? 0x40000 : 0x20000 mask:self.ram.mask];
+	NSUInteger length = self.ram.length;
 
-	if (ram) @synchronized(self.cpu)
+	switch (menuItem.tag)
+	{
+		case 1:
+
+			if (length == 128 * 1024)
+				length = 256 * 1024;
+			else
+				length = 128 * 1024;
+
+			break;
+
+		case 128: case 192: case 256: case 512: case 1024:
+
+			length = menuItem.tag << 10;
+			break;
+
+		default:
+
+			return;
+	}
+
+	if (self.ram.length != length) @synchronized(self.cpu)
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
-		memcpy(ram.mutableBytes, self.ram.mutableBytes, 0x20000);
-		self.ram = ram; mem[0] = mem[1] = mem[2] = mem[3] = nil;
-
-		[self mapObjects];
+		self.ram.length = length;
+		self.crt.memory = *self.ram.pMutableBytes;
 		[self.cpu reset];
 	}
 }
@@ -262,6 +303,9 @@
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
 		return FALSE;
 
+    if (self.mem == nil && (self.mem = [self.ram memoryAtOffest:0]) == nil)
+        return FALSE;
+
 	if (self.rom == nil)
 		return FALSE;
 
@@ -296,7 +340,7 @@
 	if (self.sysF8 == nil && (self.sysF8 = [[Orion128SystemF8 alloc] initWithCRT:self.crt]) == nil)
 		return FALSE;
 
-	if (self.sysF9 == nil && (self.sysF9 = [[Orion128SystemF9 alloc] initWithCPU:self.cpu]) == nil)
+	if (self.sysF9 == nil && (self.sysF9 = [[Orion128SystemF9 alloc] initWithRAM:self.ram]) == nil)
 		return FALSE;
 
 	if (self.sysFA == nil && (self.sysFA = [[Orion128SystemFA alloc] initWithCRT:self.crt]) == nil)
@@ -307,7 +351,7 @@
 
 	self.cpu.FF = TRUE;
 
-	self.crt.memory = self.ram.mutableBytes;
+	self.crt.memory = *self.ram.pMutableBytes;
 
 	if (self.inpHook == nil)
 	{
@@ -332,24 +376,23 @@
 	uint16_t F806 = (self.rom.mutableBytes[0x08] << 8) | self.rom.mutableBytes[0x07];
 	uint16_t F80C = (self.rom.mutableBytes[0x0E] << 8) | self.rom.mutableBytes[0x0D];
 
-	for (uint8_t page = 0; page < 16; page++)
+	for (uint8_t page = 0; page < 4; page++)
 	{
-		if (page < 4 && mem[page] == nil)
-			mem[page] = [self.ram memoryAtOffest:page << 16 length:0x10000 mask:0xFFFF];
-
-		if ((page & 8) == 0)
+		if ((page & 2) == 0)
 		{
-			[self.cpu mapObject:mem[page & 3]	atPage:page from:0x0000 to:0xEFFF];
+			[self.cpu mapObject:self.ram		atPage:page from:0x0000 to:0xEFFF];
 		}
 		else
 		{
-			[self.cpu mapObject:self.ram		atPage:page from:0x0000 to:0x3FFF];
-			[self.cpu mapObject:mem[page & 3]	atPage:page from:0x4000 to:0xEFFF];
+			[self.cpu mapObject:self.mem		atPage:page from:0x0000 to:0x3FFF];
+			[self.cpu mapObject:self.ram		atPage:page from:0x4000 to:0xEFFF];
 		}
 
-		if ((page & 4) == 0)
+		if ((page & 1) == 0)
 		{
-			[self.cpu mapObject:mem[0]			atPage:page from:0xF000 to:0xF3FF];
+			[self.cpu mapObject:[self.ram memoryAtOffest:0]
+                         atPage:page from:0xF000 to:0xF3FF];
+
 			[self.cpu mapObject:self.kbd		atPage:page from:0xF400 to:0xF4FF];
 			[self.cpu mapObject:self.ext		atPage:page from:0xF500 to:0xF5FF];
 			[self.cpu mapObject:self.prn		atPage:page from:0xF600 to:0xF6FF];
@@ -373,7 +416,7 @@
 		}
 		else
 		{
-			[self.cpu mapObject:mem[page & 3]	atPage:page from:0xF000 to:0xFFFF];
+			[self.cpu mapObject:self.ram		atPage:page from:0xF000 to:0xFFFF];
 		}
 	}
 
@@ -470,6 +513,8 @@
 	[encoder encodeObject:self.ext forKey:@"ext"];
 	[encoder encodeObject:self.prn forKey:@"prn"];
 	[encoder encodeObject:self.snd forKey:@"snd"];
+
+    [encoder encodeInteger:self.mem.offset forKey:@"mem"];
 }
 
 - (BOOL) decodeWithCoder:(NSCoder *)decoder
@@ -501,7 +546,12 @@
 	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
 		return FALSE;
 
-	return TRUE;
+    if ((self.mem = [self.ram memoryAtOffest:0]) == nil)
+        return FALSE;
+
+    self.mem.offset = [decoder decodeIntegerForKey:@"mem"];
+
+    return TRUE;
 }
 
 @end
@@ -510,58 +560,19 @@
 // Системные регистры Z80Card-II
 // =============================================================================
 
-@implementation Orion128RAM
-
-@synthesize offset;
-
-- (uint8_t *) BYTE:(uint16_t)addr
-{
-	return offset + (addr & mask) >= length ? NULL : mutableBytes + offset + (addr & mask);
-}
-
-- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
-{
-	if (offset + (addr & mask) < length) *data = mutableBytes[offset + (addr & mask)];
-}
-
-- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
-{
-	if (offset + (addr & mask) < length) mutableBytes[offset + (addr & mask)] = data;
-}
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[super encodeWithCoder:encoder];
-	[encoder encodeInt:offset forKey:@"offset"];
-}
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super initWithCoder:decoder])
-	{
-		offset = [decoder decodeIntForKey:@"offset"];
-	}
-
-	return self;
-}
-
-@end
-
-// -----------------------------------------------------------------------------
-
 @implementation Orion128SystemFB
 {
 	Orion128Screen *crt;
 	X8080 __weak *cpu;
-	Orion128RAM *ram;
+	MEM *mem;
 }
 
-- (id) initWithCPU:(X8080 *)_cpu RAM:(Orion128RAM *)_ram CRT:(Orion128Screen *)_crt
+- (id) initWithCPU:(X8080 *)_cpu MEM:(MEM *)_mem CRT:(Orion128Screen *)_crt
 {
 	if (self = [super init])
 	{
 		cpu = _cpu;
-		ram = _ram;
+		mem = _mem;
 		crt = _crt;
 	}
 
@@ -574,8 +585,8 @@
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	cpu.PAGE = ((~data & 0x80) >> 4) | ((data & 0x20) >> 3) | (cpu.PAGE & 0x03);
-	ram.offset = (data & 0x0F) << 14;
+	cpu.PAGE = ((~data & 0x80) >> 6) | ((data & 0x20) >> 5);
+	mem.offset = (data & 0x1F) << 14;
 	crt.IE = data & 0x40;
 }
 
@@ -694,7 +705,7 @@
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initZ80WithQuartz:5000000 start:0xF800]) == nil)
 		return FALSE;
 
-	if (self.ram == nil && (self.ram = [[Orion128RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
 		return FALSE;
 
 	return [super createObjects];
@@ -702,7 +713,7 @@
 
 - (BOOL) mapObjects
 {
-	if (self.sysFB == nil && (self.sysFB = [[Orion128SystemFB alloc] initWithCPU:self.cpu RAM:self.ram CRT:self.crt]) == nil)
+	if (self.sysFB == nil && (self.sysFB = [[Orion128SystemFB alloc] initWithCPU:self.cpu MEM:self.mem CRT:self.crt]) == nil)
 		return FALSE;
 
 	if (self.sysFE == nil && (self.sysFE = [[Orion128SystemFE alloc] initWithX8253:self.snd EXT:self.ext]) == nil)

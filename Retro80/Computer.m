@@ -38,53 +38,58 @@
 	if (menuItem.action == @selector(reset:))
 		return [self.cpu respondsToSelector:@selector(reset)];
 
-	if (menuItem.action == @selector(outHook:))
+	else if (menuItem.action == @selector(outHook:))
 	{
-		if (self.snd.sound.isOutput)
+		if (!self.snd.sound.isOutput)
 		{
-			menuItem.state = FALSE;
-			return NO;
+            menuItem.state = self.outHook.enabled;
+            return self.outHook != nil;
 		}
-
-		menuItem.state = self.outHook.enabled;
-		return self.outHook != nil;
 	}
 
-	if (menuItem.action == @selector(inpHook:))
+	else if (menuItem.action == @selector(inpHook:))
 	{
-		if (self.snd.sound.isInput)
+		if (!self.snd.sound.isInput)
 		{
-			menuItem.state = FALSE;
-			return NO;
+            menuItem.state = self.inpHook.enabled;
+            return self.inpHook != nil;
 		}
-
-		menuItem.state = self.inpHook.enabled;
-		return self.inpHook != nil;
 	}
 
-	if (menuItem.action == @selector(qwerty:))
+	else if (menuItem.action == @selector(qwerty:))
 	{
 		menuItem.state = self.kbd.qwerty;
 		return self.kbd != nil;
 	}
+    
+    else if (menuItem.action == @selector(extraMemory:))
+    {
+        menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 
-	if (menuItem.action == @selector(floppy:) && menuItem.tag)
-		menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"][0]) stringByAppendingString:@":"];
+        menuItem.hidden = menuItem.tag != 0;
+    }
 
-	if (menuItem.action == @selector(ROMDisk:))
+	else if (menuItem.action == @selector(floppy:))
+    {
+        if (menuItem.tag)
+            menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingString:@":"];
+        else
+            menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+    }
+
+	else if (menuItem.action == @selector(ROMDisk:))
 	{
-		if (menuItem.tag == 0)
-			menuItem.title = [menuItem.title componentsSeparatedByString:@":"][0];
-		else
-			menuItem.hidden = TRUE;
+        menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+
+        menuItem.hidden = menuItem.tag != 0;
 	}
 
-	if (menuItem.action == @selector(UT88:))
+	else if (menuItem.action == @selector(UT88:))
 		menuItem.hidden = TRUE;
-
-	menuItem.state = FALSE;
-	menuItem.submenu = nil;
-	return NO;
+    
+    menuItem.alternate = FALSE;
+    menuItem.state = FALSE;
+    return NO;
 }
 
 // -----------------------------------------------------------------------------
@@ -97,15 +102,15 @@
 {
 }
 
-- (IBAction) UT88:(id)sender
-{
-}
-
 - (IBAction) ROMDisk:(id)sender
 {
 }
 
 - (IBAction) floppy:(id)sender
+{
+}
+
+- (IBAction) UT88:(id)sender
 {
 }
 

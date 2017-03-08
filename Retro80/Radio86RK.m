@@ -33,32 +33,35 @@
 		return YES;
 	}
 
-	if (menuItem.action == @selector(ROMDisk:) && menuItem.tag == 0)
-	{
-		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
-			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
-		else
-			menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+    if (menuItem.action == @selector(ROMDisk:))
+    {
+        if (menuItem.tag == 0)
+        {
+            NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
+                menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingFormat:@": %@", url.lastPathComponent];
+            else
+                menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 
-		menuItem.submenu = nil;
-		return YES;
-	}
+            menuItem.hidden = FALSE;
+            return YES;
+        }
+    }
 
 	if (menuItem.action == @selector(floppy:))
 	{
 		if (menuItem.tag == 0)
 		{
-			menuItem.state = self.fdd != nil;
-			return YES;
+			menuItem.state = self.cpu.PAGE == 1;
+			return self.rom.length <= 2048;
 		}
 		else
 		{
-			NSURL *url = [self.fdd getDisk:menuItem.tag]; if ((menuItem.state = url != nil))
+            NSURL *url = self.cpu.PAGE == 1 ? [self.fdd getDisk:menuItem.tag] : nil; if ((menuItem.state = url != nil))
 				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
 			else
 				menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingString:@":"];
 
-			return self.fdd != nil && menuItem.tag != [self.fdd selected];
+			return self.cpu.PAGE == 1 && menuItem.tag != [self.fdd selected];
 		}
 	}
 
@@ -129,31 +132,20 @@ static uint32_t colors[] =
 	{
 		[self.document registerUndoWithMenuItem:menuItem];
 
-		if (self.fdd == nil)
-		{
-			if ((self.fdd = [[Floppy alloc] init]) != nil)
-			{
-				if ((self.dos = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) != nil)
-				{
-					[self.cpu mapObject:self.dos from:0xE000 to:0xEFFF WR:self.dma];
-					[self.cpu mapObject:self.fdd from:0xF000 to:0xF7FF];
-				}
-				else
-				{
-					self.fdd = nil;
-				}
-			}
-		}
-		else
-		{
-			[self.cpu mapObject:self.rom from:0xE000 to:0xF7FF WR:self.dma];
+		if (self.cpu.PAGE == 1)
+        {
+            self.cpu.START = 0xF800;
+            self.cpu.PAGE = 0;
+        }
 
-			self.fdd = nil;
-			self.dos = nil;
-		}
-	}
+        else if (self.rom.length <= 2048)
+        {
+            self.cpu.START = 0x1F800;
+            self.cpu.PAGE = 1;
+        }
+    }
 
-	else if (self.fdd != nil)
+	else if (self.cpu.PAGE == 1)
 	{
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
 		panel.allowedFileTypes = @[@"rkdisk"];
@@ -174,7 +166,7 @@ static uint32_t colors[] =
 }
 
 // -----------------------------------------------------------------------------
-// createObjects/encodeWithCoder/decodeWithCoder
+// Инициализация
 // -----------------------------------------------------------------------------
 
 - (BOOL) createObjects
@@ -182,34 +174,101 @@ static uint32_t colors[] =
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if (self.snd == nil && (self.snd = [[Radio86RK8253 alloc] init]) == nil)
-		return FALSE;
+    if (self.crt == nil)
+    {
+        if ((self.crt = [[X8275 alloc] init]) == nil)
+            return FALSE;
+
+        [self.crt selectFont:0x0C00];
+    }
+
+	if (self.snd == nil)
+    {
+        if ((self.snd = [[Radio86RK8253 alloc] init]) == nil)
+            return FALSE;
+
+        self.snd.channel0 = TRUE;
+        self.snd.rkmode = TRUE;
+    }
 
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
-		return FALSE;
+        return FALSE;
 
 	if (![super createObjects])
 		return FALSE;
 
-	[self.crt selectFont:0x0C00];
+    if (self.fdd == nil && (self.fdd = [[Floppy alloc] init]) == nil)
+        return FALSE;
 
-	self.snd.channel0 = TRUE;
-	self.snd.rkmode = TRUE;
-
+    if (self.dos == nil && (self.dos = [[ROM alloc] initWithContentsOfResource:@"dos29" mask:0x0FFF]) == nil)
+        return FALSE;
+    
 	return TRUE;
 }
 
+// -----------------------------------------------------------------------------
+
+- (BOOL) mapObjects
+{
+    if (self.isColor)
+        [self.crt setColors:colors attributesMask:0x3F shiftMask:0x22];
+    else
+        [self.crt setColors:NULL attributesMask:0x22 shiftMask:0x22];
+
+    self.cpu.INTE = self.snd;
+    self.snd.ext = self.ext;
+
+    if (self.inpHook == nil)
+    {
+        self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
+        self.inpHook.mem = self.rom;
+        self.inpHook.snd = self.snd;
+
+        self.inpHook.extension = @"rkr";
+        self.inpHook.type = 1;
+    }
+
+    if (self.outHook == nil)
+    {
+        self.outHook = [[F80C alloc] initWithX8080:self.cpu];
+        self.outHook.mem = self.rom;
+        self.outHook.snd = self.snd;
+
+        self.outHook.extension = @"rkr";
+        self.outHook.type = 1;
+    }
+
+    for (uint8_t page = 0; page <= 1; page++)
+    {
+        [self.cpu mapObject:self.ram atPage:page from:0x0000 to:0x7FFF];
+        [self.cpu mapObject:self.kbd atPage:page from:0x8000 to:0x9FFF];
+        [self.cpu mapObject:self.snd atPage:page from:0xA000 to:0xBFFF RD:self.ext];
+        [self.cpu mapObject:self.crt atPage:page from:0xC000 to:0xDFFF];
+
+        [self.cpu mapObject:self.rom atPage:page from:0xE000 to:0xFFFF WR:self.dma];
+        [self.cpu mapObject:self.inpHook from:0xFB98 to:0xFB98 WR:self.dma];
+        [self.cpu mapObject:self.outHook from:0xFC46 to:0xFC46 WR:self.dma];
+
+        if (page)
+        {
+            [self.cpu mapObject:self.dos atPage:1 from:0xE000 to:0xEFFF WR:self.dma];
+            [self.cpu mapObject:self.fdd atPage:1 from:0xF000 to:0xF7FF];
+        }
+    }
+    
+    return [super mapObjects];
+}
+
+// -----------------------------------------------------------------------------
+// encodeWithCoder/decodeWithCoder
 // -----------------------------------------------------------------------------
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[super encodeWithCoder:encoder];
 
-	if (self.fdd != nil)
-	{
-		[encoder encodeObject:self.fdd forKey:@"fdd"];
-		[encoder encodeObject:self.dos forKey:@"dos"];
-	}
+    [encoder encodeObject:self.fdd forKey:@"fdd"];
+    [encoder encodeObject:self.dos forKey:@"dos"];
 }
 
 // -----------------------------------------------------------------------------
@@ -219,65 +278,13 @@ static uint32_t colors[] =
 	if (![super decodeWithCoder:decoder])
 		return FALSE;
 
-	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) != nil)
-	{
-		if ((self.dos = [decoder decodeObjectForKey:@"dos"]) == nil)
-			return FALSE;
-	}
+	if ((self.fdd = [decoder decodeObjectForKey:@"fdd"]) == nil)
+        return FALSE;
 
-	return TRUE;
-}
+    if ((self.dos = [decoder decodeObjectForKey:@"dos"]) == nil)
+        return FALSE;
 
-// -----------------------------------------------------------------------------
-// mapObjects
-// -----------------------------------------------------------------------------
-
-- (BOOL) mapObjects
-{
-	if (self.isColor)
-		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x22];
-	else
-		[self.crt setColors:NULL attributesMask:0x22 shiftMask:0x22];
-
-	self.cpu.INTE = self.snd;
-	self.snd.ext = self.ext;
-
-	if (self.inpHook == nil)
-	{
-		self.inpHook = [[F806 alloc] initWithX8080:self.cpu];
-		self.inpHook.mem = self.rom;
-		self.inpHook.snd = self.snd;
-
-		self.inpHook.extension = @"rkr";
-		self.inpHook.type = 1;
-	}
-
-	if (self.outHook == nil)
-	{
-		self.outHook = [[F80C alloc] initWithX8080:self.cpu];
-		self.outHook.mem = self.rom;
-		self.outHook.snd = self.snd;
-
-		self.outHook.extension = @"rkr";
-		self.outHook.type = 1;
-	}
-	
-	[self.cpu mapObject:self.ram from:0x0000 to:0x7FFF];
-	[self.cpu mapObject:self.kbd from:0x8000 to:0x9FFF];
-	[self.cpu mapObject:self.snd from:0xA000 to:0xBFFF RD:self.ext];
-	[self.cpu mapObject:self.crt from:0xC000 to:0xDFFF];
-	[self.cpu mapObject:self.rom from:0xE000 to:0xFFFF WR:self.dma];
-
-	[self.cpu mapObject:self.inpHook from:0xFB98 to:0xFB98 WR:self.dma];
-	[self.cpu mapObject:self.outHook from:0xFC46 to:0xFC46 WR:self.dma];
-
-	if (self.fdd != nil)
-	{
-		[self.cpu mapObject:self.dos from:0xE000 to:0xEFFF WR:self.dma];
-		[self.cpu mapObject:self.fdd from:0xF000 to:0xF7FF];
-	}
-
-	return [super mapObjects];
+    return TRUE;
 }
 
 @end

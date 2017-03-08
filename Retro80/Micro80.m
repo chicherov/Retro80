@@ -24,6 +24,76 @@
 }
 
 // -----------------------------------------------------------------------------
+// validateMenuItem
+// -----------------------------------------------------------------------------
+
+- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
+{
+    if (menuItem.action == @selector(extraMemory:))
+    {
+        switch (menuItem.tag)
+        {
+            case 1:
+
+                if (self.ram.length != 2048)
+                    menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingFormat:@": %luK", (self.ram.length >> 10) - 2];
+                else
+                    menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+                
+                menuItem.state = FALSE;
+                break;
+                
+            case 2: case 18: case 34: case 50: case 62:
+
+                menuItem.state = self.ram.length == menuItem.tag * 1024;
+                break;
+
+            default:
+                
+                menuItem.state = FALSE;
+                menuItem.hidden = TRUE;
+                return NO;
+        }
+
+        menuItem.hidden = FALSE;
+        return YES;
+    }
+    
+    return [super validateMenuItem:menuItem];
+}
+
+// -----------------------------------------------------------------------------
+// Модуль ОЗУ
+// -----------------------------------------------------------------------------
+
+- (IBAction) extraMemory:(NSMenuItem *)menuItem
+{
+    @synchronized(self.cpu)
+    {
+        NSUInteger newLength = self.ram.length;
+
+        switch (menuItem.tag)
+        {
+            case 1:
+
+                newLength = newLength == 2048 ? 62 * 1024 : 2048;
+                break;
+
+            case 2: case 18: case 34: case 50: case 62:
+                
+                newLength = menuItem.tag * 1024;
+                break;
+        }
+        
+        if (self.ram.length != newLength)
+        {
+            [self.document registerUndoWithMenuItem:menuItem];
+            self.ram.length = newLength;
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
@@ -35,13 +105,13 @@
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
 		return FALSE;
 
-	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
+	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0xF800 mask:0x07FF]) == nil)
 		return FALSE;
 
+    if (self.kbd == nil && (self.kbd = [[Micro80Keyboard alloc] init]) == nil)
+        return FALSE;
+    
 	if (self.crt == nil && (self.crt = [[Micro80Screen alloc] init]) == nil)
-		return FALSE;
-
-	if (self.kbd == nil && (self.kbd = [[Micro80Keyboard alloc] init]) == nil)
 		return FALSE;
 
 	return TRUE;
@@ -54,10 +124,13 @@
 	if (self.snd == nil && (self.snd = [[Micro80Recorder alloc] init]) == nil)
 		return FALSE;
 
-    self.crt.ram = self.ram;
-    
-	[self.cpu mapObject:self.ram from:0x0000 to:0xDFFF];
-    [self.cpu mapObject:self.crt from:0xE000 to:0xEFFF RD:self.ram];
+    MEM *mem; if ((mem = [self.ram memoryAtOffest:2048]) == nil)
+        return FALSE;
+
+    self.crt.mem = mem;
+
+    [self.cpu mapObject:mem from:0x0000 to:0xDFFF];
+    [self.cpu mapObject:self.crt from:0xE000 to:0xEFFF RD:mem];
 	[self.cpu mapObject:self.ram from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
@@ -85,9 +158,10 @@
     uint16_t F80C = (self.rom.mutableBytes[0x0E] << 8) | self.rom.mutableBytes[0x0D];
     [self.cpu mapObject:self.outHook from:F80C to:F80C WR:nil];
     
-	[self.cpu mapObject:self.snd atPort:0x00 count:0x02];
+	[self.cpu mapObject:self.snd atPort:0x00 count:0x04];
 	[self.cpu mapObject:self.kbd atPort:0x04 count:0x04];
 
+    self.cpu.FF = TRUE;
 	return TRUE;
 }
 
@@ -105,7 +179,7 @@
 
 - (id) initWithData:(NSData *)data URL:(NSURL *)url
 {
-	if (self = [self initWithType:0])
+    if (self = [self initWithType:0])
 	{
 		self.inpHook.buffer = data;
 		[self.kbd paste:@"I\n"];
@@ -125,8 +199,8 @@
 	[encoder encodeObject:self.cpu forKey:@"cpu"];
 	[encoder encodeObject:self.rom forKey:@"rom"];
 	[encoder encodeObject:self.ram forKey:@"ram"];
+    [encoder encodeObject:self.kbd forKey:@"kbd"];
 	[encoder encodeObject:self.crt forKey:@"crt"];
-	[encoder encodeObject:self.kbd forKey:@"kbd"];
 }
 
 // -----------------------------------------------------------------------------
@@ -145,10 +219,10 @@
 	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
 		return FALSE;
 
+    if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
+        return FALSE;
+    
 	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
-		return FALSE;
-
-	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
 		return FALSE;
 
 	return TRUE;

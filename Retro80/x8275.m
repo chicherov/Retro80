@@ -236,7 +236,11 @@ static uint32_t foreground[] =
 
 - (void) selectFont:(unsigned int)offset
 {
-	font = offset;
+    @synchronized(self)
+    {
+        font = offset; bitmap[0] = bitmap[1] = NULL;
+        memset(screen, -1, sizeof(screen));
+    }
 }
 
 // -----------------------------------------------------------------------------

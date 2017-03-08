@@ -11,33 +11,48 @@
 
 @implementation Micro80Screen
 {
-	NSMutableData *buffer;
-	NSData *rom;
-
-	uint8_t screen[32 * 64];
-	uint32_t* bitmap;
+    uint8_t screen[32 * 64];
+    uint32_t* bitmap;
 }
 
 @synthesize display;
-@synthesize ram;
+@synthesize font;
 
 // -----------------------------------------------------------------------------
-// RD/WR
+// Подключение фоновой памяти
+// -----------------------------------------------------------------------------
+
+- (void) setMem:(MEM *)mem
+{
+    pMutableBytes = mem->pMutableBytes;
+    pLength = mem->pLength;
+    offset = mem->offset;
+    mask = mem->mask;
+}
+
+// -----------------------------------------------------------------------------
+// RD/WR/BYTE
 // -----------------------------------------------------------------------------
 
 - (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	if (addr & 0x800)
-		mutableBytes[addr & 0x7FF] = (mutableBytes[addr & 0x7FF] & 0x80) | (data & 0x7F);
-	else
-		mutableBytes[addr & 0x7FF] = (mutableBytes[addr & 0x7FF] & 0x7F) | (data & 0x80);
-    
-    [ram WR:addr data:data CLK:clock];
+    if (addr & 0x800)
+        mutableBytes[addr & 0x7FF] = (mutableBytes[addr & 0x7FF] & 0x80) | (data & 0x7F);
+    else
+        mutableBytes[addr & 0x7FF] = (mutableBytes[addr & 0x7FF] & 0x7F) | (data & 0x80);
+
+    if (*pMutableBytes != mutableBytes && offset + (addr & mask) < *pLength)
+        (*pMutableBytes) [offset + (addr & mask)] = data;
 }
 
 - (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	*data = mutableBytes[addr & 0x7FF] & 0x7F;
+}
+
+- (uint8_t *) BYTE:(uint16_t)addr
+{
+    return mutableBytes + (addr & 0x7FF);
 }
 
 // -----------------------------------------------------------------------------
@@ -46,10 +61,7 @@
 
 - (void) draw
 {
-	if (bitmap == NULL)
-		bitmap = [self.display setupTextWidth:64 height:32 cx:6 cy:8];
-
-	if (bitmap)
+	if (bitmap || (bitmap = [self.display setupTextWidth:64 height:32 cx:6 cy:8]))
 	{
 		for (NSUInteger i = 0; i < 2048; i++)
 		{
@@ -57,20 +69,34 @@
 
 			if (screen[i] != ch)
 			{
-				screen[i] = ch;
-
-				uint32_t *ptr = bitmap + (((i & ~63) << 3) | (i & 63)) * 6;
-				const uint8_t *fnt = rom.bytes + ((ch & 0x7F) << 3);
+                uint32_t *ptr = bitmap + (((i & ~63) << 3) | (i & 63)) * 6;
+                const uint8_t *fnt = font.bytes + ((ch & 0x7F) << 3);
 
 				for (int line = 0; line < 8; line++)
 				{
-					uint8_t byte = *fnt++; if (ch & 0x80) byte ^= 0xFF;
-
-					for (int i = 0; i < 6; i++, byte <<= 1)
-						*ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFAAAAAA;
-
+					uint8_t byte = *fnt++; if (ch & 0x80)
+                    {
+                        *ptr++ = byte & 0x20 ? 0xFFAAAAAA : 0xFF000000;
+                        *ptr++ = byte & 0x10 ? 0xFFAAAAAA : 0xFF000000;
+                        *ptr++ = byte & 0x08 ? 0xFFAAAAAA : 0xFF000000;
+                        *ptr++ = byte & 0x04 ? 0xFFAAAAAA : 0xFF000000;
+                        *ptr++ = byte & 0x02 ? 0xFFAAAAAA : 0xFF000000;
+                        *ptr++ = byte & 0x01 ? 0xFFAAAAAA : 0xFF000000;
+                    }
+                    else
+                    {
+                        *ptr++ = byte & 0x20 ? 0xFF000000 : 0xFFAAAAAA;
+                        *ptr++ = byte & 0x10 ? 0xFF000000 : 0xFFAAAAAA;
+                        *ptr++ = byte & 0x08 ? 0xFF000000 : 0xFFAAAAAA;
+                        *ptr++ = byte & 0x04 ? 0xFF000000 : 0xFFAAAAAA;
+                        *ptr++ = byte & 0x02 ? 0xFF000000 : 0xFFAAAAAA;
+                        *ptr++ = byte & 0x01 ? 0xFF000000 : 0xFFAAAAAA;
+                    }
+                    
 					ptr += 63 * 6;
 				}
+                
+                screen[i] = ch;
 			}
 		}
 
@@ -84,14 +110,10 @@
 
 - (unichar) charAtX:(unsigned int)x Y:(unsigned int)y
 {
-	NSString *unicode = @
-	" ▘▝▀▗▚▐▜ ⌘ ⬆  ➡⬇▖▌▞▛▄▙▟█   ┃━⬅☼ "
-	" !\"#$%&'()*+,-./0123456789:;<=>?"
-	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-	"ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ▇";
+	NSString *unicode = @" ▘▝▀▗▚▐▜ ⌘ ⬆  ➡⬇▖▌▞▛▄▙▟█   ┃━⬅☼  !\"#$%&'()*+,-./0123456789:;<=>?"
+	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ▇";
 
-
-	return [unicode characterAtIndex:screen[y * 64 + x] & 0x7F];
+    return [unicode characterAtIndex:screen[y * 64 + x] & 0x7F];
 }
 
 // -----------------------------------------------------------------------------
@@ -100,40 +122,27 @@
 
 - (id) init
 {
-	if (self = [super init])
+	if (self = [super initWithLength:2048 mask:0x07FF])
 	{
-		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Micro80" ofType:@"fnt"]]) == nil)
+		if ((font = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Micro80" ofType:@"fnt"]]) == nil)
 			return self = nil;
-
-		if ((buffer = [NSMutableData dataWithLength:2048]) == nil)
-			return self = nil;
-
-		mutableBytes = buffer.mutableBytes;
+        
+        memset(mutableBytes, 0x80, length);
 	}
 
 	return self;
 }
 
 // -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
+// initWithCoder
 // -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[encoder encodeObject:buffer forKey:@"buffer"];
-}
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [super init])
+	if (self = [super initWithCoder:decoder])
 	{
-		if ((rom = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Micro80" ofType:@"fnt"]]) == nil)
+		if ((font = [NSData dataWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"Micro80" ofType:@"fnt"]]) == nil)
 			return self = nil;
-
-		if ((buffer = [decoder decodeObjectForKey:@"buffer"]) == nil)
-			return self = nil;
-
-		mutableBytes = buffer.mutableBytes;
 	}
 	
 	return self;

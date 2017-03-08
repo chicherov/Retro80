@@ -7,8 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		36A9C02B1250C90EF5C86C37 /* SpecialistMXKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9CB9B1FEDF94A97FEBEEE /* SpecialistMXKeyboard.m */; };
+		36A9C07354E31D0FF79869C3 /* SpecialistMX.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9CAFAE49016F4DB03AB24 /* SpecialistMX.m */; };
+		36A9C519888D5E4FE31FF2FD /* SpecialistSP580.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C150A004D01D2597BB2C /* SpecialistSP580.m */; };
+		36A9C996DFDDC87D81B13A01 /* SpecialistKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C95229419D86990F63F7 /* SpecialistKeyboard.m */; };
+		36A9CA557FE8877B01CD4181 /* Specialist.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C9A2ECE23A9F311BFB4C /* Specialist.m */; };
+		36A9CB081DCF3A64A8E2E2FE /* SpecialistScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C25BDA9E4810B8CB7B3B /* SpecialistScreen.m */; };
+		36A9CF5B8E310101F21857C6 /* SpecialistMXSystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C37988CB8D68D5EFC89C /* SpecialistMXSystem.m */; };
 		D907F01F1B1BB45500616107 /* digits.png in Resources */ = {isa = PBXBuildFile; fileRef = D907F01E1B1BB45500616107 /* digits.png */; };
 		D90D94141B09A27300CE2475 /* Orion128Floppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D90D94131B09A27300CE2475 /* Orion128Floppy.m */; };
+		D915D6C41DBDDD640098AA98 /* MicroshaKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D915D6C31DBDDD640098AA98 /* MicroshaKeyboard.m */; };
+		D915D6C71DBDDE550098AA98 /* MicroshaExt.m in Sources */ = {isa = PBXBuildFile; fileRef = D915D6C61DBDDE550098AA98 /* MicroshaExt.m */; };
 		D91B89EF1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin in Resources */ = {isa = PBXBuildFile; fileRef = D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */; };
 		D91FBD7E19AE60A70002128E /* Sound.m in Sources */ = {isa = PBXBuildFile; fileRef = D91FBD7D19AE60A70002128E /* Sound.m */; };
 		D92059E81B1C8638009D353D /* UT88-0.bin in Resources */ = {isa = PBXBuildFile; fileRef = D92059E71B1C8638009D353D /* UT88-0.bin */; };
@@ -38,7 +47,7 @@
 		D967335A1D830FC0006167FA /* M80RK86.bin in Resources */ = {isa = PBXBuildFile; fileRef = D96733591D830FC0006167FA /* M80RK86.bin */; };
 		D967B3E019B457E000C3ED9A /* Micro80.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3DF19B457E000C3ED9A /* Micro80.m */; };
 		D971486B1A0ED612006348B1 /* QLRetro80.qlgenerator in Copy Files */ = {isa = PBXBuildFile; fileRef = D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
-		D9728AC41DAAC60C00D52694 /* UT88Port40.m in Sources */ = {isa = PBXBuildFile; fileRef = D9728AC31DAAC60C00D52694 /* UT88Port40.m */; };
+		D9728AC41DAAC60C00D52694 /* UT88System.m in Sources */ = {isa = PBXBuildFile; fileRef = D9728AC31DAAC60C00D52694 /* UT88System.m */; };
 		D974FCA019ADE9450041DF91 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FC9F19ADE9450041DF91 /* main.m */; };
 		D974FCA719ADE9450041DF91 /* Document.m in Sources */ = {isa = PBXBuildFile; fileRef = D974FCA619ADE9450041DF91 /* Document.m */; };
 		D974FCAA19ADE9450041DF91 /* Document.xib in Resources */ = {isa = PBXBuildFile; fileRef = D974FCA819ADE9450041DF91 /* Document.xib */; };
@@ -59,11 +68,6 @@
 		D98BEB4A19F2A2DC008E4EC4 /* Partner.m in Sources */ = {isa = PBXBuildFile; fileRef = D98BEB4919F2A2DC008E4EC4 /* Partner.m */; };
 		D98CD8CA1AFCC9E10009C7B3 /* SpecialistMX2.bin in Resources */ = {isa = PBXBuildFile; fileRef = D98CD8C91AFCC9E10009C7B3 /* SpecialistMX2.bin */; };
 		D9903DB71BC8000B00750E86 /* Orion128-3.3.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9903DB61BC8000B00750E86 /* Orion128-3.3.bin */; };
-		D99121C91AB164F700A95BBB /* Specialist.m in Sources */ = {isa = PBXBuildFile; fileRef = D99121C81AB164F700A95BBB /* Specialist.m */; };
-		D994F5561ADBA613002408E8 /* SpecialistScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F5551ADBA613002408E8 /* SpecialistScreen.m */; };
-		D994F5591ADBA7D7002408E8 /* SpecialistKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F5581ADBA7D7002408E8 /* SpecialistKeyboard.m */; };
-		D994F55C1ADBA9C7002408E8 /* SpecialistSP580.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F55B1ADBA9C7002408E8 /* SpecialistSP580.m */; };
-		D994F55F1ADBAB6C002408E8 /* SpecialistMX.m in Sources */ = {isa = PBXBuildFile; fileRef = D994F55E1ADBAB6C002408E8 /* SpecialistMX.m */; };
 		D99555061A051B2300BC4868 /* Retro80.icns in Resources */ = {isa = PBXBuildFile; fileRef = D99555051A051B2300BC4868 /* Retro80.icns */; };
 		D99ACCA61AB9824600E05074 /* Lik.bin in Resources */ = {isa = PBXBuildFile; fileRef = D99ACCA51AB9824600E05074 /* Lik.bin */; };
 		D9A1AADB1AB1AAD400D0E5FF /* Specialist2.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9A1AAD91AB1AAD400D0E5FF /* Specialist2.bin */; };
@@ -116,9 +120,27 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		36A9C0DAE03FF62866824CDD /* SpecialistMXSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMXSystem.h; sourceTree = "<group>"; };
+		36A9C150A004D01D2597BB2C /* SpecialistSP580.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistSP580.m; sourceTree = "<group>"; };
+		36A9C25BDA9E4810B8CB7B3B /* SpecialistScreen.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistScreen.m; sourceTree = "<group>"; };
+		36A9C37988CB8D68D5EFC89C /* SpecialistMXSystem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMXSystem.m; sourceTree = "<group>"; };
+		36A9C3EC28EA5D292532C6E7 /* SpecialistMX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMX.h; sourceTree = "<group>"; };
+		36A9C5DD8A3F5474104DFEEE /* SpecialistScreen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistScreen.h; sourceTree = "<group>"; };
+		36A9C707C41A18D601F0171B /* SpecialistKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistKeyboard.h; sourceTree = "<group>"; };
+		36A9C7B0D0A15CB0D0D29AEC /* Specialist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Specialist.h; sourceTree = "<group>"; };
+		36A9C8701AF7C263FF13613C /* SpecialistSP580.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistSP580.h; sourceTree = "<group>"; };
+		36A9C95229419D86990F63F7 /* SpecialistKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistKeyboard.m; sourceTree = "<group>"; };
+		36A9C9A2ECE23A9F311BFB4C /* Specialist.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Specialist.m; sourceTree = "<group>"; };
+		36A9CAFAE49016F4DB03AB24 /* SpecialistMX.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMX.m; sourceTree = "<group>"; };
+		36A9CB9B1FEDF94A97FEBEEE /* SpecialistMXKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMXKeyboard.m; sourceTree = "<group>"; };
+		36A9CE4F90F90CF587161D00 /* SpecialistMXKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMXKeyboard.h; sourceTree = "<group>"; };
 		D907F01E1B1BB45500616107 /* digits.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = digits.png; sourceTree = "<group>"; };
 		D90D94121B09A27300CE2475 /* Orion128Floppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orion128Floppy.h; sourceTree = "<group>"; };
 		D90D94131B09A27300CE2475 /* Orion128Floppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Orion128Floppy.m; sourceTree = "<group>"; };
+		D915D6C21DBDDD640098AA98 /* MicroshaKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MicroshaKeyboard.h; sourceTree = "<group>"; };
+		D915D6C31DBDDD640098AA98 /* MicroshaKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MicroshaKeyboard.m; sourceTree = "<group>"; };
+		D915D6C51DBDDE550098AA98 /* MicroshaExt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MicroshaExt.h; sourceTree = "<group>"; };
+		D915D6C61DBDDE550098AA98 /* MicroshaExt.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MicroshaExt.m; sourceTree = "<group>"; };
 		D91B89EE1ABC8EF8002F70DC /* SpecialistMX_RAMFOS.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_RAMFOS.bin; path = Retro80/ROM/SpecialistMX_RAMFOS.bin; sourceTree = "<group>"; };
 		D91FBD7C19AE60A70002128E /* Sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Sound.h; sourceTree = "<group>"; };
 		D91FBD7D19AE60A70002128E /* Sound.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Sound.m; sourceTree = "<group>"; };
@@ -158,8 +180,8 @@
 		D967B3DF19B457E000C3ED9A /* Micro80.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Micro80.m; sourceTree = "<group>"; };
 		D967B3E119B4584200C3ED9A /* UT88.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UT88.h; sourceTree = "<group>"; };
 		D967B3E219B4584200C3ED9A /* UT88.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UT88.m; sourceTree = "<group>"; };
-		D9728AC21DAAC60C00D52694 /* UT88Port40.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UT88Port40.h; sourceTree = "<group>"; };
-		D9728AC31DAAC60C00D52694 /* UT88Port40.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UT88Port40.m; sourceTree = "<group>"; };
+		D9728AC21DAAC60C00D52694 /* UT88System.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UT88System.h; sourceTree = "<group>"; };
+		D9728AC31DAAC60C00D52694 /* UT88System.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UT88System.m; sourceTree = "<group>"; };
 		D974FC9019ADE9450041DF91 /* Retro80.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Retro80.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D974FC9B19ADE9450041DF91 /* Retro80-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Retro80-Info.plist"; sourceTree = "<group>"; };
 		D974FC9F19ADE9450041DF91 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -191,16 +213,6 @@
 		D98BEB4919F2A2DC008E4EC4 /* Partner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Partner.m; sourceTree = "<group>"; };
 		D98CD8C91AFCC9E10009C7B3 /* SpecialistMX2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX2.bin; path = Retro80/ROM/SpecialistMX2.bin; sourceTree = "<group>"; };
 		D9903DB61BC8000B00750E86 /* Orion128-3.3.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "Orion128-3.3.bin"; path = "Retro80/ROM/Orion128-3.3.bin"; sourceTree = "<group>"; };
-		D99121C71AB164F700A95BBB /* Specialist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Specialist.h; sourceTree = "<group>"; };
-		D99121C81AB164F700A95BBB /* Specialist.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Specialist.m; sourceTree = "<group>"; };
-		D994F5541ADBA613002408E8 /* SpecialistScreen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistScreen.h; sourceTree = "<group>"; };
-		D994F5551ADBA613002408E8 /* SpecialistScreen.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistScreen.m; sourceTree = "<group>"; };
-		D994F5571ADBA7D7002408E8 /* SpecialistKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistKeyboard.h; sourceTree = "<group>"; };
-		D994F5581ADBA7D7002408E8 /* SpecialistKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistKeyboard.m; sourceTree = "<group>"; };
-		D994F55A1ADBA9C7002408E8 /* SpecialistSP580.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistSP580.h; sourceTree = "<group>"; };
-		D994F55B1ADBA9C7002408E8 /* SpecialistSP580.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistSP580.m; sourceTree = "<group>"; };
-		D994F55D1ADBAB6C002408E8 /* SpecialistMX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMX.h; sourceTree = "<group>"; };
-		D994F55E1ADBAB6C002408E8 /* SpecialistMX.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMX.m; sourceTree = "<group>"; };
 		D99555051A051B2300BC4868 /* Retro80.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Retro80.icns; sourceTree = "<group>"; };
 		D99ACCA51AB9824600E05074 /* Lik.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Lik.bin; path = Retro80/ROM/Lik.bin; sourceTree = "<group>"; };
 		D9A1AAD91AB1AAD400D0E5FF /* Specialist2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = Specialist2.bin; path = Retro80/ROM/Specialist2.bin; sourceTree = "<group>"; };
@@ -259,6 +271,27 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		36A9CF28488EC5CEBF268C00 /* Specialist */ = {
+			isa = PBXGroup;
+			children = (
+				36A9C7B0D0A15CB0D0D29AEC /* Specialist.h */,
+				36A9C9A2ECE23A9F311BFB4C /* Specialist.m */,
+				36A9C707C41A18D601F0171B /* SpecialistKeyboard.h */,
+				36A9C95229419D86990F63F7 /* SpecialistKeyboard.m */,
+				36A9C5DD8A3F5474104DFEEE /* SpecialistScreen.h */,
+				36A9C25BDA9E4810B8CB7B3B /* SpecialistScreen.m */,
+				36A9C8701AF7C263FF13613C /* SpecialistSP580.h */,
+				36A9C150A004D01D2597BB2C /* SpecialistSP580.m */,
+				36A9C3EC28EA5D292532C6E7 /* SpecialistMX.h */,
+				36A9CAFAE49016F4DB03AB24 /* SpecialistMX.m */,
+				36A9CE4F90F90CF587161D00 /* SpecialistMXKeyboard.h */,
+				36A9CB9B1FEDF94A97FEBEEE /* SpecialistMXKeyboard.m */,
+				36A9C0DAE03FF62866824CDD /* SpecialistMXSystem.h */,
+				36A9C37988CB8D68D5EFC89C /* SpecialistMXSystem.m */,
+			);
+			name = Specialist;
+			sourceTree = "<group>";
+		};
 		D92701821B073DF900CC51BD /* Orion128 */ = {
 			isa = PBXGroup;
 			children = (
@@ -325,10 +358,10 @@
 				D967B3E219B4584200C3ED9A /* UT88.m */,
 				D93AA4B91DAABBF700175978 /* UT88Keyboard.h */,
 				D93AA4BA1DAABBF700175978 /* UT88Keyboard.m */,
-				D9728AC21DAAC60C00D52694 /* UT88Port40.h */,
-				D9728AC31DAAC60C00D52694 /* UT88Port40.m */,
 				D93AA4B61DAABAF600175978 /* UT88Screen.h */,
 				D93AA4B71DAABAF600175978 /* UT88Screen.m */,
+				D9728AC21DAAC60C00D52694 /* UT88System.h */,
+				D9728AC31DAAC60C00D52694 /* UT88System.m */,
 			);
 			name = Micro80;
 			sourceTree = "<group>";
@@ -372,9 +405,9 @@
 				D9F1C4181AE189F900E927F7 /* Debug.h */,
 				D9F1C4191AE189F900E927F7 /* Debug.m */,
 				D9EBB62119B47E1A00C833CA /* X8080 */,
-				D974FCEB19AE10640041DF91 /* Radio86RK */,
 				D967B3E419B4588800C3ED9A /* Micro80 */,
-				D99121C61AB164B500A95BBB /* Specialist */,
+				D974FCEB19AE10640041DF91 /* Radio86RK */,
+				36A9CF28488EC5CEBF268C00 /* Specialist */,
 				D92701821B073DF900CC51BD /* Orion128 */,
 				D974FC9A19ADE9450041DF91 /* Supporting Files */,
 				D95560AF19BF8EE100B2F098 /* Resources */,
@@ -406,6 +439,10 @@
 				D929488119B5850C009BC312 /* RKRecorder.m */,
 				D974FCE019AE08190041DF91 /* Microsha.h */,
 				D974FCE119AE08190041DF91 /* Microsha.m */,
+				D915D6C21DBDDD640098AA98 /* MicroshaKeyboard.h */,
+				D915D6C31DBDDD640098AA98 /* MicroshaKeyboard.m */,
+				D915D6C51DBDDE550098AA98 /* MicroshaExt.h */,
+				D915D6C61DBDDE550098AA98 /* MicroshaExt.m */,
 				D974FCE819AE10500041DF91 /* Apogeo.h */,
 				D974FCE919AE10500041DF91 /* Apogeo.m */,
 				D98BEB4819F2A2DC008E4EC4 /* Partner.h */,
@@ -435,23 +472,6 @@
 				D988F7BC1A091D5A00079E0A /* Info.plist */,
 			);
 			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		D99121C61AB164B500A95BBB /* Specialist */ = {
-			isa = PBXGroup;
-			children = (
-				D99121C71AB164F700A95BBB /* Specialist.h */,
-				D99121C81AB164F700A95BBB /* Specialist.m */,
-				D994F5571ADBA7D7002408E8 /* SpecialistKeyboard.h */,
-				D994F5581ADBA7D7002408E8 /* SpecialistKeyboard.m */,
-				D994F5541ADBA613002408E8 /* SpecialistScreen.h */,
-				D994F5551ADBA613002408E8 /* SpecialistScreen.m */,
-				D994F55A1ADBA9C7002408E8 /* SpecialistSP580.h */,
-				D994F55B1ADBA9C7002408E8 /* SpecialistSP580.m */,
-				D994F55D1ADBAB6C002408E8 /* SpecialistMX.h */,
-				D994F55E1ADBAB6C002408E8 /* SpecialistMX.m */,
-			);
-			name = Specialist;
 			sourceTree = "<group>";
 		};
 		D9EBB62119B47E1A00C833CA /* X8080 */ = {
@@ -628,7 +648,6 @@
 				D94E03B01AD83B0400C1FFBC /* vg93.m in Sources */,
 				D98BEB4A19F2A2DC008E4EC4 /* Partner.m in Sources */,
 				D93AA4BB1DAABBF700175978 /* UT88Keyboard.m in Sources */,
-				D994F55C1ADBA9C7002408E8 /* SpecialistSP580.m in Sources */,
 				D929488219B5850C009BC312 /* RKKeyboard.m in Sources */,
 				D9B274D21D9090A400D46CF8 /* Micro80Keyboard.m in Sources */,
 				D9DE3A281B18E84C006B4104 /* UT88.m in Sources */,
@@ -648,25 +667,30 @@
 				D92701881B07429F00CC51BD /* Orion128Screen.m in Sources */,
 				D977B7D319FD724A003A5FB6 /* DocumentController.m in Sources */,
 				D91FBD7E19AE60A70002128E /* Sound.m in Sources */,
+				D915D6C71DBDDE550098AA98 /* MicroshaExt.m in Sources */,
 				D9B274D51D9103E200D46CF8 /* Micro80Recorder.m in Sources */,
-				D994F5591ADBA7D7002408E8 /* SpecialistKeyboard.m in Sources */,
 				D9EBB62519B47E8B00C833CA /* x8255.m in Sources */,
 				D9A4245419B8310B00DAA3E0 /* x8257.m in Sources */,
 				D967B3E019B457E000C3ED9A /* Micro80.m in Sources */,
 				D9EBB62019B47E1300C833CA /* x8080.m in Sources */,
 				D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */,
 				D929488319B5850C009BC312 /* RKRecorder.m in Sources */,
-				D994F55F1ADBAB6C002408E8 /* SpecialistMX.m in Sources */,
 				D9EBB62919B47ECA00C833CA /* mem.m in Sources */,
 				D974FCA019ADE9450041DF91 /* main.m in Sources */,
 				D9D8CBB21CC2A8C600E2DD3A /* Dbg80.m in Sources */,
-				D994F5561ADBA613002408E8 /* SpecialistScreen.m in Sources */,
-				D99121C91AB164F700A95BBB /* Specialist.m in Sources */,
 				D9FE179D19B9F874008EBD32 /* Computer.m in Sources */,
 				D92701851B073E1D00CC51BD /* Orion128.m in Sources */,
 				D974FCEA19AE10500041DF91 /* Apogeo.m in Sources */,
 				D974FCCC19ADEA080041DF91 /* Display.m in Sources */,
-				D9728AC41DAAC60C00D52694 /* UT88Port40.m in Sources */,
+				D9728AC41DAAC60C00D52694 /* UT88System.m in Sources */,
+				D915D6C41DBDDD640098AA98 /* MicroshaKeyboard.m in Sources */,
+				36A9CA557FE8877B01CD4181 /* Specialist.m in Sources */,
+				36A9C996DFDDC87D81B13A01 /* SpecialistKeyboard.m in Sources */,
+				36A9CB081DCF3A64A8E2E2FE /* SpecialistScreen.m in Sources */,
+				36A9C519888D5E4FE31FF2FD /* SpecialistSP580.m in Sources */,
+				36A9C07354E31D0FF79869C3 /* SpecialistMX.m in Sources */,
+				36A9C02B1250C90EF5C86C37 /* SpecialistMXKeyboard.m in Sources */,
+				36A9CF5B8E310101F21857C6 /* SpecialistMXSystem.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

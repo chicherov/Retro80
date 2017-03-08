@@ -9,5 +9,5 @@
 
 #import "Micro80Screen.h"
 
-@interface UT88Screen : Micro80Screen <IRQ, RESET>
+@interface UT88Screen : Micro80Screen
 @end

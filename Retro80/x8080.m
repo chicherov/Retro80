@@ -99,8 +99,6 @@
 
 	void (*CallIOR [256]) (id, SEL, uint16_t, uint8_t *, uint64_t);
 	void (*CallIOW [256]) (id, SEL, uint16_t, uint8_t, uint64_t);
-
-	uint32_t START;
 }
 
 // -----------------------------------------------------------------------------
@@ -110,6 +108,7 @@
 @synthesize quartz;
 @synthesize CLK;
 
+@synthesize START;
 @synthesize PAGE;
 
 @synthesize PC;
@@ -737,7 +736,7 @@ static uint16_t AND[2][0x100][0x100];
 		BREAK = ((uint64_t)breakpoints[PC] << 32) | ((uint64_t)PC << 16) | (BREAK & 0xFFFF);
 		return FALSE;
 	}
-	
+
 	while (CLK < CLKI)
 	{
 		union

@@ -11,8 +11,8 @@
 #import "x8253.h"
 
 #import "UT88Keyboard.h"
-#import "UT88Port40.h"
 #import "UT88Screen.h"
+#import "UT88System.h"
 
 // -----------------------------------------------------------------------------
 // ПЭВМ «ЮТ-88»
@@ -29,10 +29,10 @@
 @property UT88Keyboard *kbd;
 @property UT88Screen *crt;
 
+@property UT88System *sys;
+
 @property ROMDisk *ext;
 @property X8253 *snd;
-
-@property UT88Port40 *sys;
 
 @property F806 *inpHook;
 @property F80C *outHook;

@@ -61,6 +61,8 @@
 @property uint64_t CLK;
 @property uint8_t PAGE;
 
+@property uint32_t START;
+
 @property uint16_t PC;
 @property uint16_t SP;
 
