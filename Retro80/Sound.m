@@ -97,7 +97,10 @@
 		else
 		{
 			[self stop];
-			[self start];
+
+			[self performSelectorOnMainThread:@selector(start)
+								   withObject:nil
+								waitUntilDone:FALSE];
 
 			return;
 		}
