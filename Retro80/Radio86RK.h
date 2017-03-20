@@ -1,36 +1,20 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «Радио-86РК»
 
  *****/
 
 #import "RK86Base.h"
-#import "ROMDisk.h"
-#import "Floppy.h"
-
-// -----------------------------------------------------------------------------
-// Radio86RK8253 - ВИ53 (только запись) повешен параллельно ВВ55
-// -----------------------------------------------------------------------------
-
-@interface Radio86RK8253 : X8253
-
-@property X8255 *ext;
-
-@end
-
-// -----------------------------------------------------------------------------
-// ПЭВМ «Радио-86РК»
-// -----------------------------------------------------------------------------
+#import "RKFloppy.h"
+#import "RKSDCard.h"
 
 @interface Radio86RK : RK86Base
+@property(nonatomic, strong) RKFloppy *fdd;
+@end
 
-@property Radio86RK8253 *snd;
-@property ROMDisk *ext;
-
-@property Floppy *fdd;
-@property ROM *dos;
-
+// Таймер ВИ53 (только запись) повешен параллельно ВВ55
+@interface Radio86RKExt : RKSDCard
 @end

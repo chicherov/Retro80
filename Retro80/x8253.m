@@ -1,20 +1,18 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Микросхема трехканального таймера КР580ВИ53 (8253)
 
  *****/
 
-#import "X8253.h"
+#import "x8253.h"
+#import "Sound.h"
 
 @implementation X8253
 {
-	// -------------------------------------------------------------------------
-	// Таймеры i8253 (0-2) и бипер (3)
-	// -------------------------------------------------------------------------
-
+	// Таймеры i8253 (0-2),  бипер (3) и выход на магнитофон (4)
 	struct i8253_timer
 	{
 		uint32_t clk;
@@ -24,16 +22,17 @@
 
 		union i8253_mode
 		{
-			uint8_t byte; struct
+			uint8_t byte;
+			struct
 			{
-				unsigned  BCD:1;
+				unsigned BCD:1;
 				unsigned MODE:3;
-				unsigned   RL:2;
-				unsigned   SC:2;
+				unsigned RL:2;
+				unsigned SC:2;
 			};
 
 		} mode;
-		
+
 		uint16_t count;
 		uint16_t latch;
 
@@ -50,75 +49,75 @@
 		uint64_t reloadHi;
 		uint64_t reloadLo;
 
-	} timers[4];
+	} timers[5];
 
-	uint64_t last_clock;
 	unsigned last_mix;
-	unsigned snd;
-
-	uint64_t start_interval;
-	uint16_t sample;
 }
 
+@synthesize enabled;
 @synthesize sound;
 
-// -----------------------------------------------------------------------------
-// Функции для работы с таймером
-// -----------------------------------------------------------------------------
-
-static void update_timers(X8253 *sound, uint64_t clock)
+static void update_timers(X8253 *x8253, uint64_t clock)
 {
-	uint64_t c; do
+	uint64_t clk;
+
+	do
 	{
-		c = sound->timers[0].reload && sound->timers[0].reload < clock ? sound->timers[0].reload : clock;
-		if (sound->timers[1].reload && sound->timers[1].reload < c) c = sound->timers[1].reload;
-		if (sound->timers[2].reload && sound->timers[2].reload < c) c = sound->timers[2].reload;
-		if (sound->timers[3].reload && sound->timers[3].reload < c) c = sound->timers[3].reload;
+		clk = clock;
 
-		unsigned mix = 0; for (int i = 0; i < 4; i++) if (sound->timers[i].reload == c)
+		if (x8253->timers[0].reload) clk = MIN(clk, x8253->timers[0].reload);
+		if (x8253->timers[1].reload) clk = MIN(clk, x8253->timers[1].reload);
+		if (x8253->timers[2].reload) clk = MIN(clk, x8253->timers[2].reload);
+		if (x8253->timers[3].reload) clk = MIN(clk, x8253->timers[3].reload);
+		if (x8253->timers[4].reload) clk = MIN(clk, x8253->timers[4].reload);
+
+		unsigned mix = 0;
+
+		for (int i = 0; i < 5; i++)
 		{
-			if ((sound->timers[i].output = !sound->timers[i].output))
+			if (x8253->timers[i].reload == clk)
 			{
-				if (sound->timers[i].reloadHi)
-					sound->timers[i].zero = sound->timers[i].reload += sound->timers[i].reloadHi;
+				if ((x8253->timers[i].output = !x8253->timers[i].output))
+				{
+					if (x8253->timers[i].reloadHi)
+						x8253->timers[i].zero = x8253->timers[i].reload += x8253->timers[i].reloadHi;
+					else
+						x8253->timers[i].reload = 0;
+				}
 				else
-					sound->timers[i].reload = 0;
+				{
+					if (x8253->timers[i].enable && (x8253->timers[i].mode.MODE != 3 || x8253->timers[i].reloadLo > 300))
+						mix++;
+
+					if (x8253->timers[i].reloadLo)
+						x8253->timers[i].zero = x8253->timers[i].reload += x8253->timers[i].reloadLo;
+					else
+						x8253->timers[i].reload = 0;
+				}
+
+				if (x8253->rkmode && i == 2)
+					change_gate(x8253, x8253->timers + 0, !x8253->timers[2].output, clk);
 			}
-			else
+			else if (!x8253->timers[i].output)
 			{
-				if (sound->timers[i].enable && (sound->timers[i].mode.MODE != 3 || sound->timers[i].reloadLo > 300))
+				if ((i >= 3 || x8253->enabled) && x8253->timers[i].enable
+					&& (x8253->timers[i].mode.MODE != 3 || x8253->timers[i].reloadLo > 300))
 					mix++;
-
-				if (sound->timers[i].reloadLo)
-					sound->timers[i].zero = sound->timers[i].reload += sound->timers[i].reloadLo;
-				else
-					sound->timers[i].reload = 0;
 			}
-
-			if (sound->rkmode && i == 2)
-				change_gate(sound, sound->timers + 0, !sound->timers[2].output, c);
-		}
-		else if (!sound->timers[i].output)
-		{
-			if (sound->timers[i].enable && (sound->timers[i].mode.MODE != 3 || sound->timers[i].reloadLo > 300))
-				mix++;
 		}
 
-		if (mix != sound->last_mix)
-		{
-			sound->snd += sound->last_mix * (c - sound->last_clock);
-			sound->last_mix = mix;
-			sound->last_clock = c;
-		}
+		[x8253->sound update:clk output:x8253->timers[4].output left:mix << 13 right:mix << 13];
 
-	} while (c != clock);
+	}
+	while (clk != clock);
 }
 
 static void change_output(X8253 *sound, struct i8253_timer *timer, BOOL output, uint64_t clock)
 {
 	if (timer->output != output)
 	{
-		timer->reload = clock; update_timers(sound, clock);
+		timer->reload = clock;
+		update_timers(sound, clock);
 	}
 	else
 	{
@@ -130,72 +129,73 @@ static void change_gate(X8253 *sound, struct i8253_timer *timer, BOOL gate, uint
 {
 	if (timer->gate != gate)
 	{
-		if (timer->zero) switch (timer->mode.MODE)
-		{
-			case 0:
+		if (timer->zero)
+			switch (timer->mode.MODE)
+			{
+				case 0:
 
-				if (gate)
-				{
-					timer->zero = clock + (uint64_t) timer->count * timer->clk;
+					if (gate)
+					{
+						timer->zero = clock + (uint64_t) timer->count*timer->clk;
 
-					if (timer->output == FALSE)
-						timer->reload = timer->zero;
-				}
-				else
-				{
-					timer->count = count(timer, clock);
-					timer->reload = 0;
-				}
-
-				break;
-
-			case 1:
-
-				if (gate)
-				{
-					if (timer->output)
-						change_output(sound, timer, FALSE, clock + timer->clk);
+						if (timer->output == FALSE)
+							timer->reload = timer->zero;
+					}
 					else
-						timer->zero = timer->reload = clock + timer->reloadLo;
-				}
+					{
+						timer->count = count(timer, clock);
+						timer->reload = 0;
+					}
 
-				break;
+					break;
 
-			case 2:
-			case 3:
-			case 6:
-			case 7:
+				case 1:
 
-				if (gate)
-				{
-					timer->zero = timer->reload = clock + timer->reloadHi;
-				}
-				else
-				{
-					timer->count = count(timer, clock);
+					if (gate)
+					{
+						if (timer->output)
+							change_output(sound, timer, FALSE, clock + timer->clk);
+						else
+							timer->zero = timer->reload = clock + timer->reloadLo;
+					}
 
-					change_output(sound, timer, TRUE, clock);
-					timer->reload = 0;
-				}
+					break;
 
-				break;
+				case 2:
+				case 3:
+				case 6:
+				case 7:
 
-			case 4:
+					if (gate)
+					{
+						timer->zero = timer->reload = clock + timer->reloadHi;
+					}
+					else
+					{
+						timer->count = count(timer, clock);
 
-				if (gate)
-				{
-					timer->reload = timer->zero = clock + (uint64_t) timer->count * timer->clk;
-				}
-				else
-				{
-					timer->count = count(timer, clock);
-					timer->reload = 0;
-				}
-				
-			default:
-				
-				break;
-		}
+						change_output(sound, timer, TRUE, clock);
+						timer->reload = 0;
+					}
+
+					break;
+
+				case 4:
+
+					if (gate)
+					{
+						timer->reload = timer->zero = clock + (uint64_t) timer->count*timer->clk;
+					}
+					else
+					{
+						timer->count = count(timer, clock);
+						timer->reload = 0;
+					}
+
+				default:
+
+					break;
+			}
 
 		timer->gate = gate;
 	}
@@ -203,106 +203,93 @@ static void change_gate(X8253 *sound, struct i8253_timer *timer, BOOL gate, uint
 
 static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 {
-	if (timer->zero) switch (timer->mode.MODE)
-	{
-		case 0:
+	if (timer->zero)
+		switch (timer->mode.MODE)
+		{
+			case 0:
 
-			if (timer->gate)
-			{
+				if (timer->gate)
+				{
+					if (timer->mode.BCD == 0 || timer->zero > clock)
+						return (int64_t) (timer->zero - clock)/timer->clk;
+					else
+						return 10000 - (clock - timer->zero)/timer->clk%10000;
+				}
+
+				break;
+
+			case 1:
+			case 5:
+
 				if (timer->mode.BCD == 0 || timer->zero > clock)
-					return (int64_t)(timer->zero - clock) / timer->clk;
+					return (int64_t) (timer->zero - clock)/timer->clk;
 				else
-					return 10000 - (clock - timer->zero) / timer->clk % 10000;
-			}
+					return 10000 - (clock - timer->zero)/timer->clk%10000;
 
-			break;
+			case 2:
+			case 6:
 
-		case 1:
-		case 5:
+				if (timer->gate)
+				{
+					if (timer->output)
+						return (int64_t) (timer->zero - clock)/timer->clk + 1;
+					else
+						return timer->reloadHi/timer->clk + 1;
+				}
 
-			if (timer->mode.BCD == 0 || timer->zero > clock)
-				return (int64_t)(timer->zero - clock) / timer->clk;
-			else
-				return 10000 - (clock - timer->zero) / timer->clk % 10000;
+				break;
 
-		case 2:
-		case 6:
+			case 3:
+			case 7:
 
-			if (timer->gate)
-			{
-				if (timer->output)
-					return (int64_t)(timer->zero - clock) / timer->clk + 1;
-				else
-					return timer->reloadHi / timer->clk + 1;
-			}
+				if (timer->gate)
+				{
+					if (timer->zero != clock)
+						return ((int64_t) (timer->zero - clock)/timer->clk)*2;
+					else if (timer->mode.BCD == 0)
+						return (timer->reloadHi + timer->reloadLo)/timer->clk;
+					else
+						return ((timer->reloadHi + timer->reloadLo)/timer->clk)%10000;
+				}
 
-			break;
+				break;
 
-		case 3:
-		case 7:
+			case 4:
 
-			if (timer->gate)
-			{
-				if (timer->zero != clock)
-					return ((int64_t)(timer->zero - clock) / timer->clk) * 2;
-				else if (timer->mode.BCD == 0)
-					return (timer->reloadHi + timer->reloadLo) / timer->clk;
-				else
-					return ((timer->reloadHi + timer->reloadLo) / timer->clk) % 10000;
-			}
+				if (timer->gate)
+				{
+					if (timer->zero > clock)
+						return (timer->zero - clock)/timer->clk;
+					else if (timer->mode.BCD == 0)
+						return (int64_t) (timer->zero - clock)/timer->clk - 1;
+					else
+						return 9999 - (clock - timer->zero)/timer->clk%10000;
+				}
 
-			break;
-
-		case 4:
-
-			if (timer->gate)
-			{
-				if (timer->zero > clock)
-					return (timer->zero - clock) / timer->clk;
-				else if (timer->mode.BCD == 0)
-					return (int64_t)(timer->zero - clock) / timer->clk - 1;
-				else
-					return 9999 - (clock - timer->zero) / timer->clk % 10000;
-			}
-
-			break;
-	}
+				break;
+		}
 
 	return timer->count;
 }
 
-// -----------------------------------------------------------------------------
-// sample
-// -----------------------------------------------------------------------------
-
-- (uint16_t) sample:(uint64_t)clock
+- (void)flush:(uint64_t)clock
 {
-	update_timers(self, clock); if (clock > last_clock)
-	{
-		snd += last_mix * (clock - last_clock); last_clock = clock;
-	}
-
-	sample = ((snd << 13) / (clock - start_interval) + sample) / 2;
-
-	start_interval = clock;
-	snd = 0; return sample;
+	update_timers(self, clock);
 }
 
-// -----------------------------------------------------------------------------
-// Чтение/запись регистров ВИ53
-// -----------------------------------------------------------------------------
-
-- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
+- (void)RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
 	update_timers(self, clock);
 
-	if ((addr & 3) != 3)
+	if (enabled && (addr & 3) != 3)
 	{
 		struct i8253_timer *timer = timers + (addr & 3);
 
-		uint16_t value; if (timer->bLatch)
+		uint16_t value;
+		if (timer->bLatch)
 		{
-			value = timer->latch; timer->bLatch = timer->mode.RL == 3 && timer->bLow;
+			value = timer->latch;
+			timer->bLatch = timer->mode.RL == 3 && timer->bLow;
 		}
 		else
 		{
@@ -310,7 +297,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 		}
 
 		if (timer->mode.BCD)
-			value = ((value / 1000 % 10) << 12) | ((value / 100 % 10) << 8) | ((value / 10 % 10) << 4) | (value % 10);
+			value = ((value/1000%10) << 12) | ((value/100%10) << 8) | ((value/10%10) << 4) | (value%10);
 
 		if (timer->bLow)
 		{
@@ -329,205 +316,211 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 	}
 }
 
-- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
+- (void)WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
 	update_timers(self, clock);
 
-	if ((addr & 3) == 3)
+	if (enabled)
 	{
-		union i8253_mode mode = { data }; if (mode.SC != 3)
+		if ((addr & 3) == 3)
 		{
-			struct i8253_timer *timer = timers + mode.SC;
-
-			if (mode.RL == 0)
+			union i8253_mode mode = {data};
+			if (mode.SC != 3)
 			{
-				if (timer->mode.RL != 3 || timer->bLow)
+				struct i8253_timer *timer = timers + mode.SC;
+
+				if (mode.RL == 0)
 				{
-					timer->latch = count(timer, clock + timer->clk);
-					timer->bLatch = TRUE;
+					if (timer->mode.RL != 3 || timer->bLow)
+					{
+						timer->latch = count(timer, clock + timer->clk);
+						timer->bLatch = TRUE;
+					}
 				}
-			}
-			else
-			{
-				timer->count = count(timer, clock + timer->clk);
-
-				if (timer->mode.BCD)
+				else
 				{
-					if (mode.BCD == 0)
-						timer->count = ((timer->count / 1000 % 10) << 12) | ((timer->count / 100 % 10) << 8) | ((timer->count / 10 % 10) << 4) | (timer->count % 10);
+					timer->count = count(timer, clock + timer->clk);
+
+					if (timer->mode.BCD)
+					{
+						if (mode.BCD == 0)
+							timer->count = ((timer->count/1000%10) << 12) | ((timer->count/100%10) << 8)
+								| ((timer->count/10%10) << 4) | (timer->count%10);
+					}
+					else if (mode.BCD)
+						timer->count = (timer->count >> 12)*1000 + ((timer->count & 0xF00) >> 8)*100
+							+ ((timer->count & 0xF0) >> 4)*10 + (timer->count & 0xF);
+
+					timer->mode = mode;
+
+					timer->bLow = mode.RL != 2;
+					timer->bLatch = FALSE;
+
+					timer->reloadHi = 0;
+					timer->reloadLo = 0;
+					timer->zero = 0;
+
+					change_output(self, timer, mode.MODE != 0, clock);
+
+					if (rkmode && mode.SC == 1)
+						timers[2].clk = 9;
 				}
-				else if (mode.BCD)
-					timer->count = (timer->count >> 12) * 1000 + ((timer->count & 0xF00) >> 8) * 100 + ((timer->count & 0xF0) >> 4) * 10 + (timer->count & 0xF);
-
-				timer->mode = mode;
-
-				timer->bLow = mode.RL != 2;
-				timer->bLatch = FALSE;
-
-				timer->reloadHi = 0;
-				timer->reloadLo = 0;
-				timer->zero = 0;
-
-				change_output(self, timer, mode.MODE != 0, clock);
-
-				if (rkmode && mode.SC == 1)
-					timers[2].clk = 9;
-			}
-		}
-	}
-	else
-	{
-		struct i8253_timer *timer = timers + (addr & 3);
-
-		if (timer->mode.RL == 3 && timer->bLow)
-		{
-			timer->latch = ((0xFF - data) << 8) | data;
-
-			timer->bLatch = TRUE;
-			timer->bLow = FALSE;
-
-			if (timer->mode.MODE == 0)
-			{
-				change_output(self, timer, FALSE, clock + timer->clk);
-
-				timer->count = count(timer, clock + timer->clk);
-				timer->zero = 0;
 			}
 		}
 		else
 		{
-			if ((timer->mode.MODE == 1 || timer->mode.MODE == 5) && (timer->zero == 0))
-				timer->zero = clock + (uint64_t) (timer->count + 3) * timer->clk;
+			struct i8253_timer *timer = timers + (addr & 3);
 
-			if (timer->mode.RL == 3)
+			if (timer->mode.RL == 3 && timer->bLow)
 			{
-				timer->count = (data << 8) | (timer->latch & 0xFF);
+				timer->latch = ((0xFF - data) << 8) | data;
 
-				timer->bLatch = FALSE;
-				timer->bLow = TRUE;
+				timer->bLatch = TRUE;
+				timer->bLow = FALSE;
+
+				if (timer->mode.MODE == 0)
+				{
+					change_output(self, timer, FALSE, clock + timer->clk);
+
+					timer->count = count(timer, clock + timer->clk);
+					timer->zero = 0;
+				}
 			}
-
-			else if (timer->mode.RL == 2)
-			{
-				timer->count = data << 8;
-			}
-
 			else
 			{
-				timer->count = data;
-			}
+				if ((timer->mode.MODE == 1 || timer->mode.MODE == 5) && (timer->zero == 0))
+					timer->zero = clock + (uint64_t) (timer->count + 3)*timer->clk;
 
-			if (timer->mode.BCD)
-				timer->count = (timer->count >> 12) * 1000 + ((timer->count & 0xF00) >> 8) * 100 + ((timer->count & 0xF0) >> 4) * 10 + (timer->count & 0xF);
+				if (timer->mode.RL == 3)
+				{
+					timer->count = (data << 8) | (timer->latch & 0xFF);
 
-			switch (timer->mode.MODE)
-			{
-				case 0:
+					timer->bLatch = FALSE;
+					timer->bLow = TRUE;
+				}
 
-					change_output(self, timer, FALSE, clock);
+				else if (timer->mode.RL == 2)
+				{
+					timer->count = data << 8;
+				}
 
-					timer->zero = clock + (uint64_t) (timer->count ? timer->count + 3 : 0x10003) * timer->clk;
+				else
+				{
+					timer->count = data;
+				}
 
-					if (timer->gate)
-						timer->reload = timer->zero;
+				if (timer->mode.BCD)
+					timer->count =
+						(timer->count >> 12)*1000 + ((timer->count & 0xF00) >> 8)*100 + ((timer->count & 0xF0) >> 4)*10
+							+ (timer->count & 0xF);
 
-					break;
+				switch (timer->mode.MODE)
+				{
+					case 0:
 
-				case 1:
+						change_output(self, timer, FALSE, clock);
 
-					timer->reloadLo = (uint64_t) (timer->count ? timer->count : 0x10000) * timer->clk;
-					break;
-
-				case 2:
-				case 6:
-
-					timer->reloadHi = (uint64_t) (timer->count ? timer->count - 1 : timer->mode.BCD ? 9999 : 0xFFFF) * timer->clk;
-					timer->reloadLo = timer->clk;
-
-					if (timer->zero == 0)
-					{
-						timer->zero = clock + timer->clk * 3 + timer->reloadHi;
-
-						if (timer->gate)
-							timer->reload = timer->zero;
-					}
-
-					break;
-
-				case 3:
-				case 7:
-
-					timer->reloadLo = (uint64_t) (timer->count > 1 ? timer->count >> 1 : timer->mode.BCD ? 5000 : 0x8000) * timer->clk;
-					timer->reloadHi = timer->reloadLo + (timer->count & 1) * timer->clk;
-
-					if (timer->zero == 0)
-					{
-						timer->zero = clock + timer->clk * 3 + timer->reloadHi;
+						timer->zero = clock + (uint64_t) (timer->count ? timer->count + 3 : 0x10003)*timer->clk;
 
 						if (timer->gate)
 							timer->reload = timer->zero;
-					}
 
-					break;
+						break;
 
-				case 4:
+					case 1:
 
-					timer->zero = clock + (uint64_t) ((timer->count ? timer->count : timer->mode.BCD ? 10000 : 0x10000) + 3) * timer->clk;
-					timer->reloadLo = timer->clk;
+						timer->reloadLo = (uint64_t) (timer->count ? timer->count : 0x10000)*timer->clk;
+						break;
 
-					if (timer->gate)
-						timer->reload = timer->zero;
+					case 2:
+					case 6:
 
-					break;
+						timer->reloadHi =
+							(uint64_t) (timer->count ? timer->count - 1 : timer->mode.BCD ? 9999 : 0xFFFF)*timer->clk;
+						timer->reloadLo = timer->clk;
 
-				case 5:
+						if (timer->zero == 0)
+						{
+							timer->zero = clock + timer->clk*3 + timer->reloadHi;
 
-					timer->reloadLo = (uint64_t) (timer->count ? timer->count : 0x10000) * timer->clk;
+							if (timer->gate)
+								timer->reload = timer->zero;
+						}
 
-					break;
-					
-			}
+						break;
 
-			if (rkmode && timer->mode.SC == 1 && (timer->mode.MODE == 2 || timer->mode.MODE == 3))
-			{
-				timers[2].clk = (uint32_t) (timer->reloadHi + timer->reloadLo);
+					case 3:
+					case 7:
+
+						timer->reloadLo =
+							(uint64_t) (timer->count > 1 ? timer->count >> 1 : timer->mode.BCD ? 5000 : 0x8000)
+								*timer->clk;
+						timer->reloadHi = timer->reloadLo + (timer->count & 1)*timer->clk;
+
+						if (timer->zero == 0)
+						{
+							timer->zero = clock + timer->clk*3 + timer->reloadHi;
+
+							if (timer->gate)
+								timer->reload = timer->zero;
+						}
+
+						break;
+
+					case 4:
+
+						timer->zero = clock
+							+ (uint64_t) ((timer->count ? timer->count : timer->mode.BCD ? 10000 : 0x10000) + 3)
+								*timer->clk;
+						timer->reloadLo = timer->clk;
+
+						if (timer->gate)
+							timer->reload = timer->zero;
+
+						break;
+
+					case 5:
+
+						timer->reloadLo = (uint64_t) (timer->count ? timer->count : 0x10000)*timer->clk;
+
+						break;
+
+				}
+
+				if (rkmode && timer->mode.SC == 1 && (timer->mode.MODE == 2 || timer->mode.MODE == 3))
+				{
+					timers[2].clk = (uint32_t) (timer->reloadHi + timer->reloadLo);
+				}
 			}
 		}
 	}
 }
 
-// -----------------------------------------------------------------------------
 // Управление вход gate 2 для Микроши
-// -----------------------------------------------------------------------------
-
-- (void) setGate2:(BOOL)gate clock:(uint64_t)clock
+- (void)setGate2:(BOOL)gate clock:(uint64_t)clock
 {
 	change_gate(self, timers + 2, gate, clock);
 }
 
-// -----------------------------------------------------------------------------
 // Динамик на EI/DI для Радио-86РК/Орион-128
-// -----------------------------------------------------------------------------
-
-- (void) INTE:(BOOL)IF clock:(uint64_t)clock
+- (void)INTE:(BOOL)IF clock:(uint64_t)clock
 {
 	change_output(self, timers + 3, !IF, clock);
 }
 
-// -----------------------------------------------------------------------------
 // Динамик на бите одного из порта
-// -----------------------------------------------------------------------------
-
-- (void) setBeeper:(BOOL)beeper clock:(uint64_t)clock
+- (void)setBeeper:(BOOL)beeper clock:(uint64_t)clock
 {
 	change_output(self, timers + 3, !beeper, clock);
 }
 
-// -----------------------------------------------------------------------------
-// "Пищалка" для Партнер 01.01
-// -----------------------------------------------------------------------------
+- (void)setOutput:(BOOL)output clock:(uint64_t)clock
+{
+	change_output(self, timers + 4, !output, clock);
+}
 
-- (void) setTone:(unsigned)tone clock:(uint64_t)clock
+// "Пищалка" для Партнер 01.01
+- (void)setTone:(unsigned)tone clock:(uint64_t)clock
 {
 	if (tone)
 	{
@@ -543,28 +536,23 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 	}
 }
 
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
+- (void)setChannel0:(BOOL)channel0 { timers[0].enable = channel0; }
+- (void)setChannel1:(BOOL)channel1 { timers[1].enable = channel1; }
+- (void)setChannel2:(BOOL)channel2 { timers[2].enable = channel2; }
 
-- (void) setChannel0:(BOOL)channel0 { timers[0].enable = channel0; }
-- (void) setChannel1:(BOOL)channel1 { timers[1].enable = channel1; }
-- (void) setChannel2:(BOOL)channel2 { timers[2].enable = channel2; }
-
-- (BOOL) channel0 { return timers[0].enable; }
-- (BOOL) channel1 { return timers[1].enable; }
-- (BOOL) channel2 { return timers[2].enable; }
+- (BOOL)channel0 { return timers[0].enable; }
+- (BOOL)channel1 { return timers[1].enable; }
+- (BOOL)channel2 { return timers[2].enable; }
 
 @synthesize rkmode;
 
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
-
-- (id) init
+- (id)init
 {
 	if (self = [super init])
 	{
+		enabled = TRUE;
+		rkmode = FALSE;
+
 		timers[0].zero = timers[1].zero = timers[2].zero = random();
 		timers[0].clk = timers[1].clk = timers[2].clk = 9;
 
@@ -577,46 +565,62 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 		timers[1].output = 1;
 		timers[2].output = 1;
 		timers[3].output = 1;
+		timers[4].output = 1;
 
 		timers[3].enable = 1;
+		timers[4].enable = 1;
+
 	}
 
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
+- (void)encodeWithCoder:(NSCoder *)coder
 {
-	[encoder encodeObject:[NSData dataWithBytes:&timers length:sizeof(timers)] forKey:[NSString stringWithUTF8String:@encode(struct i8253_timer)]];
-	[encoder encodeBool:self.rkmode forKey:@"rkmode"];
+	[coder encodeBool:self.enabled forKey:@"enabled"];
+	[coder encodeBool:self.rkmode forKey:@"rkmode"];
+
+	[coder encodeObject:[NSData dataWithBytes:&timers length:sizeof(timers)]
+				   forKey:[NSString stringWithUTF8String:@encode(struct i8253_timer)]];
 }
 
-- (id) initWithCoder:(NSCoder *)decoder
+- (id)initWithCoder:(NSCoder *)coder
 {
 	if (self = [super init])
 	{
+		self.enabled = [coder decodeBoolForKey:@"enabled"];
+		self.rkmode = [coder decodeBoolForKey:@"rkmode"];
+
 		NSData *data;
 
-		if ((data = [decoder decodeObjectForKey:[NSString stringWithUTF8String:@encode(struct i8253_timer)]]) == nil)
+		if ((data = [coder decodeObjectForKey:[NSString stringWithUTF8String:@encode(struct i8253_timer)]]) == nil)
 			return self = nil;
 
 		[data getBytes:&timers];
-
-		self.rkmode = [decoder decodeBoolForKey:@"rkmode"];
 	}
 
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
+	if (menuItem.action == @selector(VI53:))
+	{
+		menuItem.state = self.enabled;
+		menuItem.hidden = FALSE;
+		return YES;
+	}
+
+	return [super validateMenuItem:menuItem];
+}
+
+- (IBAction)VI53:(id)sender
+{
+	self.enabled = !self.enabled;
+}
 
 #ifdef DEBUG
-- (void) dealloc
+- (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
 }

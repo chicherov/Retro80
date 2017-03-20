@@ -131,8 +131,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 
 		if ([fileExt isEqualToString:@"wav"])
 		{
-			[self.snd.sound stop];
-			[self.snd.sound start:panel.URLs.firstObject];
+			[self.snd.sound openWave:panel.URLs.firstObject];
 		}
 
 		else if ((self.buffer = [NSData dataWithContentsOfURL:panel.URLs.firstObject]))

@@ -10,6 +10,12 @@
 #import "x8080.h"
 #import "Debug.h"
 
-@interface Dbg80 : NSObject <Debug>
+@interface Dbg80 : NSObject <DebugDelegate>
+@property(nonatomic, assign) Debug *debug;
+@property(nonatomic, assign) X8080 *cpu;
+- (void)run;
+
++ (instancetype)dbg80WithDebug:(Debug *)debug;
+- (instancetype)initWithDebug:(Debug *)debug;
 
 @end

@@ -1,19 +1,16 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Контроллер дисплея ПЭВМ «Микро-80»
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
+#import "Display.h"
 #import "mem.h"
 
-@interface Micro80Screen : RAM <CRT>
-
-- (void) setMem:(MEM *)mem;
-
-@property NSData *font;
-
+@interface Micro80Screen : RAM<CRT, TextScreen>
+- (void)setMem:(MEM *)mem;
 @end

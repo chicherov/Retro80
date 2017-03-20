@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  КР1818ВГ93
 
@@ -37,6 +37,8 @@
 	unsigned pos;
 	uint8_t *ptr;
 }
+
+@synthesize enabled;
 
 @synthesize selected;
 @synthesize head;
@@ -398,7 +400,10 @@
 						DIRC = (command.code & 2) == 0;
 
 					else if (command.code == 0)
-						cylinder = 255, shift = 0;
+					{
+						cylinder = 255;
+						shift = 0;
+					}
 
 					[self step];
 				}
@@ -687,6 +692,7 @@
 	if (self = [super init])
 	{
 		ms = (ms200 = quartz / 5) / 200; DRQ = -1;
+		enabled = TRUE;
 	}
 
 	return self;
@@ -699,6 +705,8 @@
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:ms200 * 5 forKey:@"quartz"];
+	[encoder encodeBool:enabled forKey:@"enabled"];
+
 	[encoder encodeObject:URLs[0] forKey:@"urlA"];
 	[encoder encodeObject:URLs[1] forKey:@"urlB"];
 	[encoder encodeObject:URLs[2] forKey:@"urlC"];
@@ -718,10 +726,12 @@
 	[encoder encodeInt:shift forKey:@"shift"];
 }
 
-- (id) initWithCoder:(NSCoder *)decoder
+- (instancetype) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [self initWithQuartz:[decoder decodeIntForKey:@"quartz"]])
 	{
+		enabled = [decoder decodeBoolForKey:@"enabled"];
+
 		URLs[0] = [decoder decodeObjectForKey:@"urlA"];
 		URLs[1] = [decoder decodeObjectForKey:@"urlB"];
 		URLs[2] = [decoder decodeObjectForKey:@"urlC"];
@@ -744,9 +754,91 @@
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
+	if (menuItem.action == @selector(floppy:))
+	{
+		menuItem.hidden = menuItem.tag < 1 || menuItem.tag > 4;
+
+		switch (menuItem.tag)
+		{
+			case 1:
+			case 2:
+			{
+				menuItem.hidden = false;
+				break;
+			}
+
+			case 3:
+			case 4:
+			{
+				menuItem.hidden = menuItem.tag == ([self.computer isKindOfClass:NSClassFromString(@"Partner")] ? 3 : 4);
+				menuItem.state = self.isEnabled;
+				return !self.busy;
+			}
+
+			default:
+			{
+				menuItem.hidden = true;
+				menuItem.state = FALSE;
+				return NO;
+			}
+
+		}
+
+		NSURL *url = [self getDisk:menuItem.tag];
+
+		if ((menuItem.state = url != nil))
+			menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingFormat:@": %@", url.lastPathComponent];
+		else
+			menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingString:@":"];
+
+		return self.isEnabled && (menuItem.tag != selected || !self.busy);
+	}
+
+	return NO;
+}
+
+- (IBAction)floppy:(NSMenuItem *)menuItem;
+{
+	if (menuItem.tag == 3 || menuItem.tag == 4)
+	{
+		@synchronized(self.computer)
+		{
+			[self.computer registerUndoWithMenuItem:menuItem];
+			self.enabled = self.isEnabled ? self.busy : TRUE;
+		}
+	}
+
+	else if ((menuItem.tag == 1 || menuItem.tag == 2) && self.isEnabled)
+	{
+		NSOpenPanel *panel = [NSOpenPanel openPanel];
+
+		panel.allowedFileTypes = [self.computer isKindOfClass:NSClassFromString(@"Partner")] ? @[@"cpm"] : @[@"odi", @"kdi", @"cpm"];
+		panel.canChooseDirectories = FALSE;
+		panel.title = menuItem.title;
+
+		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		{
+			@synchronized(self.computer)
+			{
+				[self.computer registerUndoWithMenuItem:menuItem];
+				[self setDisk:menuItem.tag URL:panel.URLs.firstObject];
+			}
+		}
+		else
+		{
+			@synchronized(self)
+			{
+				if ([self getDisk:0] != nil)
+				{
+					[self.computer registerUndoWithMenuItem:menuItem];
+					[self setDisk:menuItem.tag URL:nil];
+				}
+			}
+		}
+	}
+}
 
 #ifdef DEBUG
 - (void) dealloc

@@ -1,17 +1,17 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Клавиатура ПЭВМ «Микроша»
 
  *****/
 
-#import "MicroshaKeyboard.h"
+#import "Microsha.h"
 
 @implementation MicroshaKeyboard
 
-- (void) keyboardInit
+- (void)keyboardInit
 {
     [super keyboardInit];
 
@@ -34,22 +34,26 @@
                @49,  @53,  @48,  @76,  @36,  @117, @123, @124
                ];
 
-    chr1Map = @"XYZ[\\]^_PQRSTUVWHIJKLMNO@ABCDEFG89:;,-./01234567 \x1B\t\x03\r";
-    chr2Map = @"ЬЫЗШЭЩЧ\x7FПЯРСТУЖВХИЙКЛМНОЮАБЦДЕФГ()*+<=>? !\"#$%&' \x1B\t\x03\r";
+	chr1Map = @"XYZ[\\]^_PQRSTUVWHIJKLMNO@ABCDEFG89:;,-./01234567 \x1B\t\x03\r";
+	chr2Map = @"ЬЫЗШЭЩЧ\x7FПЯРСТУЖВХИЙКЛМНОЮАБЦДЕФГ()*+<=>? !\"#$%&' \x1B\t\x03\r";
 
-    RUSLAT = 0x20;
-    SHIFT = 0x80;
+	RUSLAT = 0x20;
+	SHIFT = 0x80;
 }
 
-// -----------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
-- (void) setC:(uint8_t)data
+- (void)setC:(uint8_t)data
 {
-    [self.snd setBeeper:self.snd.channel2 = data & 0x02 clock:current];
-    [self.snd setGate2:data & 0x04 clock:current];
-    
-    [super setC:data];
+	Microsha *microsha = (Microsha *)self.computer;
+	uint64_t clock = microsha.clock;
+	X8253 *snd = microsha.snd;
+
+	[snd setBeeper:data & 0x02 clock:clock];
+	[snd setGate2:data & 0x04 clock:clock];
+	snd.channel2 = data & 0x02;
+
+	[super setC:data];
 }
 
 @end
-

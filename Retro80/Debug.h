@@ -1,38 +1,26 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+
+ Панель отладчика
 
  *****/
 
-// -----------------------------------------------------------------------------
-// Панель отладчика
-// -----------------------------------------------------------------------------
+@class Debug;
 
-@interface Debug : NSObject
-
-@property (weak) IBOutlet Document* document;
-
-@property IBOutlet NSTextView *textView;
-@property IBOutlet NSPanel *panel;
-
-- (IBAction) debug:(id)sender;
-
-- (void) print:(NSString *)format, ...;
-- (void) flush;
-- (void) clear;
-
+@protocol DebugDelegate
+- (BOOL)Debugger:(NSString *)command;
 @end
 
-// -----------------------------------------------------------------------------
-// Протокол отладчика
-// -----------------------------------------------------------------------------
+@interface Debug : NSResponder <NSTextViewDelegate, NSWindowDelegate>
 
-@protocol Debug
+@property(nonatomic, strong) NSObject <DebugDelegate> *delegate;
 
-- (BOOL) Debugger:(NSString *)command;
+- (void)print:(NSString *)format, ...;
+- (void)flush;
+- (void)clear;
 
-- (void) attach:(NSObject<CPU> *)cpu
-		  debug:(Debug *)debug;
+- (void)run;
 
 @end

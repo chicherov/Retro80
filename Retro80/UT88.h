@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «ЮТ-88»
 
@@ -14,27 +14,23 @@
 #import "UT88Screen.h"
 #import "UT88System.h"
 
-// -----------------------------------------------------------------------------
-// ПЭВМ «ЮТ-88»
-// -----------------------------------------------------------------------------
+@interface UT88 : Retro80
 
-@interface UT88: Computer
+@property(strong, nonatomic) UT88Screen *crt;
+@property(strong, nonatomic) X8253 *snd;
 
-@property X8080 *cpu;
+@property(strong, nonatomic) UT88Keyboard *kbd;
+@property(strong, nonatomic) RKSDCard *ext;
 
-@property ROM *monitor0;
-@property ROM *monitorF;
-@property RAM *ram;
+@property(strong, nonatomic) ROM *monitor0;
+@property(strong, nonatomic) ROM *monitorF;
 
-@property UT88Keyboard *kbd;
-@property UT88Screen *crt;
+@property(strong, nonatomic) UT88System *sys;
 
-@property UT88System *sys;
+@property(strong, nonatomic) F806 *inpHook;
+@property(strong, nonatomic) F80C *outHook;
 
-@property ROMDisk *ext;
-@property X8253 *snd;
-
-@property F806 *inpHook;
-@property F80C *outHook;
+- (instancetype)initWithData:(NSData *)data;
+- (instancetype)init;
 
 @end

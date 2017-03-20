@@ -7,7 +7,7 @@
 
  *****/
 
-#import "X8275.h"
+#import "x8275.h"
 
 @implementation X8275
 {
@@ -372,7 +372,19 @@ static uint32_t foreground[] =
 					if (status.VE)
 					{
 						row = 0; rowTimer = clock + rowClock + 24 - clock % 12;
-						[self.display blank];
+						rowTimer += rowClock * (config.R + config.V + 2) * 2;
+						dmaTimer = -1; bpos = 0;
+
+						bitmap[0] = [self.display setupTextWidth:config.H + 1
+														  height:config.R + 1
+															  cx:6
+															  cy:config.L + 1
+													  textScreen:self];
+
+						memset(screen, -1, sizeof(screen));
+						bitmap[1] = NULL;
+
+						[self.display draw:TRUE];
 					}
 
 					break;
@@ -585,7 +597,8 @@ static uint32_t foreground[] =
 								bitmap[0] = [self.display setupTextWidth:config.H + 1
 																  height:config.R + 1
 																	  cx:6
-																	  cy:config.L + 1];
+																	  cy:config.L + 1
+															  textScreen:self];
 
 								bitmap[1] = NULL;
 							}
@@ -596,7 +609,7 @@ static uint32_t foreground[] =
 							}
 						}
 
-						uint32_t b0 = colors ? colors[0x0F & attrMask] : /*fonts == NULL && ch.H ? 0xFF555555 :*/ 0xFF000000;
+						uint32_t b0 = /*colors ? colors[0x0F & attrMask] :*/ /*fonts == NULL && ch.H ? 0xFF555555 :*/ 0xFF000000;
 						uint32_t b1 = colors ? colors[ch.attr & 0x0F] : fonts == NULL && ch.H ? 0xFFFFFFFF : 0xFFAAAAAA;
 
 						if (page)
@@ -752,7 +765,7 @@ static uint32_t foreground[] =
 // Copy to pasteboard
 // -----------------------------------------------------------------------------
 
-- (unichar) charAtX:(unsigned int)x Y:(unsigned int)y
+- (unichar)unicharAtX:(unsigned)x Y:(unsigned)y
 {
 	NSString *unicode = nil; if (fonts)
 	{

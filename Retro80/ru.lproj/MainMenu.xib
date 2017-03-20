@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11762" systemVersion="16D32" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="13771" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11762"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="13771"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
+        <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
+            <connections>
+                <outlet property="delegate" destination="7PA-cd-xni" id="hpK-Cp-0Lj"/>
+            </connections>
+        </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customObject id="Ro2-68-5SS" customClass="DocumentController">
@@ -13,6 +17,7 @@
                 <outlet property="menuNew" destination="Was-JA-tGl" id="ugE-AR-Sd0"/>
             </connections>
         </customObject>
+        <customObject id="7PA-cd-xni" customClass="ApplicationDelegate"/>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
             <items>
                 <menuItem title="Retro80" id="1Xt-HY-uBw">
@@ -66,43 +71,43 @@
                             <menuItem title="Новый" tag="-1" id="Was-JA-tGl">
                                 <menu key="submenu" title="Новый" id="nth-Ep-RR1">
                                     <items>
-                                        <menuItem title="Радио-86РК" tag="100" id="rt9-UG-Sp7">
+                                        <menuItem title="Радио-86РК" tag="101" id="rt9-UG-Sp7">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="newDocument:" target="-1" id="2Fc-03-Hjg"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Микроша" tag="200" id="2cJ-rk-mDg">
+                                        <menuItem title="Микроша" tag="102" id="2cJ-rk-mDg">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="newDocument:" target="-1" id="gI9-cb-r1d"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="pYs-TD-3oO"/>
-                                        <menuItem title="Партнер 01.01" tag="300" id="rEJ-vM-cVZ">
+                                        <menuItem title="Партнер 01.01" tag="103" id="rEJ-vM-cVZ">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="newDocument:" target="-1" id="RV9-zl-Yxi"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Апогей БК-01" tag="400" id="8Nv-Re-Yvi">
+                                        <menuItem title="Апогей БК-01" tag="104" id="8Nv-Re-Yvi">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="newDocument:" target="-1" id="079-Ul-r87"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="Vjz-mJ-sxq"/>
-                                        <menuItem title="Микро-80" tag="501" id="icv-w3-YhX">
+                                        <menuItem title="Микро-80" tag="201" id="icv-w3-YhX">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <menu key="submenu" title="Микро-80" id="sRy-Ed-2sG">
                                                 <items>
-                                                    <menuItem title="Оригинальный монитор" tag="501" id="w0W-To-G4c">
+                                                    <menuItem title="Оригинальный монитор" tag="201" id="w0W-To-G4c">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="9VT-gG-e0j"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Монитор М/80К" tag="502" id="Vct-S7-dDx">
+                                                    <menuItem title="Монитор М/80К" tag="202" id="Vct-S7-dDx">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="cmJ-Zx-0pb"/>
@@ -114,55 +119,68 @@
                                                 <action selector="newDocument:" target="-1" id="Tv6-Pc-iKZ"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="ЮТ-88" tag="600" id="fMK-1j-gIa">
+                                        <menuItem title="ЮТ-88" tag="203" id="fMK-1j-gIa">
                                             <modifierMask key="keyEquivalentModifierMask"/>
                                             <connections>
                                                 <action selector="newDocument:" target="-1" id="KcG-aJ-gK0"/>
                                             </connections>
                                         </menuItem>
                                         <menuItem isSeparatorItem="YES" id="fnW-PB-uZi"/>
-                                        <menuItem title="Специалист" tag="702" id="WWR-0m-SAz">
+                                        <menuItem title="Специалист" tag="302" id="WWR-0m-SAz">
                                             <menu key="submenu" title="Специалист" id="fF1-uw-Lev">
                                                 <items>
-                                                    <menuItem title="Монитор-1 (Оригинальный)" tag="701" id="SbK-oG-lvm">
+                                                    <menuItem title="Монитор-1 (Оригинальный)" tag="301" id="SbK-oG-lvm">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="G1g-Yn-Eqh"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Монитор-2 (Расширенный)" tag="702" id="U44-Wz-dtl">
+                                                    <menuItem title="Монитор-2 (Расширенный)" tag="302" id="U44-Wz-dtl">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="zJ5-A0-TZq"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Монитор ПЭВМ «ЛИК»" tag="703" id="Voe-0z-NGZ">
+                                                    <menuItem title="Монитор ПЭВМ «ЛИК»" tag="303" id="Voe-0z-NGZ">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="n8a-VL-Apa"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Монитор SP580" tag="704" id="35P-XU-DCq">
+                                                    <menuItem title="Монитор SP580" tag="304" id="35P-XU-DCq">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="iqF-5a-x7M"/>
                                                         </connections>
                                                     </menuItem>
+                                                    <menuItem isSeparatorItem="YES" id="5fO-mT-lT7"/>
+                                                    <menuItem title="Монитор 2.7 (Ленинград-90)" tag="305" id="If4-Pd-tXd">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="Xhw-MP-skX"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Монитор 3.3 (Ленинград-91)" tag="306" id="shb-zk-lBx">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="O4Z-IC-e6n"/>
+                                                        </connections>
+                                                    </menuItem>
                                                     <menuItem isSeparatorItem="YES" id="cvM-HV-Bqh"/>
-                                                    <menuItem title="Специалист MX (Commander)" tag="705" id="zSe-XL-URC">
+                                                    <menuItem title="Специалист MX (RAMFOS)" tag="311" id="zSe-XL-URC">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="94k-Bk-zxG"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Специалист MX (RAMFOS)" tag="706" id="0Qe-Zh-4W1">
+                                                    <menuItem title="Специалист MX (MXOS)" tag="312" id="0Qe-Zh-4W1">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="pj3-0h-ect"/>
                                                         </connections>
                                                     </menuItem>
                                                     <menuItem isSeparatorItem="YES" id="Ccr-Xy-O3v"/>
-                                                    <menuItem title="Специалист MX2" tag="707" id="5Go-Iz-ulo">
+                                                    <menuItem title="Специалист MX2" tag="313" id="5Go-Iz-ulo">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="WIy-G3-ITx"/>
@@ -174,46 +192,46 @@
                                                 <action selector="newDocument:" target="-1" id="maO-WM-l8u"/>
                                             </connections>
                                         </menuItem>
-                                        <menuItem title="Орион-128" tag="802" id="Ccq-IT-d59">
+                                        <menuItem title="Орион-128" tag="402" id="Ccq-IT-d59">
                                             <modifierMask key="keyEquivalentModifierMask"/>
-                                            <menu key="submenu" id="3x4-G2-qWR">
+                                            <menu key="submenu" title="Орион-128" id="3x4-G2-qWR">
                                                 <items>
-                                                    <menuItem title="Монитор-1 (Отладочный)" tag="801" id="r0P-gK-ggw">
+                                                    <menuItem title="Монитор-1 (Отладочный)" tag="401" id="r0P-gK-ggw">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="zbg-Y1-wxT"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Монитор-2 (Основной)" tag="802" id="g34-yW-Xs8">
+                                                    <menuItem title="Монитор-2 (Основной)" tag="402" id="g34-yW-Xs8">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="bVC-mN-f86"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem title="Монитор 3.1" tag="803" id="q5j-k5-nIg">
+                                                    <menuItem title="Монитор-3" tag="403" id="q5j-k5-nIg">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="nCL-0I-0yA"/>
                                                         </connections>
                                                     </menuItem>
                                                     <menuItem isSeparatorItem="YES" id="EX0-9G-MKk"/>
-                                                    <menuItem title="Z80Card V3.2" tag="804" id="4yQ-Xm-KMS">
+                                                    <menuItem title="Z80Card V3.1" tag="404" id="4yQ-Xm-KMS">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="GVj-JX-ahj"/>
                                                         </connections>
                                                     </menuItem>
-                                                    <menuItem isSeparatorItem="YES" id="Y9B-Nq-j4f"/>
-                                                    <menuItem title="Z80Card-II (монитор 3.2)" tag="805" id="Zt8-Tv-QCT">
+                                                    <menuItem title="Z80Card V3.2" tag="405" id="NZz-SA-8Z1">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="Atq-bQ-QLE"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem isSeparatorItem="YES" id="TMt-5C-eAF"/>
+                                                    <menuItem title="Z80Card-II" tag="406" id="Zt8-Tv-QCT">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="TUt-9j-J79"/>
-                                                        </connections>
-                                                    </menuItem>
-                                                    <menuItem title="Z80Card-II (монитор 3.3)" tag="806" id="Pl2-9r-nbY">
-                                                        <modifierMask key="keyEquivalentModifierMask"/>
-                                                        <connections>
-                                                            <action selector="newDocument:" target="-1" id="f7y-Mt-3jb"/>
                                                         </connections>
                                                     </menuItem>
                                                 </items>
@@ -285,6 +303,12 @@
                                     <action selector="qwerty:" target="-1" id="vq2-rF-akY"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Раскладка для RAMFOS" id="kQg-B7-Ylv">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="ramfos:" target="-1" id="ZEA-QO-3Sz"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Перехват вывода на ленту" id="YDb-Gz-iEX">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
@@ -298,10 +322,50 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="4lE-Wa-aOw"/>
-                            <menuItem title="Модуль цветности" id="wQj-w4-Ogq">
+                            <menuItem title="Контроллер цвета" id="wQj-w4-Ogq">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="colorModule:" target="-1" id="mx0-Vp-lOn"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Контроллер цвета" tag="1" id="0cm-Om-1bh">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <menu key="submenu" title="Контроллер цвета" id="Sv4-Hi-OCC">
+                                    <items>
+                                        <menuItem title="Схема Толкалина" tag="2" id="ZBA-aT-Uug">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="colorModule:" target="-1" id="83t-oG-WNO"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="Схема Акименко" tag="3" id="rJA-bN-63Y">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="colorModule:" target="-1" id="Wsz-4L-qIL"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="8-ми цветный" tag="8" id="CBC-5Z-2wO">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="colorModule:" target="-1" id="rJh-5L-Kfu"/>
+                                            </connections>
+                                        </menuItem>
+                                        <menuItem title="5-ти цветный" tag="5" id="200-m8-uSP">
+                                            <modifierMask key="keyEquivalentModifierMask"/>
+                                            <connections>
+                                                <action selector="colorModule:" target="-1" id="ps1-ON-SEP"/>
+                                            </connections>
+                                        </menuItem>
+                                    </items>
+                                </menu>
+                                <connections>
+                                    <action selector="colorModule:" target="-1" id="u59-ui-xpU"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Модуль цветной псевдографический «Партнер 01.61»" tag="4" id="qKq-Au-RUY">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="colorModule:" target="-1" id="3dM-vb-kOV"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Модуль НГМД" id="R66-oC-FIQ">
@@ -310,15 +374,33 @@
                                     <action selector="floppy:" target="-1" id="O7L-Vx-HLc"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Контроллер НГМД" tag="3" id="5Ji-cg-iS3">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="floppy:" target="-1" id="rcH-G6-rFD"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="Модуль контроллера дисковода «Партнер 01.51»" tag="4" id="WZd-Po-Yfy">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="floppy:" target="-1" id="RKT-48-Shf"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem title="КР580ВИ53" id="1ea-ev-mnh">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="VI53:" target="-1" id="PTy-Dl-QcF"/>
+                                </connections>
+                            </menuItem>
                             <menuItem title="Модуль ОЗУ" id="vJC-7g-PJH">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="extraMemory:" target="-1" id="4Jx-Mx-6ZC"/>
                                 </connections>
                             </menuItem>
-                            <menuItem title="Модуль ОЗУ" tag="1" id="OWe-9z-FdZ">
+                            <menuItem title="ОЗУ" tag="1" id="OWe-9z-FdZ">
                                 <modifierMask key="keyEquivalentModifierMask"/>
-                                <menu key="submenu" title="Модуль ОЗУ" id="oLs-70-r13">
+                                <menu key="submenu" title="ОЗУ" id="oLs-70-r13">
                                     <items>
                                         <menuItem title="SRAM: 2K" tag="2" id="l5M-Cl-Iye">
                                             <modifierMask key="keyEquivalentModifierMask"/>
@@ -526,12 +608,12 @@
                         <items>
                             <menuItem title="Воспроизвести" keyEquivalent="p" id="ql2-uB-791">
                                 <connections>
-                                    <action selector="playstart:" target="-1" id="hID-XZ-BRO"/>
+                                    <action selector="play:" target="-1" id="hID-XZ-BRO"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Останов" keyEquivalent="." id="QF3-Lz-rPR">
                                 <connections>
-                                    <action selector="playstop:" target="-1" id="Zxk-2Z-5u7"/>
+                                    <action selector="stop:" target="-1" id="Zxk-2Z-5u7"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="ZuV-hw-ZDt"/>

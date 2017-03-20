@@ -1,206 +1,139 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+
+ Базовый класс ретрокомпьютера
 
  *****/
 
-#import "Retro80.h"
+#import "Document.h"
+#import "Computer.h"
+#import "Sound.h"
 
 @implementation Computer
+{
+	NSCondition *condition;
+	NSRunLoop *runLoop;
+	NSTimer *timer;
+}
 
-+ (NSArray<NSString*> *) extensions
+@synthesize quartz;
+
+@dynamic title;
+@dynamic clock;
+
+- (NSObject<Enabled> *)inpHook
 {
 	return nil;
 }
 
-+ (NSString *) title
+- (NSObject<Enabled> *)outHook
 {
 	return nil;
 }
 
-- (void) start
+- (void)registerUndoWithMenuItem:(NSMenuItem *)menuItem
 {
-	[self.snd.sound start];
+	[self.document registerUndo:menuItem.title];
 }
 
-- (void) stop
+- (void)timer:(NSTimer *)theTimer
 {
-	[self.snd.sound stop];
-}
-
-// -----------------------------------------------------------------------------
-// validateMenuItem
-// -----------------------------------------------------------------------------
-
-- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
-{
-	if (menuItem.action == @selector(reset:))
-		return [self.cpu respondsToSelector:@selector(reset)];
-
-	else if (menuItem.action == @selector(outHook:))
+	@synchronized(self)
 	{
-		if (!self.snd.sound.isOutput)
-		{
-            menuItem.state = self.outHook.enabled;
-            return self.outHook != nil;
-		}
-	}
-
-	else if (menuItem.action == @selector(inpHook:))
-	{
-		if (!self.snd.sound.isInput)
-		{
-            menuItem.state = self.inpHook.enabled;
-            return self.inpHook != nil;
-		}
-	}
-
-	else if (menuItem.action == @selector(qwerty:))
-	{
-		menuItem.state = self.kbd.qwerty;
-		return self.kbd != nil;
-	}
-    
-    else if (menuItem.action == @selector(extraMemory:))
-    {
-        menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-
-        menuItem.hidden = menuItem.tag != 0;
-    }
-
-	else if (menuItem.action == @selector(floppy:))
-    {
-        if (menuItem.tag)
-            menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject stringByAppendingString:@":"];
-        else
-            menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-    }
-
-	else if (menuItem.action == @selector(ROMDisk:))
-	{
-        menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-
-        menuItem.hidden = menuItem.tag != 0;
-	}
-
-	else if (menuItem.action == @selector(UT88:))
-		menuItem.hidden = TRUE;
-    
-    menuItem.alternate = FALSE;
-    menuItem.state = FALSE;
-    return NO;
-}
-
-// -----------------------------------------------------------------------------
-
-- (IBAction) colorModule:(id)sender
-{
-}
-
-- (IBAction) extraMemory:(id)sender
-{
-}
-
-- (IBAction) ROMDisk:(id)sender
-{
-}
-
-- (IBAction) floppy:(id)sender
-{
-}
-
-- (IBAction) UT88:(id)sender
-{
-}
-
-// -----------------------------------------------------------------------------
-// qwerty
-// -----------------------------------------------------------------------------
-
-- (IBAction)qwerty:(id)sender
-{
-	self.kbd.qwerty = !self.kbd.qwerty;
-}
-
-// -----------------------------------------------------------------------------
-// reset
-// -----------------------------------------------------------------------------
-
-- (IBAction) reset:(NSMenuItem *)menuItem
-{
-	@synchronized(self.cpu)
-	{
-		[self.document registerUndoWithMenuItem:menuItem];
-		[self.cpu reset];
+		[self execute:self.clock + self.quartz*theTimer.timeInterval];
 	}
 }
 
-// -----------------------------------------------------------------------------
-// хуки
-// -----------------------------------------------------------------------------
-
-- (IBAction) inpHook:(NSMenuItem *)menuItem
+- (BOOL)execute:(uint64_t)clki
 {
-	self.inpHook.enabled = !self.inpHook.enabled;
+	return NO;
 }
 
-- (IBAction) outHook:(NSMenuItem *)menuItem
+- (void)thread
 {
-	self.outHook.enabled = !self.outHook.enabled;
-}
+#ifdef DEBUG
+	NSLog(@"%@ thread start", NSStringFromClass(self.class));
+#endif
 
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
+	[condition lock];
 
-- (BOOL) createObjects
-{
-	return FALSE;
-}
+	runLoop = [NSRunLoop currentRunLoop];
 
-- (BOOL) mapObjects
-{
-	return FALSE;
-}
-
-- (void) encodeWithCoder:(NSCoder *)encoder
-{
-	[encoder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
-	[encoder encodeBool:self.outHook.enabled forKey:@"outHook"];
-}
-
-- (BOOL) decodeWithCoder:(NSCoder *)decoder
-{
-	return TRUE;
-}
-
-- (id) initWithCoder:(NSCoder *)decoder
-{
-	if (self = [super initWithCoder:decoder])
+	if (self.document.inViewingMode || ![self.sound start])
 	{
-		if (![self decodeWithCoder:decoder])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
-		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+		timer = [NSTimer scheduledTimerWithTimeInterval:0.02
+												 target:self
+											   selector:@selector(timer:)
+											   userInfo:nil
+												repeats:YES];
 	}
 
-	return self;
+	[condition signal];
+	[condition unlock];
+
+	while ([runLoop runMode:NSDefaultRunLoopMode
+				 beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]]);
+
+	[condition lock];
+
+	runLoop = nil;
+
+	[condition signal];
+	[condition unlock];
+
+#ifdef DEBUG
+	NSLog(@"%@ thread stop", NSStringFromClass(self.class));
+#endif
 }
 
-- (id) initWithData:(NSData *)data URL:(NSURL *)url
+- (void)start
 {
-	return self = nil;
+	[NSThread detachNewThreadSelector:@selector(thread)
+							 toTarget:self
+						   withObject:self];
+
+	[condition lock];
+
+	while (!runLoop)
+		[condition wait];
+
+	[condition unlock];
 }
 
-- (id) initWithType:(NSInteger)type
+- (void)stop
+{
+	if (timer)
+	{
+		[timer invalidate];
+		timer = nil;
+	}
+	else
+	{
+		[self.sound stop];
+	}
+
+	[condition lock];
+
+	while (runLoop)
+		[condition wait];
+
+	[condition unlock];
+
+#ifdef DEBUG
+	NSLog(@"%@ stop", NSStringFromClass(self.class));
+#endif
+}
+
+- (instancetype)initWithQuartz:(unsigned)value
 {
 	if (self = [super init])
 	{
+		condition = [[NSCondition alloc] init];
+
+		quartz = value;
+
 		if (![self createObjects])
 			return self = nil;
 
@@ -214,12 +147,87 @@
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
+- (instancetype)initWithCoder:(NSCoder *)decoder
+{
+	if (self = [super initWithCoder:decoder])
+	{
+		condition = [[NSCondition alloc] init];
+
+		if (![self decodeWithCoder:decoder])
+			return self = nil;
+
+		if (![self mapObjects])
+			return self = nil;
+
+		self.inpHook.enabled = [decoder decodeBoolForKey:@"inpHook"];
+		self.outHook.enabled = [decoder decodeBoolForKey:@"outHook"];
+	}
+
+	return self;
+}
+
+- (BOOL)decodeWithCoder:(NSCoder *)coder
+{
+	if ((quartz = [coder decodeInt32ForKey:@"quartz"]) == 0)
+		return FALSE;
+	else
+		return TRUE;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+	[coder encodeInt32:quartz forKey:@"quartz"];
+
+	[coder encodeBool:self.inpHook.enabled forKey:@"inpHook"];
+	[coder encodeBool:self.outHook.enabled forKey:@"outHook"];
+}
+
+- (BOOL)createObjects
+{
+	return FALSE;
+}
+
+- (BOOL)mapObjects
+{
+	return FALSE;
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
+	if (menuItem.action == @selector(outHook:))
+	{
+		if (!self.sound.isOutput)
+		{
+			menuItem.state = self.outHook.enabled;
+			return self.outHook != nil;
+		}
+	}
+	else if (menuItem.action == @selector(inpHook:))
+	{
+		if (!self.sound.isInput)
+		{
+			menuItem.state = self.inpHook.enabled;
+			return self.inpHook != nil;
+		}
+	}
+
+	menuItem.alternate = FALSE;
+	menuItem.state = FALSE;
+	return NO;
+}
+
+- (IBAction)inpHook:(NSMenuItem *)menuItem
+{
+	self.inpHook.enabled = !self.inpHook.enabled;
+}
+
+- (IBAction)outHook:(NSMenuItem *)menuItem
+{
+	self.outHook.enabled = !self.outHook.enabled;
+}
 
 #ifdef DEBUG
-- (void) dealloc
+- (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
 }

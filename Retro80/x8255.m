@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Микросхема параллельного интерфейса КР580ВВ55А (8255A)
 
@@ -11,84 +11,57 @@
 
 @implementation X8255
 
-//------------------------------------------------------------------------------
-// @property uint8_t mode
-//------------------------------------------------------------------------------
+@synthesize computer;
 
-- (void) setMode:(uint8_t)data
+- (void)setMode:(uint8_t)data
 {
 	mode.byte = data & 0x7F;
-
-#ifdef DEBUG
-	if (mode.GA)
-		NSLog(@"Group A mode: %d", mode.GA);
-	if (mode.GB)
-		NSLog(@"Group B mode: %d", mode.GB);
-#endif
 
 	A = self.A = 0x00;
 	B = self.B = 0x00;
 	C = self.C = 0x00;
 }
 
-- (uint8_t) mode
+- (uint8_t)mode
 {
 	return mode.byte;
 }
 
-//------------------------------------------------------------------------------
-// @property uint8_t A
-//------------------------------------------------------------------------------
-
-- (void) setA:(uint8_t)data
+- (void)setA:(uint8_t)data
 {
 }
 
-- (uint8_t) A
+- (uint8_t)A
 {
 	return 0xFF;
 }
 
-//------------------------------------------------------------------------------
-// @property uint8_t B
-//------------------------------------------------------------------------------
-
-- (void) setB:(uint8_t)data
+- (void)setB:(uint8_t)data
 {
 }
 
-- (uint8_t) B
+- (uint8_t)B
 {
 	return 0xFF;
 }
 
-//------------------------------------------------------------------------------
-// @property uint8_t C
-//------------------------------------------------------------------------------
-
-- (void) setC:(uint8_t)data
+- (void)setC:(uint8_t)data
 {
 }
 
-- (uint8_t) C
+- (uint8_t)C
 {
 	return 0xFF;
 }
 
-//------------------------------------------------------------------------------
-// RESET/RD/WR
-//------------------------------------------------------------------------------
-
-- (void) RESET:(uint64_t)clock
+- (void)RESET:(uint64_t)clock
 {
-	current = clock; self.mode = 0x1B;
+	self.mode = 0x1B;
 }
 
-//------------------------------------------------------------------------------
-
-- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
+- (void)RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	current = clock; switch (addr & 3)
+	switch (addr & 3)
 	{
 		case 0:
 
@@ -126,11 +99,9 @@
 	}
 }
 
-//------------------------------------------------------------------------------
-
-- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
+- (void)WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
 {
-	current = clock; switch (addr & 3)
+	switch (addr & 3)
 	{
 		case 0:
 
@@ -162,30 +133,19 @@
 		case 2:
 
 			if (!mode.H && !mode.L)
-			{
 				C = self.C = data;
-			}
 
 			else if (!mode.H)
-			{
 				C = self.C = data & 0xF0;
-			}
 
 			else
-			{
 				C = self.C = data & 0x0F;
-			}
 
 			break;
-
 	}
 }
 
-//------------------------------------------------------------------------------
-// Инициализация
-//------------------------------------------------------------------------------
-
-- (id) init
+- (id)init
 {
 	if (self = [super init])
 		[self RESET:0];
@@ -193,37 +153,29 @@
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
+- (void)encodeWithCoder:(NSCoder *)coder
 {
-	[encoder encodeInt:mode.byte forKey:@"mode"];
-	[encoder encodeInt:A forKey:@"A"];
-	[encoder encodeInt:B forKey:@"B"];
-	[encoder encodeInt:C forKey:@"C"];
+	[coder encodeInt:mode.byte forKey:@"mode"];
+	[coder encodeInt:A forKey:@"A"];
+	[coder encodeInt:B forKey:@"B"];
+	[coder encodeInt:C forKey:@"C"];
 }
 
-- (id) initWithCoder:(NSCoder *)decoder
+- (id)initWithCoder:(NSCoder *)coder
 {
-	if (self = [super initWithCoder:decoder])
+	if (self = [super initWithCoder:coder])
 	{
-		mode.byte = [decoder decodeIntForKey:@"mode"];
-		A = [decoder decodeIntForKey:@"A"];
-		B = [decoder decodeIntForKey:@"B"];
-		C = [decoder decodeIntForKey:@"C"];
+		mode.byte = [coder decodeIntForKey:@"mode"];
+		A = [coder decodeIntForKey:@"A"];
+		B = [coder decodeIntForKey:@"B"];
+		C = [coder decodeIntForKey:@"C"];
 	}
 
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
-
 #ifdef DEBUG
-- (void) dealloc
+- (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
 }

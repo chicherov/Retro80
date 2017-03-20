@@ -1,42 +1,37 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Базовый вариант РК86 без ПЗУ и распределения памяти
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
+
 #import "x8275.h"
 #import "x8257.h"
 #import "x8253.h"
+#import "mem.h"
 
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
 
-#import "mem.h"
+@interface RK86Base : Retro80
 
-// -----------------------------------------------------------------------------
+@property(nonatomic, strong) X8275 *crt;
+@property(nonatomic, strong) X8257 *dma;
+@property(nonatomic, strong) X8253 *snd;
 
-@interface RK86Base : Computer
+@property(nonatomic, strong) RKKeyboard *kbd;
+@property(nonatomic, strong) X8255 *ext;
 
-@property X8080 *cpu;
-@property X8275 *crt;
-@property X8257 *dma;
-@property X8253 *snd;
+@property(nonatomic) unsigned colorScheme;
 
-@property RKKeyboard *kbd;
-@property X8255 *ext;
+@property(nonatomic, strong) F806 *inpHook;
+@property(nonatomic, strong) F80C *outHook;
 
-@property ROM *rom;
-@property RAM *ram;
-
-@property F806 *inpHook;
-@property F80C *outHook;
-
-@property BOOL isColor;
+- (instancetype)initWithData:(NSData *)data;
+- (instancetype)init;
 
 @end
-
-// -----------------------------------------------------------------------------

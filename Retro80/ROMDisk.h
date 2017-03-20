@@ -1,24 +1,30 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+
+ ROM-диск
 
  *****/
 
 #import "x8255.h"
 
-@class F806;
-
 @interface ROMDisk : X8255 <NSOpenSavePanelDelegate>
+{
+	uint16_t latch;
+	uint32_t addr;
 
-@property NSData* ROM;
-@property NSURL* URL;
+	NSData *rom;
+	NSURL *URL;
+}
 
-@property (weak) F806 *recorder;
-@property BOOL tapeEmulator;
+@property(nonatomic, readonly) NSData *rom;
+@property(nonatomic, strong) NSURL *URL;
+@property(nonatomic) uint8_t MSB;
 
-@property BOOL specialist;
-@property BOOL flashDisk;
-@property uint8_t MSB;
+- (BOOL)validateDirectory:(NSURL *)url error:(NSError **)outError;
+- (BOOL)validateFile:(NSURL *)url error:(NSError **)outError;
+
+- (IBAction)ROMDisk:(NSMenuItem *)menuItem;
 
 @end

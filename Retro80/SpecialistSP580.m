@@ -1,17 +1,18 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Модификация ПЭВМ «Специалист» с монитором от SP580
 
  *****/
 
 #import "SpecialistSP580.h"
+#import "ROMDisk.h"
 
 @implementation SpecialistSP580
 
-- (BOOL) createObjects
+- (BOOL)createObjects
 {
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistSP580" mask:0x0FFF]) == nil)
 		return FALSE;
@@ -22,6 +23,9 @@
 	if ((self.kbd = [[SpecialistSP580Keyboard alloc] init]) == nil)
 		return FALSE;
 
+	if ((self.ext = [[ROMDisk alloc] init]) == nil)
+		return FALSE;
+
 	if ([super createObjects] == FALSE)
 		return FALSE;
 
@@ -30,8 +34,14 @@
 	return TRUE;
 }
 
-- (BOOL) mapObjects
+- (BOOL)mapObjects
 {
+	self.nextResponder = self.kbd;
+	self.kbd.computer = self;
+
+	self.kbd.nextResponder = self.ext;
+	self.ext.computer = self;
+
 	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
 	[self.cpu mapObject:self.ram from:0x0000 to:0x8FFF];
@@ -43,31 +53,26 @@
 	[self.cpu mapObject:self.kbd from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
-	self.kbd.crt = self.crt;
-	self.kbd.snd = self.snd;
 	return TRUE;
 }
 
 @end
 
-// -----------------------------------------------------------------------------
 // Интерфейс клавиатуры ПЭВМ «Специалист» с монитором от SP580
-// -----------------------------------------------------------------------------
-
 @implementation SpecialistSP580Keyboard
 
-- (void) keyboardInit
+- (void)keyboardInit
 {
 	[super keyboardInit];
 
 	kbdmap = @[
-			   @53,  @48,  @122, @120, @99,  @118, @96,  @97,  @98,  @109, @103, @117,
-			   @10,  @18,  @19,  @20,  @21,  @23,  @22,  @26,  @28,  @25,  @29,  @27,
-			   @12,  @13,  @14,  @15,  @17,  @16,  @32,  @34,  @31,  @35,  @33,  @30,
-			   @0,   @1,   @2,   @3,   @5,   @4,   @38,  @40,  @37,  @41,  @39,  @42,
-			   @6,   @7,   @8,   @9,   @11,  @45,  @46,  @43,  @47,  @44,  @50,  @51,
-			   @999, @115, @126, @125, @48,  @53,  @49,  @123, @111, @124, @76,  @36
-			   ];
+		   @53,  @48,  @122, @120, @99,  @118, @96,  @97,  @98,  @109, @103, @117,
+		   @10,  @18,  @19,  @20,  @21,  @23,  @22,  @26,  @28,  @25,  @29,  @27,
+		   @12,  @13,  @14,  @15,  @17,  @16,  @32,  @34,  @31,  @35,  @33,  @30,
+		   @0,   @1,   @2,   @3,   @5,   @4,   @38,  @40,  @37,  @41,  @39,  @42,
+		   @6,   @7,   @8,   @9,   @11,  @45,  @46,  @43,  @47,  @44,  @50,  @51,
+		   @999, @115, @126, @125, @48,  @53,  @49,  @123, @111, @124, @76,  @36
+		   ];
 
 	chr1Map = @"\x1B\t+1234567890-JCUKENG[]ZH:FYWAPROLDV\\.Q^SMITXB@,/_\0\0\0 \x03\r";
 	chr2Map = @"\x1B\t;!\"#$%&'()\0=ЙЦУКЕНГШЩЗХ*ФЫВАПРОЛДЖЭ>ЯЧСМИТЬБЮ<?\0\0\0\0 \x03\r";

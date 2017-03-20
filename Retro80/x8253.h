@@ -1,30 +1,32 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Микросхема трехканального таймера КР580ВИ53 (8253)
 
  *****/
 
-#import "Sound.h"
-#import "x8080.h"
+#import "Retro80.h"
 
-@interface X8253 : NSObject <SND, RD, WR, INTE, NSCoding>
+@interface X8253 : NSResponder <SND, RD, WR, INTE, Enabled, NSCoding>
 
-@property BOOL channel0;
-@property BOOL channel1;
-@property BOOL channel2;
+@property(nonatomic) BOOL channel0;
+@property(nonatomic) BOOL channel1;
+@property(nonatomic) BOOL channel2;
 
-@property BOOL rkmode;
+@property(nonatomic) BOOL rkmode;
 
-- (void) setGate2:(BOOL)gate
+- (void)setGate2:(BOOL)gate
+		   clock:(uint64_t)clock;
+
+- (void)setBeeper:(BOOL)beeper
 			clock:(uint64_t)clock;
 
-- (void) setBeeper:(BOOL)beeper
-			 clock:(uint64_t)clock;
+- (void)setOutput:(BOOL)output
+			clock:(uint64_t)clock;
 
-- (void) setTone:(unsigned)tone
-		   clock:(uint64_t)clock;
+- (void)setTone:(unsigned)tone
+		  clock:(uint64_t)clock;
 
 @end

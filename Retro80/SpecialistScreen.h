@@ -1,19 +1,19 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Интерфейс графического экрана ПЭВМ «Специалист»
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
 
-@interface SpecialistScreen : NSObject <CRT, WR, NSCoding>
+@interface SpecialistScreen : NSObject<CRT, WR, NSCoding>
 
-@property uint8_t* screen;
+@property(nonatomic) uint8_t *screen;
 
-@property BOOL isColor;
-@property uint8_t color;
+@property(nonatomic) uint8_t color;
+@property(nonatomic) BOOL isColor;
 
 @end

@@ -1,187 +1,140 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  *****/
 
-#import "Retro80.h"
+#import "Document.h"
+#import "Computer.h"
 
-// -----------------------------------------------------------------------------
-// Документ, содержащий тот или иной компьютер
-// -----------------------------------------------------------------------------
+#import "DocumentController.h"
+#import "WindowController.h"
+#import "ComputerFactory.h"
 
 @implementation Document
-{
-	NSInteger lastUndoType;
-	SEL lastUndoAction;
-}
 
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
+@synthesize computer;
 
-- (id) init
+- (id)init
 {
 	if (self = [super init])
-	{
-		self.undoManager.levelsOfUndo = 100;
-	}
+		self.undoManager.levelsOfUndo = 10;
 
 	return self;
 }
 
-- (id) initWithComputer:(Computer *)computer type:(NSString *)typeName error:(NSError **)outError
+- (instancetype)initWithComputerType:(Computer *)object typeName:(NSString *)typeName error:(NSError **)outError
 {
-	if (self = [super initWithType:typeName error:outError])
-	{
-		self.computer = computer;
-	}
+	if ((self = object ? [super initWithType:typeName error:outError] : nil))
+		computer = object;
 
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// Undo/Redo
-// -----------------------------------------------------------------------------
-
-- (void) performUndo:(NSData *)data
+- (void)performUndo:(NSData *)data
 {
-	[self.windowControllers.firstObject windowWillClose:[NSNotification notificationWithName:NSWindowWillCloseNotification object:nil]];
+	WindowController *windowController = self.windowControllers.firstObject;
+
+	[windowController stopComputer];
 
 	[self.undoManager registerUndoWithTarget:self
-									selector:lastUndoAction = @selector(performUndo:)
+									selector:@selector(performUndo:)
 									  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
 
-	lastUndoType = 0; lastUndoAction = nil;
+	computer = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 
-	self.computer = [NSKeyedUnarchiver unarchiveObjectWithData:data];
-	[self.windowControllers.firstObject windowDidLoad];
+	[windowController startComputer];
 }
 
-// -----------------------------------------------------------------------------
-
-- (void) registerUndoWitString:(NSString *)string type:(NSInteger)type
+- (void)registerUndo:(NSString *)string
 {
-	@synchronized(self.computer.cpu)
+	@synchronized(self.computer)
 	{
-		if (type != lastUndoType)
-		{
-			[self.undoManager registerUndoWithTarget:self
-											selector:@selector(performUndo:)
-											  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
+		[self.undoManager registerUndoWithTarget:self
+										selector:@selector(performUndo:)
+										  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
 
-			lastUndoType = type; lastUndoAction = nil;
-			[self.undoManager setActionName:string];
+		[self.undoManager setActionName:string];
+	}
+}
+
+- (NSData *)dataOfType:(NSString *)typeName error:(NSError **)outError
+{
+	DocumentController *documentController = DocumentController.sharedDocumentController;
+
+	if ([typeName isEqualToString:documentController.defaultType])
+	{
+		@synchronized(self.computer)
+		{
+			return [NSKeyedArchiver archivedDataWithRootObject:self.computer];
 		}
 	}
+
+	return nil;
 }
 
-// -----------------------------------------------------------------------------
-
-- (void) registerUndoWithMenuItem:(NSMenuItem *)menuItem
-{
-	@synchronized(self.computer.cpu)
-	{
-		if (lastUndoType || menuItem.action != lastUndoAction)
-		{
-			[self.undoManager registerUndoWithTarget:self
-											selector:@selector(performUndo:)
-											  object:[NSKeyedArchiver archivedDataWithRootObject:self.computer]];
-
-			lastUndoType = 0; lastUndoAction = menuItem.action;
-			[self.undoManager setActionName:menuItem.title];
-		}
-	}
-}
-
-// -----------------------------------------------------------------------------
-// Save/Load
-// -----------------------------------------------------------------------------
-
-- (NSData *) dataOfType:(NSString *)typeName error:(NSError **)outError
-{
-	@synchronized(self.computer.cpu)
-	{
-		return [NSKeyedArchiver archivedDataWithRootObject:self.computer];
-	}
-}
-
-- (BOOL) readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError *__autoreleasing *)outError
+- (BOOL)readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError
 {
 	@try
 	{
-		DocumentController *documentController = [DocumentController sharedDocumentController];
+		DocumentController *documentController = DocumentController.sharedDocumentController;
 
-		id object; if ([typeName isEqualToString:documentController.defaultType])
+		id object;
+
+		if ([typeName isEqualToString:documentController.defaultType])
 		{
 			object = [NSKeyedUnarchiver unarchiveObjectWithData:data];
 		}
 		else
 		{
-			object = [documentController computerByFileExtension:self.fileURL data:data];
+			object = [ComputerFactory computerFromData:data URL:self.fileURL];
+
+			self.fileType = documentController.defaultType;
 			self.fileURL = nil;
 		}
 
 		if ([object isKindOfClass:[Computer class]])
 		{
-			if (self.computer)
-			{
-				[self.windowControllers.firstObject windowWillClose:[NSNotification notificationWithName:NSWindowWillCloseNotification object:nil]];
-				self.computer = object;
-				[self.windowControllers.firstObject windowDidLoad];
-			}
-			else
-			{
-				self.computer = object;
-			}
+			WindowController *windowController = self.windowControllers.firstObject;
+			[windowController stopComputer];
 
+			computer = object;
+
+			[windowController startComputer];
 			return TRUE;
 		}
 	}
-
-	@catch (NSException *exception)
+	@catch(NSException *exception)
 	{
 		NSLog(@"%@", exception);
 	}
 
-	*outError = nil;
 	return FALSE;
 }
 
-// -----------------------------------------------------------------------------
-// NSDocument
-// -----------------------------------------------------------------------------
-
-- (void) makeWindowControllers
+- (void)makeWindowControllers
 {
-	[self addWindowController:[[WindowController alloc] initWithWindowNibName:@"Document" owner:self]];
+	[self addWindowController:[[WindowController alloc] initWithWindowNibName:@"Document"]];
 }
 
-- (NSString *) defaultDraftName
+- (NSString *)defaultDraftName
 {
-	if (self.computer)
-		return [[self.computer class] title];
-	else
-		return [super defaultDraftName];
+	return [self.computer.class title];
 }
 
-+ (BOOL) preservesVersions
++ (BOOL)preservesVersions
 {
 	return YES;
 }
 
-+ (BOOL) autosavesInPlace
++ (BOOL)autosavesInPlace
 {
-    return YES;
+	return YES;
 }
 
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
-
 #ifdef DEBUG
-- (void) dealloc
+- (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
 }

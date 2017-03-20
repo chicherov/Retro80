@@ -1,13 +1,14 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Клавиатура РК86 на 8255
 
  *****/
 
 #import "RKKeyboard.h"
+#import "Sound.h"
 
 @implementation RKKeyboard
 {
@@ -19,13 +20,8 @@
 }
 
 @synthesize qwerty;
-@synthesize snd;
 
-// -----------------------------------------------------------------------------
-// flagsChanged
-// -----------------------------------------------------------------------------
-
-- (void) flagsChanged:(NSEvent*)theEvent
+- (void)flagsChanged:(NSEvent *)theEvent
 {
 	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0)
 	{
@@ -36,25 +32,23 @@
 	}
 }
 
-// -----------------------------------------------------------------------------
-// keyDown
-// -----------------------------------------------------------------------------
-
-- (void) keyDown:(NSEvent*)theEvent
+- (void)keyDown:(NSEvent *)theEvent
 {
-	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0) @synchronized(self)
-	{
-		paste = nil;
+	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) != 0)
+		return;
 
-		unsigned short keyCode = theEvent.keyCode + 1; if (qwerty)
+	@synchronized (self)
+	{
+		NSUInteger index;
+
+		if (qwerty)
 		{
 			if (theEvent.charactersIgnoringModifiers.length)
 			{
-				NSString *chr = upperCase ? theEvent.charactersIgnoringModifiers.uppercaseString : theEvent.charactersIgnoringModifiers;
+				NSString *chr = theEvent.charactersIgnoringModifiers;
+				if (upperCase) chr = chr.uppercaseString;
 
-				NSUInteger index = [chr1Map rangeOfString:chr].location;
-
-				if (index != NSNotFound && index < 72)
+				if ((index = [chr1Map rangeOfString:chr].location) != NSNotFound)
 				{
 					if (chr2Map.length <= index || [chr2Map characterAtIndex:index] != [chr1Map characterAtIndex:index])
 					{
@@ -69,45 +63,48 @@
 						modifierFlags = theEvent.modifierFlags;
 					}
 
-					keyboard[index] = keyCode;
-					return;
+					if (index < 72)
+					{
+						keyboard[index] = theEvent.keyCode + 1; paste = nil;
+					}
 				}
 
-				index = [chr2Map rangeOfString:chr].location;
-
-				if (index != NSNotFound && index < 72)
+				else if ((index = [chr2Map rangeOfString:chr].location) != NSNotFound)
 				{
 					modifierFlags = theEvent.modifierFlags | NSShiftKeyMask; ignoreShift = TRUE;
-					keyboard[index] = keyCode;
-					return;
+
+					if (index < 72)
+					{
+						keyboard[index] = theEvent.keyCode + 1; paste = nil;
+					}
 				}
 			}
 		}
 
-		else
+		else if ((index = [kbdmap indexOfObject:@(theEvent.keyCode)]) != NSNotFound)
 		{
-			NSUInteger index = [kbdmap indexOfObject:[NSNumber numberWithShort:keyCode - 1]];
+			modifierFlags = theEvent.modifierFlags;
 
-			if (index != NSNotFound && index < 72)
+			if (index < 72)
 			{
-				modifierFlags = theEvent.modifierFlags;
-				keyboard[index] = keyCode;
+				keyboard[index] = theEvent.keyCode + 1; paste = nil;
 			}
 		}
 	}
 }
 
-// -----------------------------------------------------------------------------
-// keyUp
-// -----------------------------------------------------------------------------
-
 - (void) keyUp:(NSEvent*)theEvent
 {
-	if (theEvent)
+	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) != 0)
+		return;
+
+	@synchronized (self)
 	{
-		if ((theEvent.modifierFlags & NSCommandKeyMask) == 0) @synchronized(self)
+		unsigned short keyCode = theEvent.keyCode + 1;
+
+		if (keyCode)
 		{
-			unsigned short keyCode = theEvent.keyCode + 1; for (int i = 0; i < 72; i++)
+			for (int i = 0; i < 72; i++)
 			{
 				if (keyboard[i] == keyCode)
 				{
@@ -116,85 +113,92 @@
 				}
 			}
 		}
-	}
-
-	else
-	{
-		modifierFlags = theEvent.modifierFlags;
-		memset(keyboard, 0, sizeof(keyboard));
-		ignoreShift = FALSE;
+		else
+		{
+			memset(keyboard, 0, sizeof(keyboard));
+			ignoreShift = FALSE;
+			modifierFlags = 0;
+		}
 	}
 }
 
-// -----------------------------------------------------------------------------
-// paste
-// -----------------------------------------------------------------------------
-
-- (void) paste:(NSString *)string
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	@synchronized(self)
+	if (menuItem.action == @selector(paste:))
+		return [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] != nil;
+
+	if (menuItem.action == @selector(qwerty:))
+	{
+		menuItem.state = qwerty;
+		return YES;
+	}
+
+	return NO;
+}
+
+- (IBAction) qwerty:(id)sender
+{
+	qwerty = !qwerty;
+}
+
+- (IBAction) paste:(NSMenuItem *)menuItem
+{
+	[self.computer registerUndoWithMenuItem:menuItem];
+	[self pasteString:[[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString]];
+}
+
+- (void)pasteString:(NSString *)string
+{
+	@synchronized (self)
 	{
 		paste = upperCase ? string.uppercaseString : string;
-		pos = 0; pasteClock = 0; pasteKey = NSNotFound;
+		pasteClock = self.computer.clock;
+		pos = 0; pasteKey = NSNotFound;
 	}
 }
 
-// -----------------------------------------------------------------------------
-//
-// -----------------------------------------------------------------------------
-
-- (void) scan:(uint64_t)clock
+- (void)RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
 {
-	@synchronized(self)
+	@synchronized (self)
 	{
 		if (pasteKey != NSNotFound && pasteKey < 72 && clock - pasteClock > 1000000)
 		{
-			modifierFlags &= !NSShiftKeyMask;
+			modifierFlags &= ~NSEventModifierFlagShift;
 			keyboard[pasteKey] = FALSE;
 			pasteKey = NSNotFound;
 		}
 
 		if (paste != nil && clock - pasteClock > 3000000)
 		{
-			if (pos == paste.length)
+			NSString *chr = [paste substringWithRange:NSMakeRange(pos, 1)];
+
+			if ([chr isEqualToString:@"\n"])
+				chr = @"\r";
+
+			if ((pasteKey = [chr1Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
+			{
+				modifierFlags &= ~NSEventModifierFlagShift;
+				keyboard[pasteKey] = TRUE;
+			}
+
+			else if ((pasteKey = [chr2Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
+			{
+				modifierFlags |= NSShiftKeyMask;
+				keyboard[pasteKey] = TRUE;
+			}
+
+			if (++pos == paste.length)
 				paste = nil;
 
-			else if (pasteClock == 0)
-				pasteClock = clock;
-
-			else
-			{
-				NSString *chr = [paste substringWithRange:NSMakeRange(pos++, 1)];
-
-				if ([chr isEqualToString:@"\n"])
-					chr = @"\r";
-
-				if ((pasteKey = [chr1Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
-				{
-					modifierFlags &= !NSShiftKeyMask;
-					keyboard[pasteKey] = TRUE;
-				}
-
-				else if ((pasteKey = [chr2Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
-				{
-					modifierFlags |= NSShiftKeyMask;
-					keyboard[pasteKey] = TRUE;
-				}
-
-				pasteClock = clock;
-			}
+			pasteClock = clock;
 		}
 	}
+
+	[super RD:addr data:data CLK:clock];
 }
 
-// -----------------------------------------------------------------------------
-// Порт A
-// -----------------------------------------------------------------------------
-
-- (uint8_t) A
+- (uint8_t)A
 {
-	[self scan:current];
-
 	uint8_t data = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 	{
 		if ((B & (0x01 << (i & 0x07))) == 0)
@@ -204,14 +208,8 @@
 	return data;
 }
 
-// -----------------------------------------------------------------------------
-// Порт B
-// -----------------------------------------------------------------------------
-
-- (uint8_t) B
+- (uint8_t)B
 {
-	[self scan:current];
-
 	uint8_t data = 0xFF; for (int i = 0; i < 64; i++) if (keyboard[i])
 	{
 		if ((A & (0x80 >> (i >> 3))) == 0)
@@ -221,42 +219,32 @@
 	return data;
 }
 
-// -----------------------------------------------------------------------------
-// Порт C
-// -----------------------------------------------------------------------------
-
-- (uint8_t) C
+- (uint8_t)C
 {
-	[self scan:current];
-
 	uint8_t data = 0xFF & ~(RUSLAT | CTRL | SHIFT | TAPEI);
 
-	if (!(modifierFlags & NSAlternateKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagOption))
 		data |= RUSLAT;
 
-	if (!(modifierFlags & NSControlKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagControl))
 		data |= CTRL;
 
-	if (!(modifierFlags & NSShiftKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagShift))
 		data |= SHIFT;
 
-	if (snd.sound.input)
+	if (TAPEI && [self.computer.sound input:self.computer.clock])
 		data |= TAPEI;
 
 	return data;
 }
 
-- (void) setC:(uint8_t)data
+- (void)setC:(uint8_t)data
 {
-	if (TAPEO)
-		snd.sound.output = data & TAPEO ? TRUE : FALSE;
+	if ((C ^ data) & TAPEO)
+		[self.computer.snd setOutput:data & TAPEO clock:self.computer.clock];
 }
 
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
-
-- (void) keyboardInit
+- (void)keyboardInit
 {
 	kbdmap = @[
 			   // 58 59    5A    5B    5C    5D    5E    20
@@ -289,7 +277,7 @@
 	TAPEO = 0x01;
 }
 
-- (id) init
+- (instancetype)init
 {
 	if (self = [super init])
 	{
@@ -300,17 +288,17 @@
 	return self;
 }
 
-- (void) encodeWithCoder:(NSCoder *)encoder
+- (void)encodeWithCoder:(NSCoder *)coder
 {
-	[super encodeWithCoder:encoder];
-	[encoder encodeBool:qwerty forKey:@"qwerty"];
+	[super encodeWithCoder:coder];
+	[coder encodeBool:qwerty forKey:@"qwerty"];
 }
 
-- (id) initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)coder
 {
-	if (self = [super initWithCoder:decoder])
+	if (self = [super initWithCoder:coder])
 	{
-		qwerty = [decoder decodeBoolForKey:@"qwerty"];
+		qwerty = [coder decodeBoolForKey:@"qwerty"];
 		[self keyboardInit];
 	}
 

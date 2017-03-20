@@ -1,13 +1,11 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Центральные процессоры КР580ВМ80А (Intel 8080A) и Zilog Z80
 
  *****/
-
-#import "Retro80.h"
 
 // -----------------------------------------------------------------------------
 
@@ -53,9 +51,8 @@
 
 // -----------------------------------------------------------------------------
 
-@interface X8080 : NSObject <CPU, NSCoding, BYTE>
+@interface X8080 : NSObject <NSCoding, BYTE>
 
-@property uint32_t quartz;
 @property BOOL Z80;
 
 @property uint64_t CLK;
@@ -107,9 +104,9 @@
 
 // -----------------------------------------------------------------------------
 
-- (id) initZ80WithQuartz:(unsigned)quartz start:(uint32_t)start;
-
-- (id) initWithQuartz:(unsigned)quartz start:(uint32_t)start;
+- (instancetype)init8080:(uint32_t)start NS_DESIGNATED_INITIALIZER;
+- (instancetype)initZ80:(uint32_t)start;
+- (instancetype)init NS_UNAVAILABLE;
 
 // -----------------------------------------------------------------------------
 
@@ -167,5 +164,8 @@ uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
 
 @property uint8_t *breakpoints;
 @property uint64_t BREAK;
+
+- (BOOL)execute:(uint64_t)clock;
+- (void)reset;
 
 @end

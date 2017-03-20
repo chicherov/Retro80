@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Центральные процессоры КР580ВМ80А (Intel 8080A) и Zilog Z80
 
@@ -105,7 +105,6 @@
 // Доступ к регистрам процессора
 // -----------------------------------------------------------------------------
 
-@synthesize quartz;
 @synthesize CLK;
 
 @synthesize START;
@@ -3710,43 +3709,29 @@ static uint16_t AND[2][0x100][0x100];
 }
 
 // -----------------------------------------------------------------------------
-// debug
-// -----------------------------------------------------------------------------
-
-- (NSObject<Debug> *) debug
-{
-	return [[Dbg80 alloc] init];
-}
-
-// -----------------------------------------------------------------------------
 // Инициализация
 // -----------------------------------------------------------------------------
 
-- (id) initWithQuartz:(unsigned)freq start:(unsigned int)start
+
+- (instancetype)init8080:(uint32_t)start
 {
-	if (self = [self init])
+	if (self = [super init])
 	{
+		MEMIO = TRUE;
 		[X8080 ALU];
 
-		quartz = freq;
 		START = start;
 
 		PAGE = (START >> 16) & 0xF;
 		PC = START & 0xFFFF;
-
-		MEMIO = TRUE;
 	}
 
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// Инициализация Z80
-// -----------------------------------------------------------------------------
-
-- (id) initZ80WithQuartz:(unsigned)freq start:(uint32_t)start
+- (instancetype)initZ80:(uint32_t)start
 {
-	if (self = [self initWithQuartz:freq * 9 start:start])
+	if (self = [self init8080:start])
 		Z80 = TRUE;
 
 	return self;
@@ -3758,7 +3743,6 @@ static uint16_t AND[2][0x100][0x100];
 
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
-	[encoder encodeInt:quartz forKey:@"quartz"];
 	[encoder encodeInt:START forKey:@"START"];
 
 	[encoder encodeInt64:CLK forKey:@"CLK"];
@@ -3794,7 +3778,7 @@ static uint16_t AND[2][0x100][0x100];
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
-	if (self = [self initWithQuartz:[decoder decodeIntForKey:@"quartz"] start:[decoder decodeIntForKey:@"START"]])
+	if (self = [self init8080:[decoder decodeIntForKey:@"START"]])
 	{
 		CLK = [decoder decodeInt64ForKey:@"CLK"];
 		IF = [decoder decodeBoolForKey:@"IF"];

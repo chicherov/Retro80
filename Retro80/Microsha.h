@@ -1,38 +1,27 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «Микроша»
 
  *****/
 
 #import "RK86Base.h"
-#import "Floppy.h"
-
-#import "MicroshaKeyboard.h"
-#import "MicroshaExt.h"
-
-// -----------------------------------------------------------------------------
-// Вывод байта на магнитофон (Микроша)
-// -----------------------------------------------------------------------------
-
-@interface MicroshaF80C : F80C
-
-@end
-
-// -----------------------------------------------------------------------------
-// ПЭВМ «Микроша»
-// -----------------------------------------------------------------------------
+#import "RKFloppy.h"
 
 @interface Microsha : RK86Base
+@property(nonatomic, strong) RKFloppy *fdd;
+@end
 
-@property MicroshaKeyboard *kbd;
-@property MicroshaExt *ext;
+// Клавиатура ПЭВМ «Микроша»
+@interface MicroshaKeyboard : RKKeyboard
+@end
 
-@property MicroshaF80C *outHook;
+// Второй интерфейс ВВ55 ПЭВМ «Микроша»
+@interface MicroshaExt : X8255
+@end
 
-@property Floppy *fdd;
-@property ROM *dos;
-
+// Вывод байта на магнитофон (Микроша)
+@interface MicroshaF80C : F80C
 @end

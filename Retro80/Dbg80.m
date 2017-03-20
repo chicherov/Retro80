@@ -12,8 +12,6 @@
 @implementation Dbg80
 {
 	uint8_t breakpoints[0x10000];
-	Debug __weak *debug;
-	X8080 __weak *cpu;
 
 	NSString *unicode;
 	unichar dbgCmd;
@@ -25,46 +23,58 @@
 	uint16_t lastM;
 }
 
-- (void) attach:(NSObject<CPU> *)_cpu debug:(Debug *)_debug
+@synthesize debug;
+@synthesize cpu;
+
+- (instancetype)initWithDebug:(Debug *)object
 {
-	if ([_cpu isKindOfClass:X8080.class])
+	if (self = [super init])
+		debug = object;
+
+	return self;
+}
+
++ (instancetype)dbg80WithDebug:(Debug *)debug
+{
+	return [[self alloc] initWithDebug:debug];
+}
+
+- (void)run
+{
+	[cpu setBreakpoints:breakpoints];
+
+	uint16_t addr = 0x0000;
+	do
+		breakpoints[addr++] &= ~0x20;
+	while (addr);
+
+	if (unicode == nil)
+		unicode = koi7();
+
+	if (cpu.BREAK & 0x2000000000)
 	{
-		[cpu = (X8080 *)_cpu setBreakpoints:breakpoints];
-
-		uint16_t addr = 0x0000; do
-			breakpoints[addr++] &= ~0x20;
-		while (addr);
-
-		if (unicode == nil)
-			unicode = koi7();
-
-		debug = _debug;
-
-		if (cpu.BREAK & 0x2000000000)
-		{
-			[self regs];
-		}
-
-		else if (cpu.BREAK & 0xFFFFFFFF00000000)
-		{
-			[debug print:@"%c %04X/%04X\n",
-
-			 cpu.BREAK & 0x0100000000 ? 'R' :
-			 cpu.BREAK & 0x0200000000 ? 'W' :
-			 cpu.BREAK & 0x0400000000 ? 'I' :
-			 cpu.BREAK & 0x0800000000 ? 'O' :
-			 cpu.BREAK & 0x1000000000 ? 'X' :
-			 '?',
-
-			 lastD = (cpu.BREAK >> 16) & 0xFFFF,
-			 lastL = cpu.BREAK & 0xFFFF
-			 ];
-		}
-
-		[debug print:@"# "];
-		[debug flush];
-		dbgCmd = 0;
+		[self regs];
 	}
+
+	else if (cpu.BREAK & 0xFFFFFFFF00000000)
+	{
+		[debug print:@"%c %04X/%04X\n",
+				cpu.BREAK & 0x0100000000 ? 'R' :
+				cpu.BREAK & 0x0200000000 ? 'W' :
+				cpu.BREAK & 0x0400000000 ? 'I' :
+				cpu.BREAK & 0x0800000000 ? 'O' :
+				cpu.BREAK & 0x1000000000 ? 'X' :
+				'?',
+				lastD = (cpu.BREAK >> 16) & 0xFFFF,
+				lastL = cpu.BREAK & 0xFFFF
+		];
+	}
+
+	[debug print:@"# "];
+	[debug flush];
+	dbgCmd = 0;
+
+	[debug run];
 }
 
 // -----------------------------------------------------------------------------
@@ -1197,5 +1207,16 @@ static NSString *koi8()
 	[debug print:@"# "];
 	dbgCmd = 0; return FALSE;
 }
+
+// -----------------------------------------------------------------------------
+// DEBUG: dealloc
+// -----------------------------------------------------------------------------
+
+#ifdef DEBUG
+- (void) dealloc
+{
+	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
+}
+#endif
 
 @end

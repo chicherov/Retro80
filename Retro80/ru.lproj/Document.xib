@@ -1,32 +1,31 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="9531" systemVersion="15E65" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11762" systemVersion="16D32" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="9531"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11762"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="Document">
+        <customObject id="-2" userLabel="File's Owner" customClass="WindowController">
             <connections>
-                <outlet property="debug" destination="cIB-lr-ra9" id="19G-Q9-g4J"/>
-                <outlet property="display" destination="ELn-iW-TvI" id="ZFd-fu-f5l"/>
-                <outlet property="sound" destination="43H-H2-5a3" id="lGS-Fe-enX"/>
-                <outlet property="window" destination="O9k-RO-V98" id="IgL-Za-qFb"/>
+                <outlet property="constraint" destination="2e6-Zo-PUb" id="Vtc-kF-UOJ"/>
+                <outlet property="debug" destination="cIB-lr-ra9" id="tHK-Eg-Qol"/>
+                <outlet property="display" destination="ELn-iW-TvI" id="2eS-3n-LPI"/>
+                <outlet property="sound" destination="43H-H2-5a3" id="uIj-Fw-oVe"/>
+                <outlet property="window" destination="O9k-RO-V98" id="1M3-YZ-NSW"/>
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customObject id="cIB-lr-ra9" customClass="Debug">
+        <customObject id="43H-H2-5a3" userLabel="Sound" customClass="Sound">
             <connections>
-                <outlet property="document" destination="-2" id="72m-Sd-fgy"/>
-                <outlet property="panel" destination="01n-hT-pln" id="yQi-Nc-LMg"/>
-                <outlet property="textView" destination="FeX-Q1-ED0" id="Ri7-gq-ch2"/>
+                <outlet property="textField" destination="ggy-Fu-duH" id="h4r-9z-4l3"/>
             </connections>
         </customObject>
-        <customObject id="43H-H2-5a3" customClass="Sound">
+        <customObject id="cIB-lr-ra9" customClass="Debug">
             <connections>
-                <outlet property="document" destination="-2" id="fOa-tp-zfq"/>
-                <outlet property="nextResponder" destination="01n-hT-pln" id="tHa-Kk-nNA"/>
-                <outlet property="textField" destination="ggy-Fu-duH" id="h4r-9z-4l3"/>
+                <outlet property="panel" destination="01n-hT-pln" id="yQi-Nc-LMg"/>
+                <outlet property="textView" destination="FeX-Q1-ED0" id="Ri7-gq-ch2"/>
             </connections>
         </customObject>
         <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="O9k-RO-V98" userLabel="Computer Window">
@@ -43,23 +42,20 @@
                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="ELn-iW-TvI" customClass="Display">
                         <rect key="frame" x="0.0" y="22" width="468" height="300"/>
                         <connections>
-                            <outlet property="constraint" destination="2e6-Zo-PUb" id="vcN-eU-Dt2"/>
                             <outlet property="digit1" destination="Q1s-GN-Epx" id="kWw-Wc-IhU"/>
                             <outlet property="digit2" destination="ErH-GJ-97A" id="fJ1-Xp-vHw"/>
                             <outlet property="digit3" destination="tUO-DX-8oi" id="UKG-MU-MCk"/>
                             <outlet property="digit4" destination="0af-jc-DW1" id="BE6-JV-IST"/>
                             <outlet property="digit5" destination="as5-em-ydf" id="Jwj-Qg-D8I"/>
                             <outlet property="digit6" destination="bV2-nW-PMC" id="laF-jW-cOZ"/>
-                            <outlet property="document" destination="-2" id="hsX-IB-F4h"/>
-                            <outlet property="nextResponder" destination="43H-H2-5a3" id="Lok-Ks-Gfu"/>
                         </connections>
                     </customView>
                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ggy-Fu-duH">
-                        <rect key="frame" x="5" y="0.0" width="37" height="22"/>
+                        <rect key="frame" x="5" y="0.0" width="4" height="22"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="22" id="rJP-rM-255"/>
                         </constraints>
-                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Label" id="H4c-W7-g6n">
+                        <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" id="H4c-W7-g6n">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
@@ -131,7 +127,7 @@
             </view>
             <contentBorderThickness minY="22"/>
             <connections>
-                <outlet property="delegate" destination="ELn-iW-TvI" id="Zbw-gI-0q3"/>
+                <outlet property="delegate" destination="-2" id="Fbs-Up-CgJ"/>
             </connections>
         </window>
         <window title="Ретро КР580: Отладчик" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
@@ -148,15 +144,13 @@
                             <rect key="frame" x="1" y="1" width="781" height="520"/>
                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                             <subviews>
-                                <textView importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" id="FeX-Q1-ED0">
+                                <textView importsGraphics="NO" richText="NO" horizontallyResizable="YES" id="FeX-Q1-ED0">
                                     <rect key="frame" x="0.0" y="0.0" width="781" height="520"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <color key="backgroundColor" red="1" green="1" blue="0.78431372549019607" alpha="0.94999999999999996" colorSpace="calibratedRGB"/>
                                     <size key="minSize" width="781" height="520"/>
                                     <size key="maxSize" width="10000000" height="10000000"/>
                                     <color key="insertionPointColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                    <size key="minSize" width="781" height="520"/>
-                                    <size key="maxSize" width="10000000" height="10000000"/>
                                     <connections>
                                         <outlet property="delegate" destination="cIB-lr-ra9" id="LaI-he-zOY"/>
                                     </connections>

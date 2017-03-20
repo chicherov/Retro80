@@ -1,47 +1,36 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «Специалист MX»
 
  *****/
 
 #import "Specialist.h"
-#import "ROMDisk.h"
 #import "vg93.h"
 
-#import "SpecialistMXKeyboard.h"
-#import "SpecialistMXSystem.h"
+@class SpecialistMXSystem;
 
-// -----------------------------------------------------------------------------
+// ПЭВМ "Специалист MX" с RAMFOS
+@interface SpecialistMX : Specialist
+@property(nonatomic, strong) SpecialistMXSystem *sys;
+@property(nonatomic, strong) VG93 *fdd;
+@end
+
 // ПЭВМ "Специалист MX" с MXOS (Commander)
-// -----------------------------------------------------------------------------
-
-@interface SpecialistMX_Commander : Specialist
-
-@property SpecialistMXSystem *sys;
-@property ROMDisk *ext;
-
+@interface SpecialistMX_MXOS : SpecialistMX
 @end
 
-// -----------------------------------------------------------------------------
-// ПЭВМ "Специалист MX" с MXOS (RAMFOS)
-// -----------------------------------------------------------------------------
-
-@interface SpecialistMX_RAMFOS : SpecialistMX_Commander
-
-@property SpecialistMXKeyboard *kbd;
-@property VG93 *fdd;
-
-@end
-
-// -----------------------------------------------------------------------------
 // ПЭВМ "Специалист MX2"
-// -----------------------------------------------------------------------------
+@interface SpecialistMX2 : SpecialistMX
+@end
 
-@interface SpecialistMX2 : SpecialistMX_RAMFOS
+// Системные регистры Специалист MX
+@interface SpecialistMXSystem : NSObject<RD, WR, RESET>
+@property(nonatomic, assign) SpecialistMX *specialist;
+@end
 
-@property SpecialistMX2System *sys;
-
+// Системные регистры Специалист MX2
+@interface SpecialistMX2System : SpecialistMXSystem
 @end

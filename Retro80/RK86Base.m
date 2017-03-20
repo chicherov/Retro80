@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Базовый вариант РК86 без ПЗУ и распределения памяти
 
@@ -11,13 +11,21 @@
 
 @implementation RK86Base
 
-// -----------------------------------------------------------------------------
-// createObjects - стандартные устройства РК86
-// -----------------------------------------------------------------------------
+@synthesize crt;
+@synthesize dma;
+@synthesize snd;
 
-- (BOOL) createObjects
+@synthesize kbd;
+@synthesize ext;
+
+@synthesize colorScheme;
+
+@synthesize inpHook;
+@synthesize outHook;
+
+- (BOOL)createObjects
 {
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:16000000 start:0xF800]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xF800]) == nil)
 		return FALSE;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0xFFFF]) == nil)
@@ -25,6 +33,8 @@
 
 	if (self.crt == nil && (self.crt = [[X8275 alloc] init]) == nil)
 		return FALSE;
+
+	[self.crt selectFont:0x0C00];
 
 	if (self.dma == nil && (self.dma = [[X8257 alloc] init]) == nil)
 		return FALSE;
@@ -41,94 +51,84 @@
 	return TRUE;
 }
 
-// -----------------------------------------------------------------------------
-// mapObjects
-// -----------------------------------------------------------------------------
-
-- (BOOL) mapObjects
+- (BOOL)mapObjects
 {
+	self.nextResponder = self.kbd;
+	self.kbd.computer = self;
+
+	self.kbd.nextResponder = self.ext;
+	self.ext.computer = self;
+
 	self.cpu.HLDA = self.dma;
 	self.dma.HLDA = self.crt;
 	self.dma.DMA2 = self.crt;
-	self.dma.cpu  = self.cpu;
-
-	self.kbd.snd  = self.snd;
+	self.dma.cpu = self.cpu;
 
 	return TRUE;
 }
 
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
-
-- (id) initWithData:(NSData *)data URL:(NSURL *)url
+- (instancetype)init
 {
-	if (self = [self initWithType:0])
+	return self = [super initWithQuartz:16000000];
+}
+
+- (instancetype)initWithData:(NSData *)data
+{
+	if (self = [self init])
 	{
-		NSString *pathExtension = url.pathExtension.lowercaseString;
-
-		if (([pathExtension isEqualToString:@"gam"] || [pathExtension isEqualToString:@"pki"]) && data.length && *(uint8_t *)data.bytes == 0xE6)
-			data = [NSData dataWithBytes:(const uint8_t *)data.bytes + 1 length:data.length - 1];
-
-        self.inpHook.buffer = data;
-		[self.kbd paste:@"I\n"];
+		[self.kbd pasteString:@"I\n"];
+		self.inpHook.buffer = data;
 	}
 
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// encodeWithCoder/decodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
+- (void)encodeWithCoder:(NSCoder *)coder
 {
-	[super encodeWithCoder:encoder];
+	[super encodeWithCoder:coder];
 
-	[encoder encodeObject:self.cpu forKey:@"cpu"];
-	[encoder encodeObject:self.rom forKey:@"rom"];
-	[encoder encodeObject:self.ram forKey:@"ram"];
-	[encoder encodeObject:self.crt forKey:@"crt"];
-	[encoder encodeObject:self.dma forKey:@"dma"];
-	[encoder encodeObject:self.snd forKey:@"snd"];
-	[encoder encodeObject:self.kbd forKey:@"kbd"];
-	[encoder encodeObject:self.ext forKey:@"ext"];
+	[coder encodeObject:self.cpu forKey:@"cpu"];
+	[coder encodeObject:self.rom forKey:@"rom"];
+	[coder encodeObject:self.ram forKey:@"ram"];
+	[coder encodeObject:self.crt forKey:@"crt"];
+	[coder encodeObject:self.dma forKey:@"dma"];
+	[coder encodeObject:self.snd forKey:@"snd"];
+	[coder encodeObject:self.kbd forKey:@"kbd"];
+	[coder encodeObject:self.ext forKey:@"ext"];
 
-	[encoder encodeBool:self.isColor forKey:@"isColor"];
+	[coder encodeInt:self.colorScheme forKey:@"colors"];
 }
 
-// -----------------------------------------------------------------------------
-
-- (BOOL) decodeWithCoder:(NSCoder *)decoder
+- (BOOL)decodeWithCoder:(NSCoder *)coder
 {
-	if (![super decodeWithCoder:decoder])
+	if (![super decodeWithCoder:coder])
 		return FALSE;
 
-	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+	if ((self.cpu = [coder decodeObjectForKey:@"cpu"]) == nil)
 		return FALSE;
 
-	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
+	if ((self.rom = [coder decodeObjectForKey:@"rom"]) == nil)
 		return FALSE;
 
-	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
-	
-	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
+	if ((self.ram = [coder decodeObjectForKey:@"ram"]) == nil)
 		return FALSE;
 
-	if ((self.dma = [decoder decodeObjectForKey:@"dma"]) == nil)
+	if ((self.crt = [coder decodeObjectForKey:@"crt"]) == nil)
 		return FALSE;
 
-	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
+	if ((self.dma = [coder decodeObjectForKey:@"dma"]) == nil)
 		return FALSE;
 
-	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
+	if ((self.snd = [coder decodeObjectForKey:@"snd"]) == nil)
 		return FALSE;
 
-	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
+	if ((self.kbd = [coder decodeObjectForKey:@"kbd"]) == nil)
 		return FALSE;
 
-	self.isColor = [decoder decodeBoolForKey:@"isColor"];
+	if ((self.ext = [coder decodeObjectForKey:@"ext"]) == nil)
+		return FALSE;
+
+	self.colorScheme = [coder decodeIntForKey:@"colors"];
 	return TRUE;
 }
 

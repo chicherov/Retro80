@@ -1,178 +1,39 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «Специалист»
 
  *****/
 
 #import "Specialist.h"
-#import "SpecialistSP580.h"
-#import "SpecialistMX.h"
+#import "SpecialistSDCard.h"
 
 @implementation Specialist
 
-+ (NSString *) title
+@synthesize snd;
+@synthesize crt;
+
+@synthesize inpHook;
+@synthesize outHook;
+
++ (NSString *)title
 {
 	return @"Специалист";
 }
 
-+ (NSArray *) extensions
+- (instancetype)init
 {
-	return [@[@"rks"] arrayByAddingObjectsFromArray:[SpecialistMX_RAMFOS extensions]];
+	return self = [super initWithQuartz:18000000];
 }
 
-// -----------------------------------------------------------------------------
-// validateMenuItem
-// -----------------------------------------------------------------------------
-
-- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
+- (BOOL)createObjects
 {
-	if (menuItem.action == @selector(ROMDisk:) && [self.ext isKindOfClass:[ROMDisk class]])
-	{
-		switch (menuItem.tag)
-		{
-			case 0:
-			{
-				menuItem.submenu = [[NSMenu alloc] init];
-				[menuItem.submenu addItemWithTitle:menuItem.title action:@selector(ROMDisk:) keyEquivalent:@""].tag = 2;
-				[menuItem.submenu addItem:[NSMenuItem separatorItem]];
-
-				[menuItem.submenu addItemWithTitle:@"SD STARTER ROM" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 3;
-				[menuItem.submenu addItemWithTitle:@"TAPE EMULATOR" action:@selector(ROMDisk:) keyEquivalent:@""].tag = 4;
-
-				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-				menuItem.state = [(ROMDisk*)self.ext URL] != nil;
-				return YES;
-			}
-
-			case 2:
-			{
-				NSURL *url = [(ROMDisk*)self.ext URL]; if ((menuItem.state = url != nil))
-					menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
-				else
-					menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-
-				return YES;
-			}
-
-			case 3:
-				menuItem.state = memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) == 0;
-				return YES;
-
-			case 4:
-				menuItem.state = [(ROMDisk*)self.ext tapeEmulator];
-				return [[(ROMDisk*)self.ext ROM] length] != 0 && memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) != 0 && self.inpHook.enabled;
-		}
-	}
-
-	if (menuItem.action == @selector(colorModule:))
-	{
-		menuItem.state = self.crt.isColor;
-		return self.kbd.crt != nil;
-	}
-
-	return [super validateMenuItem:menuItem];
-}
-
-// -----------------------------------------------------------------------------
-// Модуль цветности
-// -----------------------------------------------------------------------------
-
-- (IBAction) colorModule:(NSMenuItem *)menuItem
-{
-	[self.document registerUndoWithMenuItem:menuItem];
-	self.crt.isColor = !self.crt.isColor;
-}
-
-// -----------------------------------------------------------------------------
-// Внешний ROM-диск
-// -----------------------------------------------------------------------------
-
-- (IBAction) ROMDisk:(NSMenuItem *)menuItem;
-{
-	if ([self.ext isKindOfClass:[ROMDisk class]])
-	{
-		ROMDisk *romdisk = (ROMDisk *)self.ext;
-		switch (menuItem.tag)
-		{
-			case 0:
-			case 2:
-			{
-				NSOpenPanel *panel = [NSOpenPanel openPanel];
-				panel.canChooseDirectories = TRUE;
-				panel.canChooseFiles = FALSE;
-				panel.title = menuItem.title;
-				panel.delegate = romdisk;
-
-				if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
-				{
-					@synchronized(self.cpu)
-					{
-						[self.document registerUndoWithMenuItem:menuItem];
-						romdisk.URL = panel.URLs.firstObject;
-					}
-				}
-				else if (romdisk.URL != nil)
-				{
-					@synchronized(self.cpu)
-					{
-						[self.document registerUndoWithMenuItem:menuItem];
-						romdisk.URL = nil;
-					}
-				}
-
-				break;
-			}
-
-			case 3:
-			{
-				@synchronized(self.cpu)
-				{
-					[self.document registerUndoWithMenuItem:menuItem];
-
-					ROM *rom = nil; if (memcmp(self.rom.mutableBytes, "\xC3\x00\xD8", 3) != 0)
-					{
-						if ((rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2SD" mask:0x3FFF]) != nil)
-							romdisk.tapeEmulator = FALSE;
-					}
-					else
-					{
-						if ((rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) != nil)
-							romdisk.tapeEmulator = TRUE;
-					}
-
-					if (rom)
-					{
-						self.rom = rom; [self mapObjects];
-					}
-				}
-
-				break;
-			}
-
-			case 4:
-			{
-				[self.document registerUndoWithMenuItem:menuItem];
-				romdisk.tapeEmulator = !romdisk.tapeEmulator;
-				break;
-			}
-		}
-
-	}
-}
-
-// -----------------------------------------------------------------------------
-// Инициализация
-// -----------------------------------------------------------------------------
-
-- (BOOL) createObjects
-{
-	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initWithQuartz:18000000 start:0xC000]) == nil)
+	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xC000]) == nil)
 		return FALSE;
 
-	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) == nil)
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist1" mask:0x3FFF]) == nil)
 		return FALSE;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
@@ -181,22 +42,26 @@
 	if (self.crt == nil && (self.crt = [[SpecialistScreen alloc] init]) == nil)
 		return FALSE;
 
+	if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
+		return FALSE;
+
 	if (self.kbd == nil && (self.kbd = [[SpecialistKeyboard alloc] init]) == nil)
 		return FALSE;
 
 	if (self.ext == nil && (self.ext = [[X8255 alloc] init]) == nil)
 		return FALSE;
 
-	if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
-		return FALSE;
-
 	return TRUE;
 }
 
-// -----------------------------------------------------------------------------
-
-- (BOOL) mapObjects
+- (BOOL)mapObjects
 {
+	self.nextResponder = self.kbd;
+	self.kbd.computer = self;
+
+	self.kbd.nextResponder = self.ext;
+	self.ext.computer = self;
+
 	self.crt.screen = self.ram.mutableBytes + 0x9000;
 
 	if (self.inpHook == nil)
@@ -207,9 +72,6 @@
 
 		self.inpHook.extension = @"rks";
 		self.inpHook.type = 3;
-
-		if ([self.ext isKindOfClass:[ROMDisk class]])
-			[(ROMDisk *)self.ext setRecorder:self.inpHook];
 	}
 
 	if (self.outHook == nil)
@@ -221,7 +83,7 @@
 		self.outHook.extension = @"rks";
 		self.outHook.type = 3;
 	}
-	
+
 	[self.cpu mapObject:self.ram from:0x0000 to:0x8FFF];
 	[self.cpu mapObject:self.crt from:0x9000 to:0xBFFF RD:self.ram];
 	[self.cpu mapObject:self.rom from:0xC000 to:0xEFFF WR:nil];
@@ -231,169 +93,203 @@
 	[self.cpu mapObject:self.inpHook from:0xC377 to:0xC377 WR:nil];
 	[self.cpu mapObject:self.outHook from:0xC3D0 to:0xC3D0 WR:nil];
 
-	self.kbd.crt = self.crt;
-	self.kbd.snd = self.snd;
 	return TRUE;
 }
 
-// -----------------------------------------------------------------------------
-
-- (id) initWithType:(NSInteger)type
+- (instancetype)initWithData:(NSData *)data
 {
-	if (self = [super init])
+	if (self = [self init])
+		self.inpHook.buffer = data;
+
+	return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+	[super encodeWithCoder:coder];
+
+	[coder encodeObject:self.cpu forKey:@"cpu"];
+	[coder encodeObject:self.rom forKey:@"rom"];
+	[coder encodeObject:self.ram forKey:@"ram"];
+	[coder encodeObject:self.crt forKey:@"crt"];
+	[coder encodeObject:self.snd forKey:@"snd"];
+	[coder encodeObject:self.kbd forKey:@"kbd"];
+	[coder encodeObject:self.ext forKey:@"ext"];
+}
+
+- (BOOL)decodeWithCoder:(NSCoder *)coder
+{
+	if (![super decodeWithCoder:coder])
+		return FALSE;
+
+	if ((self.cpu = [coder decodeObjectForKey:@"cpu"]) == nil)
+		return FALSE;
+
+	if ((self.rom = [coder decodeObjectForKey:@"rom"]) == nil)
+		return FALSE;
+
+	if ((self.ram = [coder decodeObjectForKey:@"ram"]) == nil)
+		return FALSE;
+
+	if ((self.crt = [coder decodeObjectForKey:@"crt"]) == nil)
+		return FALSE;
+
+	if ((self.snd = [coder decodeObjectForKey:@"snd"]) == nil)
+		return FALSE;
+
+	if ((self.kbd = [coder decodeObjectForKey:@"kbd"]) == nil)
+		return FALSE;
+
+	if ((self.ext = [coder decodeObjectForKey:@"ext"]) == nil)
+		return FALSE;
+
+	return TRUE;
+}
+
+@end
+
+// ПЭВМ «Специалист» с монитором 2
+
+@implementation Specialist2
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
+	if (menuItem.action == @selector(colorModule:))
 	{
-		switch (type)
+		switch (menuItem.tag)
 		{
 			case 1:
 
-				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist1" mask:0x3FFF]) == nil)
-					return self = nil;
-
-				break;
-
-			case 2:
-
-				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) == nil)
-					return self = nil;
-
-				if ((self.ext = [[ROMDisk alloc] init]) == nil)
-					return self = nil;
-
-				[(ROMDisk *)self.ext setTapeEmulator:TRUE];
-				[(ROMDisk *)self.ext setSpecialist:TRUE];
-
-				break;
-
-			case 3:
-
-				if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Lik" mask:0x3FFF]) == nil)
-					return self = nil;
-
-				break;
-
-			case 4:
-
-				return self = [[SpecialistSP580 alloc] initWithType:0];
+				menuItem.state = self.crt.isColor;
+				menuItem.hidden = FALSE;
+				return YES;
 
 			case 5:
 
-				return self = [[SpecialistMX_Commander alloc] initWithType:0];
+				menuItem.state = self.crt.isColor && self.kbd.colorScheme == 1;
+				menuItem.hidden = FALSE;
+				return YES;
 
-			case 6:
+			case 8:
 
-				return self = [[SpecialistMX_RAMFOS alloc] initWithType:0];
+				menuItem.state = self.crt.isColor && self.kbd.colorScheme == 2;
+				menuItem.hidden = FALSE;
+				return YES;
 
-			case 7:
+			default:
 
-				return self = [[SpecialistMX2 alloc] initWithType:0];
+				menuItem.hidden = TRUE;
+				menuItem.state = FALSE;
+				return YES;
 		}
-
-		if (![self createObjects])
-			return self = nil;
-
-		if (![self mapObjects])
-			return self = nil;
-
-		self.inpHook.enabled = TRUE;
-		self.outHook.enabled = TRUE;
 	}
 
-	return self;
+	return [super validateMenuItem:menuItem];
 }
 
-// -----------------------------------------------------------------------------
-
-- (id) initWithData:(NSData *)data URL:(NSURL *)url
+- (IBAction)colorModule:(NSMenuItem *)menuItem
 {
-//	if ([[SpecialistSP580 extensions] containsObject:url.pathExtension.lowercaseString])
-//		return self = [[SpecialistSP580 alloc] initWithData:data URL:url];
+	[self registerUndoWithMenuItem:menuItem];
 
-	if ([[SpecialistMX_RAMFOS extensions] containsObject:url.pathExtension.lowercaseString])
-		return self = [[SpecialistMX_RAMFOS alloc] initWithData:data URL:url];
-
-	const uint8_t* ptr = data.bytes;
-	NSUInteger length = data.length;
-
-	if (length > 23 && memcmp(ptr, "\x70\x8F\x82\x8F", 4) == 0)
+	switch (menuItem.tag)
 	{
-		ptr += 23; length -= 23; while (length && *ptr == 0x00)
-		{
-			length--; ptr++;
-		}
+		case 1:
 
-		if (length-- && *ptr++ == 0xE6 && (self = [self initWithType:3]))
-			self.inpHook.buffer = [NSData dataWithBytes:ptr length:length];
-		else
-			return self = nil;
+			self.crt.isColor = !self.crt.isColor;
+			break;
+
+		case 5:
+
+			self.kbd.colorScheme = 1;
+			self.crt.isColor = TRUE;
+			break;
+
+		case 8:
+
+			self.kbd.colorScheme = 2;
+			self.crt.isColor = TRUE;
+			break;
 	}
-
-	else if (length > 4 && memcmp(ptr, "\xD9\xD9\xD9", 3) == 0)
-	{
-		ptr += 3; length -= 3; while (length && *ptr != 0x00)
-		{
-			length--; ptr++;
-		}
-
-		while (length && *ptr == 0x00)
-		{
-			length--; ptr++;
-		}
-
-		if (length-- && *ptr++ == 0xE6 && (self = [self initWithType:2]))
-			self.inpHook.buffer = [NSData dataWithBytes:ptr length:length];
-		else
-			return self = nil;
-	}
-
-	else if (self = [self initWithType:2])
-	{
-		self.inpHook.buffer = data;
-	}
-
-	return self;
 }
 
-// -----------------------------------------------------------------------------
-// encodeWithCoder/decodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
+- (BOOL)createObjects
 {
-	[super encodeWithCoder:encoder];
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist2" mask:0x3FFF]) == nil)
+		return NO;
 
-	[encoder encodeObject:self.cpu forKey:@"cpu"];
-	[encoder encodeObject:self.rom forKey:@"rom"];
-	[encoder encodeObject:self.ram forKey:@"ram"];
-	[encoder encodeObject:self.crt forKey:@"crt"];
-	[encoder encodeObject:self.kbd forKey:@"kbd"];
-	[encoder encodeObject:self.ext forKey:@"ext"];
-	[encoder encodeObject:self.snd forKey:@"snd"];
-}
+	if (self.ext == nil && (self.ext = [[SpecialistSDCard alloc] init]) == nil)
+		return NO;
 
-- (BOOL) decodeWithCoder:(NSCoder *)decoder
-{
-	if ((self.cpu = [decoder decodeObjectForKey:@"cpu"]) == nil)
+	if (![super createObjects])
 		return FALSE;
 
-	if ((self.rom = [decoder decodeObjectForKey:@"rom"]) == nil)
-		return FALSE;
-
-	if ((self.ram = [decoder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
-
-	if ((self.crt = [decoder decodeObjectForKey:@"crt"]) == nil)
-		return FALSE;
-
-	if ((self.kbd = [decoder decodeObjectForKey:@"kbd"]) == nil)
-		return FALSE;
-
-	if ((self.ext = [decoder decodeObjectForKey:@"ext"]) == nil)
-		return FALSE;
-
-	if ((self.snd = [decoder decodeObjectForKey:@"snd"]) == nil)
-		return FALSE;
-
+	self.kbd.colorScheme = 2;
+	self.crt.isColor = TRUE;
 	return TRUE;
+}
+
+@end
+
+// ПЭВМ «Специалист» с монитором ПЭВМ «ЛИК»
+
+@implementation SpecialistLik
+
+- (BOOL)createObjects
+{
+	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Lik" mask:0x3FFF]) == nil)
+		return NO;
+
+	return [super createObjects];
+}
+
+@end
+
+// ПЭВМ «Специалист» с монитором 2.7
+
+@implementation Specialist27
+
+- (instancetype)init
+{
+	return self = [super initWithQuartz:22500000];
+}
+
+- (BOOL)createObjects
+{
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist-2.7" mask:0x3FFF]) == nil)
+		return NO;
+
+	return [super createObjects];
+}
+
+- (BOOL)mapObjects
+{
+	if (![super mapObjects])
+		return NO;
+
+	self.crt.isColor = FALSE;
+
+	[self.cpu mapObject:[self.rom memoryAtOffest:0 mask:0xFF] from:0xF800 to:0xF8FF];
+
+	return YES;
+}
+
+@end
+
+// ПЭВМ «Специалист» с монитором 3.3
+
+@implementation Specialist33
+
+- (BOOL)createObjects
+{
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist-3.3" mask:0x3FFF]) == nil)
+		return NO;
+
+	uint8_t *ptr = [self.rom BYTE:0xCEDF];
+
+	if (ptr && *ptr == 0xE5)
+		*ptr = 0xC9;
+
+	return [super createObjects];
 }
 
 @end

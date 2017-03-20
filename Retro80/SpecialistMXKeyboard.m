@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Интерфейс клавиатуры ПЭВМ «Специалист MX»
 
@@ -11,23 +11,73 @@
 
 @implementation SpecialistMXKeyboard
 
-- (void) keyboardInit
+@synthesize ramfos;
+
+- (void)keyboardInit
 {
     [super keyboardInit];
 
-    kbdmap = @[
-               @53,  @109, @122, @120, @99,  @118, @96,  @97,  @98,  @100, @101, @51,
-               @10,  @18,  @19,  @20,  @21,  @23,  @22,  @26,  @28,  @25,  @29,  @27,
-               @12,  @13,  @14,  @15,  @17,  @16,  @32,  @34,  @31,  @35,  @33,  @30,
-               @0,   @1,   @2,   @3,   @5,   @4,   @38,  @40,  @37,  @41,  @39,  @42,
-               @6,   @7,   @8,   @9,   @11,  @45,  @46,  @43,  @47,  @44,  @50,  @117,
-               @999, @115, @126, @125, @999, @999, @49,  @123, @48,  @124, @76,  @36
-               ];
+	if (ramfos)
+	{
+		kbdmap = @[
+			@53,  @109, @122, @120, @99,  @118, @96,  @97,  @98,  @100, @101, @51,
+			@10,  @18,  @19,  @20,  @21,  @23,  @22,  @26,  @28,  @25,  @29,  @27,
+			@12,  @13,  @14,  @15,  @17,  @16,  @32,  @34,  @31,  @35,  @33,  @30,
+			@0,   @1,   @2,   @3,   @5,   @4,   @38,  @40,  @37,  @41,  @39,  @42,
+			@6,   @7,   @8,   @9,   @11,  @45,  @46,  @43,  @47,  @44,  @50,  @117,
+			@999, @115, @126, @125, @999, @999, @49,  @123, @48,  @124, @76,  @36
+		];
 
-    chr1Map = @"\x1B\x7F;1234567890-jcukeng[]zh:fywaproldv\\.q^smitxb@,/_\0\0\0 \t\x03\r";
-    chr2Map = @"\x1B\x7F+!\"#$%&'() =JCUKENG{}ZH*FYWAPROLDV|>Q~SMITXB`<?\0\0\0\0 \t\x03\r";
-    
-    upperCase = FALSE;
+		chr1Map = @"\x1B\x7F;1234567890-jcukeng[]zh:fywaproldv\\.q^smitxb@,/_\0\0\0 \t\x03\r";
+		chr2Map = @"\x1B\x7F+!\"#$%&'() =JCUKENG{}ZH*FYWAPROLDV|>Q~SMITXB`<?\0\0\0\0 \t\x03\r";
+
+		upperCase = FALSE;
+	}
+}
+
+- (instancetype)init
+{
+	if (self = [super init])
+	{
+		ramfos = TRUE;
+	}
+
+	return self;
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
+{
+	if (menuItem.action == @selector(ramfos:))
+	{
+		menuItem.hidden = FALSE;
+		menuItem.state = ramfos;
+		return YES;
+	}
+
+	return [super validateMenuItem:menuItem];
+}
+
+- (IBAction)ramfos:(id)sender
+{
+	self.ramfos = !self.ramfos;
+	[self keyboardInit];
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+	[super encodeWithCoder:coder];
+	[coder encodeBool:ramfos forKey:@"ramfos"];
+}
+
+- (instancetype)initWithCoder:(NSCoder *)coder
+{
+	if (self = [super initWithCoder:coder])
+	{
+		ramfos = [coder decodeBoolForKey:@"ramfos"];
+		[self keyboardInit];
+	}
+
+	return self;
 }
 
 @end

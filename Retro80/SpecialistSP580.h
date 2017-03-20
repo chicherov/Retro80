@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Модификация ПЭВМ «Специалист» с монитором от SP580
 
@@ -9,20 +9,9 @@
 
 #import "Specialist.h"
 
-// -----------------------------------------------------------------------------
-// Интерфейс клавиатуры ПЭВМ «Специалист» с монитором от SP580
-// -----------------------------------------------------------------------------
-
-@interface SpecialistSP580Keyboard : SpecialistKeyboard
-
+@interface SpecialistSP580 : Specialist
 @end
 
-// -----------------------------------------------------------------------------
-// ПЭВМ «Специалист» с монитором от SP580
-// -----------------------------------------------------------------------------
-
-@interface SpecialistSP580 : Specialist
-
-@property SpecialistSP580Keyboard *kbd;
-
+// Интерфейс клавиатуры ПЭВМ «Специалист» с монитором от SP580
+@interface SpecialistSP580Keyboard : SpecialistKeyboard
 @end

@@ -1,55 +1,31 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+
+ Поддеркжа звукового ввода/вывода
 
  *****/
 
-@protocol CRT;
-@protocol SND;
-@protocol CPU;
-
-@class Document;
-
-// -----------------------------------------------------------------------------
-// Sound - Поддеркжа звукового ввода/вывода
-// -----------------------------------------------------------------------------
+@class Computer;
 
 @interface Sound : NSResponder
 
-@property (weak) IBOutlet NSResponder *nextResponder;
-@property (weak) IBOutlet Document* document;
-@property IBOutlet NSTextField *textField;
+@property(nonatomic, assign) Computer *computer;
 
-@property (weak) NSObject<CPU> *cpu;
-@property (weak) NSObject<CRT> *crt;
-@property (weak) NSObject<SND> *snd;
+@property(nonatomic, readonly) BOOL isOutput;
+@property(nonatomic, readonly) BOOL isInput;
 
-@property BOOL debug;
+- (void)openWave:(NSURL *)URL;
 
-@property (readonly) BOOL isOutput;
-@property BOOL output;
+- (BOOL)start;
+- (void)stop;
 
-@property (readonly) BOOL isInput;
-@property (readonly) BOOL input;
+- (void)update:(uint64_t)clock output:(BOOL)output
+		  left:(int16_t)left right:(int16_t)right;
 
-- (void) start:(NSURL *)URL;
-- (void) start;
-- (void) stop;
+- (void)flush:(uint64_t)clock;
+
+- (BOOL)input:(uint64_t)clock;
 
 @end
-
-// -----------------------------------------------------------------------------
-// Протокол звукового процессора
-// -----------------------------------------------------------------------------
-
-@protocol SND
-
-@property Sound* sound;
-
-@optional
-
-- (uint16_t) sample:(uint64_t)clock;
-
-@end
-

@@ -1,13 +1,13 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «Специалист»
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
 #import "x8255.h"
 #import "x8253.h"
 #import "mem.h"
@@ -16,29 +16,31 @@
 #import "SpecialistKeyboard.h"
 
 #import "RKRecorder.h"
-#import "ROMDisk.h"
 
-// -----------------------------------------------------------------------------
-// ПЭВМ "Специалист"
-// -----------------------------------------------------------------------------
+@interface Specialist : Retro80
 
-@interface Specialist : Computer
+@property(nonatomic, strong) SpecialistScreen *crt;
+@property(nonatomic, strong) X8253* snd;
 
-@property X8080 *cpu;
-@property ROM *rom;
-@property RAM *ram;
+@property(nonatomic, strong) SpecialistKeyboard *kbd;
+@property(nonatomic, strong) X8255* ext;
 
-@property SpecialistScreen *crt;
+@property(nonatomic, strong) F806 *inpHook;
+@property(nonatomic, strong) F80C *outHook;
 
-@property SpecialistKeyboard *kbd;
-@property X8255* ext;
-@property X8253* snd;
+- (instancetype)initWithData:(NSData *)data;
+- (instancetype)init;
 
-@property F806 *inpHook;
-@property F80C *outHook;
+@end
 
-- (BOOL) decodeWithCoder:(NSCoder *)decoder;
-- (BOOL) createObjects;
-- (BOOL) mapObjects;
+@interface SpecialistLik : Specialist
+@end
 
+@interface Specialist2 : Specialist
+@end
+
+@interface Specialist27 : Specialist2
+@end
+
+@interface Specialist33 : Specialist27
 @end

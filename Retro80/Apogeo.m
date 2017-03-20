@@ -1,103 +1,53 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «Апогей БК-01»
 
  *****/
 
 #import "Apogeo.h"
+#import "RKSDCard.h"
 
 @implementation Apogeo
 
-+ (NSString *) title
++ (NSString *)title
 {
 	return @"Апогей БК-01";
 }
 
-+ (NSArray *) extensions
-{
-	return @[@"rka"];
-}
-
-// -----------------------------------------------------------------------------
-// validateMenuItem
-// -----------------------------------------------------------------------------
-
-- (BOOL) validateMenuItem:(NSMenuItem *)menuItem
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
 	if (menuItem.action == @selector(colorModule:))
 	{
-		menuItem.state = self.isColor;
-		return YES;
-	}
-
-	if (menuItem.action == @selector(ROMDisk:) && menuItem.tag == 0)
-	{
-		NSURL *url = [self.ext URL]; if ((menuItem.state = url != nil))
-			menuItem.title = [((NSString *)[menuItem.title componentsSeparatedByString:@":"].firstObject) stringByAppendingFormat:@": %@", url.lastPathComponent];
-		else
-			menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
-
-		menuItem.submenu = nil;
-		return YES;
+		menuItem.hidden = menuItem.tag != 0;
+		menuItem.state = self.colorScheme != 0;
+		return menuItem.tag == 0;
 	}
 
 	return [super validateMenuItem:menuItem];
 }
 
-// -----------------------------------------------------------------------------
-// Модуль цветности
-// -----------------------------------------------------------------------------
-
-static uint32_t colors[] =
-{
-	0xFFFFFFFF, 0xFFFFFF00, 0xFFFFFFFF, 0xFFFFFF00,
-	0xFF00FFFF, 0xFF00FF00, 0xFF00FFFF, 0xFF00FF00,
-	0xFFFF00FF, 0xFFFF0000, 0xFFFF00FF, 0xFFFF0000,
-	0xFF0000FF, 0xFF000000, 0xFF0000FF, 0xFF000000
+static uint32_t colors[] = {
+	0xFFFFFFFF, 0xFFFFFF00, 0xFFFFFFFF, 0xFFFFFF00, 0xFF00FFFF, 0xFF00FF00, 0xFF00FFFF, 0xFF00FF00,
+	0xFFFF00FF, 0xFFFF0000, 0xFFFF00FF, 0xFFFF0000, 0xFF0000FF, 0xFF000000, 0xFF0000FF, 0xFF000000
 };
 
-- (IBAction) colorModule:(NSMenuItem *)menuItem
+- (IBAction)colorModule:(NSMenuItem *)menuItem
 {
-	[self.document registerUndoWithMenuItem:menuItem];
-
-	if ((self.isColor = !self.isColor))
-		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x3F];
-	else
-		[self.crt setColors:NULL attributesMask:0x33 shiftMask:0x22];
-}
-
-// -----------------------------------------------------------------------------
-// Внешний ROM-диск
-// -----------------------------------------------------------------------------
-
-- (IBAction) ROMDisk:(NSMenuItem *)menuItem;
-{
-	NSOpenPanel *panel = [NSOpenPanel openPanel];
-	panel.allowedFileTypes = @[@"rom", @"bin"];
-	panel.canChooseDirectories = TRUE;
-	panel.title = menuItem.title;
-	panel.delegate = self.ext;
-
-	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+	@synchronized(self)
 	{
-		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.URL = panel.URLs.firstObject;
-	}
-	else if (self.ext.URL != nil)
-	{
-		[self.document registerUndoWithMenuItem:menuItem];
-		self.ext.URL = nil;
+		[self registerUndoWithMenuItem:menuItem];
+
+		if ((self.colorScheme = !self.colorScheme))
+			[self.crt setColors:colors attributesMask:0x3F shiftMask:0x3F];
+		else
+			[self.crt setColors:NULL attributesMask:0x33 shiftMask:0x22];
 	}
 }
 
-// -----------------------------------------------------------------------------
-// createObjects
-// -----------------------------------------------------------------------------
-
-- (BOOL) createObjects
+- (BOOL)createObjects
 {
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
 		return FALSE;
@@ -105,7 +55,7 @@ static uint32_t colors[] =
 	if ((self.ram = [[RAM alloc] initWithLength:0xEC00 mask:0xFFFF]) == nil)
 		return FALSE;
 
-	if ((self.ext = [[ROMDisk alloc] init]) == nil)
+	if ((self.ext = [[RKSDCard alloc] init]) == nil)
 		return FALSE;
 
 	if (![super createObjects])
@@ -117,18 +67,13 @@ static uint32_t colors[] =
 	self.snd.channel1 = TRUE;
 	self.snd.channel2 = TRUE;
 
-	self.isColor = TRUE;
-
+	self.colorScheme = TRUE;
 	return TRUE;
 }
 
-// -----------------------------------------------------------------------------
-// mapObjects
-// -----------------------------------------------------------------------------
-
-- (BOOL) mapObjects
+- (BOOL)mapObjects
 {
-	if (self.isColor)
+	if (self.colorScheme)
 		[self.crt setColors:colors attributesMask:0x3F shiftMask:0x3F];
 	else
 		[self.crt setColors:NULL attributesMask:0x33 shiftMask:0x22];

@@ -1,23 +1,22 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Клавиатура РК86 на 8255
 
  *****/
 
-#import "x8080.h"
 #import "x8255.h"
 
-@interface RKKeyboard : X8255 <KBD>
+@interface RKKeyboard : X8255
 {
 	// Раскладка клавиатуры (64/72 кода)
 
-	NSArray* kbdmap;
+	NSArray<NSNumber *> *kbdmap;
 
-	NSString* chr1Map;
-	NSString* chr2Map;
+	NSString *chr1Map;
+	NSString *chr2Map;
 	BOOL upperCase;
 
 	// Нажатые кнопки
@@ -38,11 +37,10 @@
 	uint8_t TAPEO;
 }
 
-// Для интерфейса магнитофона
+- (void)pasteString:(NSString *)string;
 
-@property (weak) NSObject <SND> *snd;
-
-- (void) scan:(uint64_t)clock;
 - (void) keyboardInit;
+
+@property(nonatomic) BOOL qwerty;
 
 @end

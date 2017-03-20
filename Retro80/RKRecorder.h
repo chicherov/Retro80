@@ -5,13 +5,13 @@
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
 
 // -----------------------------------------------------------------------------
 // F806 - Ввод байта с магнитофона
 // -----------------------------------------------------------------------------
 
-@interface F806 : NSObject <Adjustment, RD, BYTE>
+@interface F806 : NSObject <Enabled, RD, BYTE>
 {
 	NSOpenPanel *panel;
 	BOOL cancel;
@@ -38,7 +38,7 @@
 // F80C - Вывод байта на магнитофон
 // -----------------------------------------------------------------------------
 
-@interface F80C : NSObject <Adjustment, RD, BYTE>
+@interface F80C : NSObject <Enabled, RD, BYTE>
 {
 	NSTimeInterval last;
 }

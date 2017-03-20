@@ -1,16 +1,16 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  КР1818ВГ93
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
 #import "x8257.h"
 
-@interface VG93 : NSObject<RD, WR, RESET, DMA, HLDA, NSCoding>
+@interface VG93 : NSResponder<RD, WR, RESET, DMA, HLDA, Enabled, NSCoding>
 {
 	union VG93_command		// Регистр команды
 	{
@@ -71,14 +71,16 @@
 	uint8_t shift;
 }
 
-- (id) initWithQuartz:(unsigned)quartz;
+@property(nonatomic, assign) Retro80 *computer;
 
-- (void) setDisk:(NSInteger)disk URL:(NSURL *)url;
-- (NSURL *) getDisk:(NSInteger)disk;
-- (BOOL) busy;
+- (instancetype)initWithQuartz:(unsigned)quartz;
 
-@property unsigned selected;
-@property BOOL head;
-@property BOOL HOLD;
+- (void)setDisk:(NSInteger)disk URL:(NSURL *)url;
+- (NSURL *)getDisk:(NSInteger)disk;
+- (BOOL)busy;
+
+@property(nonatomic) unsigned selected;
+@property(nonatomic) BOOL head;
+@property(nonatomic) BOOL HOLD;
 
 @end

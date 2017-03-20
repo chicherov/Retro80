@@ -1,39 +1,38 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Интерфейс графического экрана ПЭВМ «Орион-128»
 
  *****/
 
 #import "Orion128Screen.h"
+#import "Display.h"
 
 @implementation Orion128Screen
 {
-	uint32_t* bitmap;
+	uint32_t *bitmap;
 	NSUInteger width;
 	uint64_t IRQ;
 }
 
 @synthesize display;
 
-@synthesize memory;
+@synthesize pMemory;
 @synthesize color;
 @synthesize page;
 
 @synthesize IE;
 
-// -----------------------------------------------------------------------------
-
-- (void) draw
+- (void)draw
 {
-	if (memory)
+	if (pMemory)
 	{
 		if (bitmap == NULL || (page & 0x80 ? width != 480 : width == 480) || (color & 0x04 && width == 400) || ((color & 0x06) == 0x02 && width == 384))
-			bitmap = [self.display setupGraphicsWidth:width = (page & 0x80 ? 480 : (color & 0x06) == 0x02 ? 400 : 384) height:256];
+				bitmap = [self.display setupGraphicsWidth:width = (page & 0x80 ? 480 : (color & 0x06) == 0x02 ? 400 : 384) height:256];
 
-		const uint8_t *mem = memory + ((~page & 0x03) << 14);
+		const uint8_t *mem = *pMemory + ((~page & 0x03) << 14);
 
 		if (color & 0x04)
 		{
@@ -93,20 +92,11 @@
 			}
 		}
 
-		self.display.needsDisplay = TRUE;
+			self.display.needsDisplay = TRUE;
 	}
 }
 
-// -----------------------------------------------------------------------------
-
-- (void) WR:(uint16_t)addr data:(uint8_t)data CLK:(uint64_t)clock
-{
-
-}
-
-// -----------------------------------------------------------------------------
-
-- (void) RESET:(uint64_t)clock
+- (void)RESET:(uint64_t)clock
 {
 	bitmap = NULL;
 	color = 0x00;
@@ -115,9 +105,7 @@
 	IE = FALSE;
 }
 
-// -----------------------------------------------------------------------------
-
-- (BOOL) IRQ:(uint64_t)clock
+- (BOOL)IRQ:(uint64_t)clock
 {
 	if (IRQ <= clock)
 	{
@@ -128,11 +116,7 @@
 	return FALSE;
 }
 
-// -----------------------------------------------------------------------------
-// encodeWithCoder/initWithCoder
-// -----------------------------------------------------------------------------
-
-- (void) encodeWithCoder:(NSCoder *)encoder
+- (void)encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:color forKey:@"color"];
 	[encoder encodeInt:page forKey:@"page"];
@@ -141,9 +125,9 @@
 	[encoder encodeBool:IE forKey:@"IE"];
 }
 
-- (id) initWithCoder:(NSCoder *)decoder
+- (instancetype)initWithCoder:(NSCoder *)decoder
 {
-	if (self = [self init])
+	if (self = [super init])
 	{
 		color = [decoder decodeIntForKey:@"color"];
 		page = [decoder decodeIntForKey:@"page"];
@@ -155,12 +139,8 @@
 	return self;
 }
 
-// -----------------------------------------------------------------------------
-// DEBUG: dealloc
-// -----------------------------------------------------------------------------
-
 #ifdef DEBUG
-- (void) dealloc
+- (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
 }

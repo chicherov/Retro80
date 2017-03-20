@@ -1,14 +1,13 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Интерфейс сопряжения ПЭВМ «Микро-80»
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
 
-@interface Micro80Recorder : NSObject <SND, RD, WR>
-
+@interface Micro80Recorder : NSObject<SND, RD, WR>
 @end

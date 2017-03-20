@@ -1,93 +1,83 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  ПЭВМ «Орион 128»
 
  *****/
 
-#import "x8080.h"
+#import "Retro80.h"
+#import "x8253.h"
 #import "mem.h"
 
 #import "Orion128Screen.h"
 #import "Orion128Floppy.h"
+#import "SystemROMDisk.h"
 
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
-#import "ROMDisk.h"
 
-#import "x8253.h"
+@class Orion128System;
+@class Z80CardII;
 
-// -----------------------------------------------------------------------------
-// Системные регистры ПЭВМ "Орион 128"
-// -----------------------------------------------------------------------------
+@interface Orion128 : Retro80
 
-@interface Orion128SystemF8 : NSObject<RD, WR>
-- (id) initWithCRT:(Orion128Screen *)crt;
-@end
+@property(nonatomic, strong) Orion128Screen *crt;
+@property(nonatomic, strong) X8253 *snd;
 
-@interface Orion128SystemF9 : NSObject<RD, WR>
-- (id) initWithRAM:(RAM *)ram;
-@end
+@property(nonatomic, strong) RKKeyboard *kbd;
+@property(nonatomic, strong) SystemROMDisk *ext;
+@property(nonatomic, strong) X8255 *prn;
 
-@interface Orion128SystemFA : NSObject<RD, WR>
-- (id) initWithCRT:(Orion128Screen *)crt;
-@end
+@property(nonatomic, strong) Orion128Floppy *fdd;
 
-// -----------------------------------------------------------------------------
-// ПЭВМ "Орион 128"
-// -----------------------------------------------------------------------------
+@property(nonatomic, strong) MEM *mem;
 
-@interface Orion128 : Computer
+@property(nonatomic, strong) Orion128System *sys;
 
-@property X8080 *cpu;
-@property ROM *rom;
-@property RAM *ram;
-@property MEM *mem;
+@property(nonatomic, strong) F806 *inpHook;
+@property(nonatomic, strong) F80C *outHook;
 
-@property Orion128SystemF8 *sysF8;
-@property Orion128SystemF9 *sysF9;
-@property Orion128SystemFA *sysFA;
-
-@property Orion128Screen *crt;
-@property Orion128Floppy *fdd;
-
-@property RKKeyboard *kbd;
-@property ROMDisk *ext;
-@property X8255 *prn;
-
-@property X8253 *snd;
-
-@property F806 *inpHook;
-@property F80C *outHook;
+- (instancetype)initWithData:(NSData *)data;
+- (instancetype)init;
 
 @end
 
-// -----------------------------------------------------------------------------
-// Системные регистры Z80Card-II
-// -----------------------------------------------------------------------------
+// ПЭВМ «Орион-128» с Монитором 1
 
-@interface Orion128SystemFB : NSObject<RD, WR>
-- (id) initWithCPU:(X8080 *)cpu MEM:(MEM *)mem CRT:(Orion128Screen *)crt;
+@interface Orion128M1 : Orion128
 @end
 
-@interface Orion128SystemFE : NSObject <RD, WR>
-- (id) initWithX8253:(X8253 *)snd EXT:(ROMDisk *)ext;
+// ПЭВМ «Орион-128» с Монитором 3
+
+@interface Orion128M3 : Orion128
 @end
 
-@interface Orion128SystemFF : NSObject <RD, WR>
-- (id) initWithX8253:(X8253 *)snd;
+// ПЭВМ «Орион-128» с Z80 Card V3.1
+
+@interface Orion128Z80V31 : Orion128
 @end
 
-// -----------------------------------------------------------------------------
-// ПЭВМ "Орион 128" + Z80Card-II
-// -----------------------------------------------------------------------------
+// ПЭВМ «Орион-128» с Z80 Card V3.2
 
-@interface Orion128Z80CardII : Orion128
+@interface Orion128Z80V32 : Orion128Z80V31
+@end
 
-@property Orion128SystemFB *sysFB;
-@property Orion128SystemFE *sysFE;
-@property Orion128SystemFF *sysFF;
+// Системные регистры ПЭВМ «Орион 128»
 
+@interface Orion128System : NSObject<WR>
+@property(nonatomic, assign) Orion128 *orion;
+@end
+
+// ПЭВМ «Орион-128» с Z80 Card II
+
+@interface Orion128Z80II : Orion128
+@property(nonatomic, strong) Z80CardII *card;
+@end
+
+// Z80 Card II
+
+@interface Z80CardII : NSObject<RD, WR, RESET>
+@property(nonatomic, assign) Orion128Z80II *orion;
 @end
