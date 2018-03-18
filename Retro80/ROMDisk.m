@@ -59,6 +59,7 @@
 
 - (void)encodeWithCoder:(NSCoder *)encoder
 {
+	[encoder encodeObject:resource forKey:@"resource"];
 	[encoder encodeObject:URL forKey:@"URL"];
 
 	[encoder encodeInteger:MSB forKey:@"MSB"];
@@ -74,6 +75,7 @@
 {
 	if (self = [super initWithCoder:decoder])
 	{
+		resource = [decoder decodeObjectForKey:@"resource"];
 		self.URL = [decoder decodeObjectForKey:@"URL"];
 
 		MSB = (uint8_t) [decoder decodeIntegerForKey:@"MSB"];
@@ -84,6 +86,14 @@
 			addr = (uint16_t) [decoder decodeIntegerForKey:@"addr"];
 		}
 	}
+
+	return self;
+}
+
+- (instancetype)initWithContentsOfResource:(NSString *)aResource
+{
+	if (self = [super init])
+		self.URL = [[NSBundle mainBundle] URLForResource:resource = aResource withExtension:@"rom"];
 
 	return self;
 }
@@ -139,17 +149,30 @@
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(ROMDisk:) && menuItem.tag == 0)
+	if (menuItem.action == @selector(ROMDisk:))
 	{
 		@synchronized(self.computer)
 		{
-			menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
+			if (menuItem.tag == 0)
+			{
+				if ((menuItem.hidden = [URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath]))
+					return NO;
 
-			if ((menuItem.state = URL != nil) && ![URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath])
-				menuItem.title = [menuItem.title stringByAppendingFormat:@": %@", URL.lastPathComponent];
+				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 
-			menuItem.hidden = FALSE;
-			return YES;
+				if ((menuItem.state = URL != nil))
+					menuItem.title = [menuItem.title stringByAppendingFormat:@": %@", URL.lastPathComponent];
+
+				return YES;
+			}
+
+			if (menuItem.tag == 1)
+			{
+				menuItem.state = [URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath];
+				menuItem.alternate = !menuItem.state;
+				menuItem.hidden = FALSE;
+				return YES;
+			}
 		}
 	}
 
@@ -160,6 +183,16 @@
 
 - (IBAction)ROMDisk:(NSMenuItem *)menuItem
 {
+	if (menuItem.tag == 1 && ![URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath])
+	{
+		@synchronized(self.computer)
+		{
+			[self.computer registerUndoWithMenuItem:menuItem];
+			self.URL = [[NSBundle mainBundle] URLForResource:resource withExtension:@"rom"];
+			return;
+		}
+	}
+
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 	panel.allowedFileTypes = @[@"rom", @"bin"];
 	panel.canChooseDirectories = TRUE;

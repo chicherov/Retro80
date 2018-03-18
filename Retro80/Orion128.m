@@ -8,7 +8,6 @@
  *****/
 
 #import "Orion128.h"
-#import "SystemROMDisk.h"
 
 @implementation Orion128
 
@@ -56,7 +55,7 @@
 	if (self.kbd == nil && (self.kbd = [[RKKeyboard alloc] init]) == nil)
 		return FALSE;
 
-	if (self.ext == nil && (self.ext = [[SystemROMDisk alloc] initWithContentsOfResource:@"ORDOS-4.03"]) == nil)
+	if (self.ext == nil && (self.ext = [[ROMDisk alloc] initWithContentsOfResource:@"ORDOS-4.03"]) == nil)
 		return FALSE;
 
 	if (self.prn == nil && (self.prn = [[X8255 alloc] init]) == nil)
@@ -334,7 +333,7 @@
 		self.ram.mutableBytes [0x10000] = 0xFF;
 	}
 
-	if (self.ext == nil && (self.ext = [[SystemROMDisk alloc] initWithContentsOfResource:@"ORDOS-2.40"]) == nil)
+	if (self.ext == nil && (self.ext = [[ROMDisk alloc] initWithContentsOfResource:@"ORDOS-2.40"]) == nil)
 		return FALSE;
 
 	if (![super createObjects])

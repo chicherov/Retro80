@@ -10,7 +10,6 @@
 		36A9C02B1250C90EF5C86C37 /* SpecialistMXKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9CB9B1FEDF94A97FEBEEE /* SpecialistMXKeyboard.m */; };
 		36A9C07354E31D0FF79869C3 /* SpecialistMX.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9CAFAE49016F4DB03AB24 /* SpecialistMX.m */; };
 		36A9C1A4631C5F4B752CAAE7 /* RKSDCard.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C959FCA8C6F7F037061A /* RKSDCard.m */; };
-		36A9C3303626A40A28FA959F /* SystemROMDisk.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C112EB4B4621DCCB2DAC /* SystemROMDisk.m */; };
 		36A9C3C20E6F551ABF4A5D5F /* Computer.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9CA307A3388FC7E8D5E50 /* Computer.m */; };
 		36A9C519888D5E4FE31FF2FD /* SpecialistSP580.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C150A004D01D2597BB2C /* SpecialistSP580.m */; };
 		36A9C996DFDDC87D81B13A01 /* SpecialistKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C95229419D86990F63F7 /* SpecialistKeyboard.m */; };
@@ -132,7 +131,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		36A9C112EB4B4621DCCB2DAC /* SystemROMDisk.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SystemROMDisk.m; sourceTree = "<group>"; };
 		36A9C150A004D01D2597BB2C /* SpecialistSP580.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistSP580.m; sourceTree = "<group>"; };
 		36A9C25BDA9E4810B8CB7B3B /* SpecialistScreen.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistScreen.m; sourceTree = "<group>"; };
 		36A9C2DF2C660CF1E61D0B5B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -151,7 +149,6 @@
 		36A9CAFAE49016F4DB03AB24 /* SpecialistMX.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMX.m; sourceTree = "<group>"; };
 		36A9CB9B1FEDF94A97FEBEEE /* SpecialistMXKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMXKeyboard.m; sourceTree = "<group>"; };
 		36A9CE4F90F90CF587161D00 /* SpecialistMXKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMXKeyboard.h; sourceTree = "<group>"; };
-		36A9CF0930DAE6B2E485B7D5 /* SystemROMDisk.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SystemROMDisk.h; sourceTree = "<group>"; };
 		D907F01E1B1BB45500616107 /* digits.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = digits.png; sourceTree = "<group>"; };
 		D90D94121B09A27300CE2475 /* Orion128Floppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orion128Floppy.h; sourceTree = "<group>"; };
 		D90D94131B09A27300CE2475 /* Orion128Floppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Orion128Floppy.m; sourceTree = "<group>"; };
@@ -345,8 +342,6 @@
 				D92701871B07429F00CC51BD /* Orion128Screen.m */,
 				D90D94121B09A27300CE2475 /* Orion128Floppy.h */,
 				D90D94131B09A27300CE2475 /* Orion128Floppy.m */,
-				36A9CF0930DAE6B2E485B7D5 /* SystemROMDisk.h */,
-				36A9C112EB4B4621DCCB2DAC /* SystemROMDisk.m */,
 			);
 			name = Orion128;
 			sourceTree = "<group>";
@@ -772,7 +767,6 @@
 				D9D41F6D1E824800005C4AC5 /* Orion128Factory.m in Sources */,
 				36A9C3C20E6F551ABF4A5D5F /* Computer.m in Sources */,
 				36A9C1A4631C5F4B752CAAE7 /* RKSDCard.m in Sources */,
-				36A9C3303626A40A28FA959F /* SystemROMDisk.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

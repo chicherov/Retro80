@@ -13,10 +13,10 @@
 
 #import "Orion128Screen.h"
 #import "Orion128Floppy.h"
-#import "SystemROMDisk.h"
 
 #import "RKKeyboard.h"
 #import "RKRecorder.h"
+#import "ROMDisk.h"
 
 @class Orion128System;
 @class Z80CardII;
@@ -27,7 +27,7 @@
 @property(nonatomic, strong) X8253 *snd;
 
 @property(nonatomic, strong) RKKeyboard *kbd;
-@property(nonatomic, strong) SystemROMDisk *ext;
+@property(nonatomic, strong) ROMDisk *ext;
 @property(nonatomic, strong) X8255 *prn;
 
 @property(nonatomic, strong) Orion128Floppy *fdd;
