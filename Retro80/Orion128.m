@@ -355,6 +355,9 @@
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.1" mask:0x07FF]) == nil)
 		return FALSE;
 
+	if (self.ext == nil && (self.ext = [[ROMDisk alloc] initWithContentsOfResource:@"M3-EXT-1.3"]) == nil)
+		return FALSE;
+
 	return [super createObjects];
 }
 

@@ -15,6 +15,7 @@
 		36A9C996DFDDC87D81B13A01 /* SpecialistKeyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C95229419D86990F63F7 /* SpecialistKeyboard.m */; };
 		36A9CA557FE8877B01CD4181 /* Specialist.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C9A2ECE23A9F311BFB4C /* Specialist.m */; };
 		36A9CB081DCF3A64A8E2E2FE /* SpecialistScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C25BDA9E4810B8CB7B3B /* SpecialistScreen.m */; };
+		36A9CF1878470F8A3ACCE3C5 /* M3-EXT-1.3.rom in Resources */ = {isa = PBXBuildFile; fileRef = 36A9CDEB06194E6384604F39 /* M3-EXT-1.3.rom */; };
 		36A9CF5B8E310101F21857C6 /* SpecialistMXSystem.m in Sources */ = {isa = PBXBuildFile; fileRef = 36A9C37988CB8D68D5EFC89C /* SpecialistMXSystem.m */; };
 		D907F01F1B1BB45500616107 /* digits.png in Resources */ = {isa = PBXBuildFile; fileRef = D907F01E1B1BB45500616107 /* digits.png */; };
 		D90D94141B09A27300CE2475 /* Orion128Floppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D90D94131B09A27300CE2475 /* Orion128Floppy.m */; };
@@ -148,6 +149,7 @@
 		36A9CA307A3388FC7E8D5E50 /* Computer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Computer.m; sourceTree = "<group>"; };
 		36A9CAFAE49016F4DB03AB24 /* SpecialistMX.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMX.m; sourceTree = "<group>"; };
 		36A9CB9B1FEDF94A97FEBEEE /* SpecialistMXKeyboard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistMXKeyboard.m; sourceTree = "<group>"; };
+		36A9CDEB06194E6384604F39 /* M3-EXT-1.3.rom */ = {isa = PBXFileReference; lastKnownFileType = file.rom; name = "M3-EXT-1.3.rom"; path = "Retro80/ROM/M3-EXT-1.3.rom"; sourceTree = "<group>"; };
 		36A9CE4F90F90CF587161D00 /* SpecialistMXKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMXKeyboard.h; sourceTree = "<group>"; };
 		D907F01E1B1BB45500616107 /* digits.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = digits.png; sourceTree = "<group>"; };
 		D90D94121B09A27300CE2475 /* Orion128Floppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orion128Floppy.h; sourceTree = "<group>"; };
@@ -380,6 +382,7 @@
 				D9903DB61BC8000B00750E86 /* Orion128-3.3.bin */,
 				D9A82D6A1B0C9B0400DC9B5F /* ORDOS-2.40.rom */,
 				D9A82D6B1B0C9B0400DC9B5F /* ORDOS-4.03.rom */,
+				36A9CDEB06194E6384604F39 /* M3-EXT-1.3.rom */,
 			);
 			name = Resources;
 			path = ..;
@@ -695,6 +698,7 @@
 				D93DC7471AB2CE5B0005D473 /* Radio86RK.bin in Resources */,
 				D97AD7D11CE925D300015D1C /* tvnoise.vs in Resources */,
 				D97AD7CF1CE9246000015D1C /* tvnoise.fs in Resources */,
+				36A9CF1878470F8A3ACCE3C5 /* M3-EXT-1.3.rom in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
