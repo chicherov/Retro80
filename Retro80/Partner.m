@@ -293,7 +293,7 @@
 {
 	if (self = [self init])
 	{
-		[self.kbd pasteString:@"\nI\n"];
+		[self.kbd pasteString:@"\x7F\x7FI\n"];
 		self.inpHook.buffer = data;
 	}
 
