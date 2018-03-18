@@ -243,7 +243,10 @@
 
 	[self.cpu mapObject:self.crt from:0xE000 to:0xEFFF];
 
+	self.inpHook.extension = @"rk";
 	self.inpHook.type = 1;
+
+	self.outHook.extension = @"rk";
 	self.outHook.type = 1;
 	return TRUE;
 }
