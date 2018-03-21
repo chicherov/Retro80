@@ -432,6 +432,18 @@
 
 @end
 
+@implementation Orion128Z80IIM33
+
+- (BOOL)createObjects
+{
+	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.3" mask:0x07FF]) == nil)
+		return FALSE;
+
+	return [super createObjects];
+}
+
+@end
+
 // Системные регистры ПЭВМ «Орион 128»
 
 @implementation Orion128System

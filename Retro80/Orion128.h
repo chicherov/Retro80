@@ -70,10 +70,15 @@
 @property(nonatomic, assign) Orion128 *orion;
 @end
 
-// ПЭВМ «Орион-128» с Z80 Card II
+// ПЭВМ «Орион-128» с Z80 Card II, монитор 3.2
 
 @interface Orion128Z80II : Orion128
 @property(nonatomic, strong) Z80CardII *card;
+@end
+
+// ПЭВМ «Орион-128» с Z80 Card II, монитор 3.3
+
+@interface Orion128Z80IIM33 : Orion128Z80II
 @end
 
 // Z80 Card II

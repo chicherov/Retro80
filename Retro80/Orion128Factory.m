@@ -38,6 +38,9 @@
 
 		case 6:
 			return [[Orion128Z80II alloc] init];
+
+		case 7:
+			return [[Orion128Z80IIM33 alloc] init];
 	}
 
 	return nil;

@@ -228,10 +228,16 @@
                                                         </connections>
                                                     </menuItem>
                                                     <menuItem isSeparatorItem="YES" id="TMt-5C-eAF"/>
-                                                    <menuItem title="Z80Card-II" tag="406" id="Zt8-Tv-QCT">
+                                                    <menuItem title="Z80Card-II (ROM-диск)" tag="406" id="Zt8-Tv-QCT">
                                                         <modifierMask key="keyEquivalentModifierMask"/>
                                                         <connections>
                                                             <action selector="newDocument:" target="-1" id="TUt-9j-J79"/>
+                                                        </connections>
+                                                    </menuItem>
+                                                    <menuItem title="Z80Card-II (дискета)" tag="407" id="iw6-If-tfR">
+                                                        <modifierMask key="keyEquivalentModifierMask"/>
+                                                        <connections>
+                                                            <action selector="newDocument:" target="-1" id="f2d-zc-4bM"/>
                                                         </connections>
                                                     </menuItem>
                                                 </items>
