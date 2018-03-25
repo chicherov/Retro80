@@ -129,7 +129,7 @@
 
 	self.ram.offset = 0x10000;
 
-	if (self.kbd == nil && (self.kbd = [[SpecialistMXKeyboard alloc] init]) == nil)
+	if (self.kbd == nil && (self.kbd = [[SpecialistMXKeyboard alloc] initRAMFOS]) == nil)
 		return FALSE;
 
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
@@ -222,11 +222,11 @@
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX_Commander" mask:0xFFFF]) == nil)
 		return FALSE;
 
-	if ([super createObjects] == FALSE)
+	if (self.kbd == nil && (self.kbd = [[SpecialistMXKeyboard alloc] init]) == nil)
 		return FALSE;
 
-	if ([self.kbd isKindOfClass:SpecialistMXKeyboard.class])
-		((SpecialistMXKeyboard *) self.kbd).ramfos = FALSE;
+	if ([super createObjects] == FALSE)
+		return FALSE;
 
 	return TRUE;
 }

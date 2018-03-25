@@ -10,5 +10,5 @@
 #import "SpecialistKeyboard.h"
 
 @interface SpecialistMXKeyboard : SpecialistKeyboard
-@property(nonatomic) BOOL ramfos;
+- (instancetype)initRAMFOS;
 @end

@@ -10,8 +10,9 @@
 #import "SpecialistMXKeyboard.h"
 
 @implementation SpecialistMXKeyboard
-
-@synthesize ramfos;
+{
+	BOOL ramfos;
+}
 
 - (void)keyboardInit
 {
@@ -35,16 +36,6 @@
 	}
 }
 
-- (instancetype)init
-{
-	if (self = [super init])
-	{
-		ramfos = TRUE;
-	}
-
-	return self;
-}
-
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
 	if (menuItem.action == @selector(ramfos:))
@@ -59,7 +50,7 @@
 
 - (IBAction)ramfos:(id)sender
 {
-	self.ramfos = !self.ramfos;
+	ramfos = !ramfos;
 	[self keyboardInit];
 }
 
@@ -71,13 +62,14 @@
 
 - (instancetype)initWithCoder:(NSCoder *)coder
 {
-	if (self = [super initWithCoder:coder])
-	{
-		ramfos = [coder decodeBoolForKey:@"ramfos"];
-		[self keyboardInit];
-	}
+	ramfos = [coder decodeBoolForKey:@"ramfos"];
+	return self = [super initWithCoder:coder];
+}
 
-	return self;
+- (instancetype)initRAMFOS
+{
+	ramfos = TRUE;
+	return self = [super init];
 }
 
 @end
