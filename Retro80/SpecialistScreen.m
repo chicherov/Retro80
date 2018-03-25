@@ -70,7 +70,9 @@
 				*ptr++ = screen[addr] & (0x80 >> i) ? c1 : c0;
 		}
 
-		self.display.needsDisplay = TRUE;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self.display setNeedsDisplay:TRUE];
+		});
 	}
 }
 

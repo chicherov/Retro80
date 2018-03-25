@@ -124,11 +124,13 @@ static OSStatus audioConverterComplexInputDataProc(AudioConverterRef inAudioConv
 
 			if (ioNumPackets > 0)
 			{
-				textField.stringValue = [NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
-																   (unsigned) (audioFilePos/fileFormat.mSampleRate)/60,
-																   (unsigned) (audioFilePos/fileFormat.mSampleRate)%60,
-																   (unsigned) (packetCount/fileFormat.mSampleRate)/60,
-																   (unsigned) (packetCount/fileFormat.mSampleRate)%60];
+				[textField performSelectorOnMainThread:@selector(setStringValue:)
+											withObject:[NSString stringWithFormat:@"%02d:%02d/%02d:%02d",
+																				  (unsigned) (audioFilePos / fileFormat.mSampleRate) / 60,
+																				  (unsigned) (audioFilePos / fileFormat.mSampleRate) % 60,
+																				  (unsigned) (packetCount / fileFormat.mSampleRate) / 60,
+																				  (unsigned) (packetCount / fileFormat.mSampleRate) % 60]
+										 waitUntilDone:FALSE];
 			}
 			else
 			{
@@ -144,7 +146,9 @@ static OSStatus audioConverterComplexInputDataProc(AudioConverterRef inAudioConv
 
 				inAudioFile = 0;
 
-				textField.stringValue = @"--:--";
+				[textField performSelectorOnMainThread:@selector(setStringValue:)
+											withObject:@"--:--"
+										 waitUntilDone:FALSE];
 			}
 		}
 
@@ -207,9 +211,11 @@ static OSStatus audioConverterComplexInputDataProc(AudioConverterRef inAudioConv
 
 			packetCount = audioFilePos += ioNumPackets;
 
-			textField.stringValue = [NSString stringWithFormat:@"%02d:%02d",
-															   (unsigned) (packetCount/streamFormat.mSampleRate)/60,
-															   (unsigned) (packetCount/streamFormat.mSampleRate)%60];
+			[textField performSelectorOnMainThread:@selector(setStringValue:)
+										withObject:[NSString stringWithFormat:@"%02d:%02d",
+																			  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
+																			  (unsigned) (packetCount / streamFormat.mSampleRate) % 60]
+									 waitUntilDone:FALSE];
 		}
 
 		else if (packetCount)
@@ -425,8 +431,10 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 
 - (BOOL)start
 {
-	textField.textColor = [NSColor blackColor];
-	textField.stringValue = @"--:--";
+	dispatch_async(dispatch_get_main_queue(), ^{
+		textField.textColor = [NSColor blackColor];
+		textField.stringValue = @"--:--";
+	});
 
 	quartz = self.computer.quartz;
 	frame = self.computer.clock;

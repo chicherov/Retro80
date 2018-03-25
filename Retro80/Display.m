@@ -49,9 +49,9 @@
 		data2 = nil;
 		overlay = NSZeroSize;
 
-		[self.window.windowController performSelectorOnMainThread:@selector(resize)
-													   withObject:nil
-													waitUntilDone:FALSE];
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[(WindowController *) self.window.windowController resize];
+		});
 
 		isSelected = FALSE;
 		selected = NSZeroRect;
@@ -97,18 +97,27 @@
 		if (data2 && (gigaScreen || graphics.width != overlay.width || graphics.height != overlay.height))
 		{
 			mode = 3;
-			self.needsDisplay = TRUE;
+
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[self setNeedsDisplay:TRUE];
+			});
 		}
 		else
 		{
 			mode = 1;
-			self.needsDisplay = TRUE;
+
+			dispatch_async(dispatch_get_main_queue(), ^{
+				[self setNeedsDisplay:TRUE];
+			});
 		}
 	}
 	else if (!gigaScreen)
 	{
 		mode = 2;
-		self.needsDisplay = TRUE;
+
+		dispatch_async(dispatch_get_main_queue(), ^{
+			[self setNeedsDisplay:TRUE];
+		});
 	}
 }
 

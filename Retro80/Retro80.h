@@ -13,7 +13,7 @@
 
 // Протокол контролера дисплея
 @protocol CRT
-@property(assign, nonatomic) Display *display;
+@property(nonatomic, weak) Display *display;
 
 @optional
 - (void)draw;
