@@ -187,6 +187,10 @@
 	return [super validateMenuItem:menuItem];
 }
 
+static uint8_t path[] = {
+	0xFB, 0x3E, 0x82, 0x32, 0x03, 0xFF, 0xC3, 0x44, 0xC4, 0x00
+};
+
 - (IBAction)colorModule:(NSMenuItem *)menuItem
 {
 	[self registerUndoWithMenuItem:menuItem];
@@ -210,6 +214,19 @@
 			self.crt.isColor = TRUE;
 			break;
 	}
+
+	uint8_t *ptr = self.rom.mutableBytes + 6;
+
+	if (self.crt.isColor && self.kbd.colorScheme == 2)
+	{
+		if (memcmp(ptr, path + 1, 9) == 0)
+			memcpy(ptr, path, 9);
+	}
+	else
+	{
+		if (memcmp(ptr, path, 9) == 0)
+			memcpy(ptr, path + 1, 9);
+	}
 }
 
 - (BOOL)createObjects
@@ -222,6 +239,11 @@
 
 	if (![super createObjects])
 		return FALSE;
+
+	uint8_t *ptr = self.rom.mutableBytes + 6;
+
+	if (memcmp(ptr, path + 1, 9) == 0)
+		memcpy(ptr, path, 9);
 
 	self.kbd.colorScheme = 2;
 	self.crt.isColor = TRUE;
