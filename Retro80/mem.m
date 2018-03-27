@@ -1,7 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (http://uart.myqnapcloud.com/retro80.html)
- Copyright © 2014-2016 Andrey Chicherov <chicherov@mac.com>
+ Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
 
  Модули ОЗУ и ПЗУ
  
@@ -191,6 +191,11 @@
 	}
 
 	return self;
+}
+
+- (void) RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
+{
+	*data = 0xFF; [super RD:addr data:data CLK:clock];
 }
 
 @end
