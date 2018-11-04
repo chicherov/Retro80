@@ -10,6 +10,8 @@
 #import "Specialist.h"
 #import "SpecialistSDCard.h"
 
+// ПЭВМ «Специалист» с монитором 1
+
 @implementation Specialist
 
 @synthesize snd;

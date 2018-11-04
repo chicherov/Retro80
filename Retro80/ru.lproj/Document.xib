@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="11762" systemVersion="16D32" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="14313.18" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="11762"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="14313.18"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
@@ -28,7 +28,7 @@
                 <outlet property="textView" destination="FeX-Q1-ED0" id="Ri7-gq-ch2"/>
             </connections>
         </customObject>
-        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" animationBehavior="default" id="O9k-RO-V98" userLabel="Computer Window">
+        <window title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" tabbingMode="disallowed" id="O9k-RO-V98" userLabel="Computer Window">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowCollectionBehavior key="collectionBehavior" fullScreenPrimary="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
@@ -50,7 +50,7 @@
                             <outlet property="digit6" destination="bV2-nW-PMC" id="laF-jW-cOZ"/>
                         </connections>
                     </customView>
-                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="ggy-Fu-duH">
+                    <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="ggy-Fu-duH">
                         <rect key="frame" x="5" y="0.0" width="4" height="22"/>
                         <constraints>
                             <constraint firstAttribute="height" constant="22" id="rJP-rM-255"/>
@@ -130,7 +130,7 @@
                 <outlet property="delegate" destination="-2" id="Fbs-Up-CgJ"/>
             </connections>
         </window>
-        <window title="Ретро КР580: Отладчик" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" oneShot="NO" releasedWhenClosed="NO" showsToolbarButton="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
+        <window title="Ретро КР580: Отладчик" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" hidesOnDeactivate="YES" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="01n-hT-pln" userLabel="Debug Panel" customClass="NSPanel">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES" utility="YES"/>
             <rect key="contentRect" x="167" y="107" width="783" height="522"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1440" height="877"/>
@@ -142,11 +142,12 @@
                         <rect key="frame" x="0.0" y="0.0" width="783" height="522"/>
                         <clipView key="contentView" drawsBackground="NO" copiesOnScroll="NO" id="EOO-jY-kaX">
                             <rect key="frame" x="1" y="1" width="781" height="520"/>
-                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                            <autoresizingMask key="autoresizingMask"/>
                             <subviews>
-                                <textView importsGraphics="NO" richText="NO" horizontallyResizable="YES" id="FeX-Q1-ED0">
+                                <textView importsGraphics="NO" richText="NO" horizontallyResizable="YES" verticallyResizable="YES" id="FeX-Q1-ED0">
                                     <rect key="frame" x="0.0" y="0.0" width="781" height="520"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <color key="textColor" name="textColor" catalog="System" colorSpace="catalog"/>
                                     <color key="backgroundColor" red="1" green="1" blue="0.78431372549019607" alpha="0.94999999999999996" colorSpace="calibratedRGB"/>
                                     <size key="minSize" width="781" height="520"/>
                                     <size key="maxSize" width="10000000" height="10000000"/>
@@ -158,11 +159,11 @@
                             </subviews>
                             <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         </clipView>
-                        <scroller key="horizontalScroller" hidden="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="nBZ-0w-kKW">
+                        <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="YES" id="nBZ-0w-kKW">
                             <rect key="frame" x="-100" y="-100" width="87" height="18"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>
-                        <scroller key="verticalScroller" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="HgN-ys-NyT">
+                        <scroller key="verticalScroller" wantsLayer="YES" verticalHuggingPriority="750" doubleValue="1" horizontal="NO" id="HgN-ys-NyT">
                             <rect key="frame" x="766" y="1" width="16" height="520"/>
                             <autoresizingMask key="autoresizingMask"/>
                         </scroller>

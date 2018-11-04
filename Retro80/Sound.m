@@ -432,8 +432,8 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 - (BOOL)start
 {
 	dispatch_async(dispatch_get_main_queue(), ^{
-		textField.textColor = [NSColor blackColor];
-		textField.stringValue = @"--:--";
+        self->textField.textColor = [NSColor blackColor];
+        self->textField.stringValue = @"--:--";
 	});
 
 	quartz = self.computer.quartz;
