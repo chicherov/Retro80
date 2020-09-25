@@ -7,7 +7,6 @@
 
  *****/
 
-#import <OpenGL/gl.h>
 #import "Digit.h"
 
 @protocol TextScreen

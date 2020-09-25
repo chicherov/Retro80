@@ -29,10 +29,10 @@
 	if (IRQ <= clock)
 	{
 		IRQ += 16000000;
-		return TRUE;
+		return YES;
 	}
 
-	return FALSE;
+	return NO;
 }
 
 - (void)RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock

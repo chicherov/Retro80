@@ -15,11 +15,10 @@
 
 @implementation WindowController
 {
-	id __weak eventMonitor;
 	unichar lastUndoChar;
 
 	IBOutlet NSLayoutConstraint *constraint;
-	BOOL hideStatusLine;
+	bool hideStatusLine;
 
 	NSInteger scale;
 	NSSize lastSize;
@@ -42,12 +41,14 @@
 	computer.debug = self.debug;
 
 	self.nextResponder = self.display;
-	self.display.nextResponder = self.sound;
-	self.sound.nextResponder = self.debug;
+
+    if ((self.display.nextResponder = self.sound) == nil)
+        self.display.nextResponder = self.debug;
+    else
+        self.sound.nextResponder = self.debug;
+
 	self.debug.nextResponder = computer;
-
-	self.sound.computer = computer;
-
+    self.sound.computer = computer;
 	[computer start];
 }
 
@@ -62,22 +63,9 @@
 
 - (void)windowDidLoad
 {
-	eventMonitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^(NSEvent *theEvent) {
-
-		if (theEvent.window == self.window && (theEvent.keyCode == 53 || theEvent.keyCode == 48))
-		{
-			[self keyDown:theEvent];
-			return (NSEvent *) nil;
-		}
-		else
-		{
-			return theEvent;
-		}
-	}];
-
 	scale = 2;
 
-	if (self.document.isInViewingMode)
+	if (self.document.inViewingMode)
 		constraint.constant = 0;
 
 	[self startComputer];
@@ -87,8 +75,6 @@
 
 - (void)windowWillClose:(NSNotification *)notification
 {
-	[NSEvent removeMonitor:eventMonitor];
-
 	[self stopComputer];
 }
 
@@ -104,7 +90,7 @@
 	{
 		if (self.window.styleMask & NSWindowStyleMaskFullScreen)
 		{
-			menuItem.state = FALSE;
+			menuItem.state = NO;
 			return NO;
 		}
 
@@ -114,7 +100,7 @@
 			menuItem.state = size.width*scale == self.display.frame.size.width
 				&& size.height*scale == self.display.frame.size.height;
 		else
-			menuItem.state = FALSE;
+			menuItem.state = NO;
 
 		if (menuItem.tag)
 		{
@@ -129,7 +115,7 @@
 		return YES;
 	}
 
-	return [super validateMenuItem:menuItem];
+	return NO;
 }
 
 // Обработка наличия строки состояния
@@ -142,21 +128,18 @@
 
 		if ((hideStatusLine = !hideStatusLine))
 		{
-			if (constraint.constant == 22)
-			{
 				frame.size.height -= 22;
 				frame.origin.y += 22;
 
-				[self.window setFrame:frame display:FALSE];
+				[self.window setFrame:frame display:NO];
 				constraint.constant = 0;
-			}
 		}
-		else if (constraint.constant == 0)
+		else
 		{
 			frame.size.height += 22;
 			frame.origin.y -= 22;
 
-			[self.window setFrame:frame display:FALSE];
+			[self.window setFrame:frame display:NO];
 			constraint.constant = 22;
 		}
 	}
@@ -196,7 +179,7 @@
 				frame.size.height = size.height*scale + addHeight;
 				frame.origin.y -= frame.size.height;
 
-				[self.window setFrame:frame display:TRUE];
+				[self.window setFrame:frame display:YES];
 				frame.size.height -= constraint.constant;
 				lastSize = frame.size;
 			}
@@ -262,7 +245,7 @@
 
 - (void)windowDidResignKey:(NSNotification *)notification
 {
-	[super keyUp:[NSEvent keyEventWithType:NSEventTypeKeyUp
+	[super keyUp:[NSEvent keyEventWithType:NSKeyUp
 								  location:NSZeroPoint
 							 modifierFlags:0
 								 timestamp:0
@@ -304,12 +287,12 @@
 - (void)windowDidExitVersionBrowser:(NSNotification *)notification
 {
 	constraint.constant = hideStatusLine ? 0 : 22;
-	[self.window setFrame:vbFrame display:FALSE];
+	[self.window setFrame:vbFrame display:NO];
 	scale = vbScale;
 
 	[self performSelectorOnMainThread:@selector(resize)
 						   withObject:nil
-						waitUntilDone:FALSE];
+						waitUntilDone:NO];
 }
 
 // Создавать undo при работе с клавиатурой
@@ -334,6 +317,35 @@
 
 	[super keyDown:theEvent];
 }
+
+#ifdef GNUSTEP
+
+- (void)windowDidResize:(NSNotification *)notification
+{
+    NSSize size = [self.window contentRectForFrameRect:self.window.frame].size;
+
+    if(!hideStatusLine)
+    {
+        [self.display setFrame:NSMakeRect(0, 22, size.width, size.height - 22)];
+        [self.display.digit6 setFrameOrigin:NSMakePoint(size.width - 20, 0)];
+        [self.display.digit5 setFrameOrigin:NSMakePoint(size.width - 33, 0)];
+        [self.display.digit4 setFrameOrigin:NSMakePoint(size.width - 59, 0)];
+        [self.display.digit3 setFrameOrigin:NSMakePoint(size.width - 72, 0)];
+        [self.display.digit2 setFrameOrigin:NSMakePoint(size.width - 85, 0)];
+        [self.display.digit1 setFrameOrigin:NSMakePoint(size.width - 98, 0)];
+    }
+    else
+    {
+        [self.display setFrame:NSMakeRect(0.0, 0.0, size.width, size.height)];
+    }
+}
+
+- (void)awakeFromNib
+{
+    self.sound = nil;
+}
+
+#endif
 
 #ifdef DEBUG
 - (void)dealloc

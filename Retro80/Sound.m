@@ -13,8 +13,6 @@
 
 @implementation Sound
 {
-	IBOutlet NSTextField *textField;
-
 	AudioStreamBasicDescription streamFormat;
 	AudioStreamBasicDescription fileFormat;
 	AudioQueueRef audioQueue;
@@ -43,6 +41,7 @@
 }
 
 @synthesize computer;
+@synthesize textField;
 
 static uint32_t filter_diff[2][64] = {
 	0x0000, 0x0034, 0x0069, 0x00A1, 0x00DB, 0x0118, 0x015A, 0x01A2,
@@ -130,7 +129,7 @@ static OSStatus audioConverterComplexInputDataProc(AudioConverterRef inAudioConv
 																				  (unsigned) (audioFilePos / fileFormat.mSampleRate) % 60,
 																				  (unsigned) (packetCount / fileFormat.mSampleRate) / 60,
 																				  (unsigned) (packetCount / fileFormat.mSampleRate) % 60]
-										 waitUntilDone:FALSE];
+										 waitUntilDone:NO];
 			}
 			else
 			{
@@ -148,7 +147,7 @@ static OSStatus audioConverterComplexInputDataProc(AudioConverterRef inAudioConv
 
 				[textField performSelectorOnMainThread:@selector(setStringValue:)
 											withObject:@"--:--"
-										 waitUntilDone:FALSE];
+										 waitUntilDone:NO];
 			}
 		}
 
@@ -215,7 +214,7 @@ static OSStatus audioConverterComplexInputDataProc(AudioConverterRef inAudioConv
 										withObject:[NSString stringWithFormat:@"%02d:%02d",
 																			  (unsigned) (packetCount / streamFormat.mSampleRate) / 60,
 																			  (unsigned) (packetCount / streamFormat.mSampleRate) % 60]
-									 waitUntilDone:FALSE];
+									 waitUntilDone:NO];
 		}
 
 		else if (packetCount)
@@ -243,7 +242,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 - (BOOL)input:(uint64_t)clock
 {
 	if (audioQueueBuffer == nil || inAudioFile == 0)
-		return FALSE;
+		return NO;
 
 	unsigned index = ((clock - frame) * streamFormat.mSampleRate) / quartz;
 	index *= streamFormat.mChannelsPerFrame;
@@ -414,7 +413,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 			textField.textColor = [NSColor blackColor];
 
 			audioFilePos = 0;
-			pause = FALSE;
+			pause = NO;
 			return;
 		}
 		@catch(NSString *string)
@@ -445,7 +444,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	if (err != noErr)
 	{
 		NSLog(@"AudioQueueNewOutput error: %d", err);
-		return FALSE;
+		return NO;
 	}
 
 	@try
@@ -473,17 +472,17 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 		NSLog(@"Sound start");
 #endif
 
-		return TRUE;
+		return YES;
 	}
 	@catch(NSString *string)
 	{
 		NSLog(@"%@", string);
 	}
 
-	if ((err = AudioQueueDispose(audioQueue, TRUE)) != noErr)
+	if ((err = AudioQueueDispose(audioQueue, YES)) != noErr)
 		NSLog(@"AudioQueueDispose error: %d", err);
 
-	return FALSE;
+	return NO;
 }
 
 - (void)stop
@@ -512,10 +511,10 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 
 	textField.stringValue = @"";
 
-	if ((err = AudioQueueStop(audioQueue, TRUE)) != noErr)
+	if ((err = AudioQueueStop(audioQueue, YES)) != noErr)
 		NSLog(@"AudioQueueStop error: %d", err);
 
-	if ((err = AudioQueueDispose(audioQueue, TRUE)) != noErr)
+	if ((err = AudioQueueDispose(audioQueue, YES)) != noErr)
 		NSLog(@"AudioQueueDispose error: %d", err);
 
 #ifdef DEBUG
@@ -535,7 +534,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(play:))
+	if (menuItem.action == @selector(tape_play:))
 	{
 		if (inAudioFile)
 			menuItem.title = pause ? @"Возобновить" : @"Пауза";
@@ -545,16 +544,16 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 		return YES;
 	}
 
-	if (menuItem.action == @selector(stop:))
+	if (menuItem.action == @selector(tape_stop:))
 		return inAudioFile != 0;
 
-	if (menuItem.action == @selector(stepBackward:))
+	if (menuItem.action == @selector(tape_backward:))
 		return inAudioFile != 0;
 
-	if (menuItem.action == @selector(stepForward:))
+	if (menuItem.action == @selector(tape_forward:))
 		return inAudioFile != 0;
 
-	if (menuItem.action == @selector(record:))
+	if (menuItem.action == @selector(tape_record:))
 	{
 		menuItem.state = outAudioFile != 0;
 		return inAudioFile == 0;
@@ -563,7 +562,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	return NO;
 }
 
-- (IBAction)play:(id)sender
+- (IBAction)tape_play:(id)sender
 {
 	if (inAudioFile == 0)
 	{
@@ -579,7 +578,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	}
 }
 
-- (IBAction)stop:(id)sender
+- (IBAction)tape_stop:(id)sender
 {
 	@synchronized(computer)
 	{
@@ -605,7 +604,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	}
 }
 
-- (IBAction)stepBackward:(id)sender
+- (IBAction)tape_backward:(id)sender
 {
 	@synchronized(computer)
 	{
@@ -625,7 +624,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	}
 }
 
-- (IBAction)stepForward:(id)sender
+- (IBAction)tape_forward:(id)sender
 {
 	@synchronized(computer)
 	{
@@ -643,7 +642,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	}
 }
 
-- (IBAction)record:(id)sender
+- (IBAction)tape_record:(id)sender
 {
 	OSStatus err;
 

@@ -98,11 +98,11 @@
 
 		if (disk && URLs[disk - 1] != nil)
 		{
-			readOnly = FALSE;
+			readOnly = NO;
 
-			if ((file = [NSFileHandle fileHandleForUpdatingURL:URLs[disk - 1] error:NULL]) == nil)
-				if ((file = [NSFileHandle fileHandleForReadingFromURL:URLs[disk - 1] error:NULL]) != nil)
-					readOnly = TRUE;
+			if ((file = [NSFileHandle fileHandleForUpdatingAtPath:URLs[disk - 1].path]) == nil)
+				if ((file = [NSFileHandle fileHandleForReadingAtPath:URLs[disk - 1].path]) != nil)
+					readOnly = YES;
 
 			if (file)
 			{
@@ -165,7 +165,7 @@
 				cylinder--;
 		}
 
-		if (selected && TRACK[selected-1] == 0 && DIRC == FALSE)
+		if (selected && TRACK[selected-1] == 0 && DIRC == NO)
 		{
 			status.S2 = 1; cylinder = 0;
 		}
@@ -673,7 +673,7 @@
 {
 	if (HOLD)
 	{
-		HOLD = FALSE; if (DRQ == -1 || DRQ < clock)
+		HOLD = NO; if (DRQ == -1 || DRQ < clock)
 			return 0;
 
 		clk = (unsigned) (DRQ - clock);
@@ -692,7 +692,7 @@
 	if (self = [super init])
 	{
 		ms = (ms200 = quartz / 5) / 200; DRQ = -1;
-		enabled = TRUE;
+		enabled = YES;
 	}
 
 	return self;
@@ -780,7 +780,7 @@
 			default:
 			{
 				menuItem.hidden = true;
-				menuItem.state = FALSE;
+				menuItem.state = NO;
 				return NO;
 			}
 
@@ -806,7 +806,7 @@
 		@synchronized(self.computer)
 		{
 			[self.computer registerUndoWithMenuItem:menuItem];
-			self.enabled = self.isEnabled ? self.busy : TRUE;
+			self.enabled = self.isEnabled ? self.busy : YES;
 		}
 	}
 
@@ -815,7 +815,7 @@
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
 
 		panel.allowedFileTypes = [self.computer isKindOfClass:NSClassFromString(@"Partner")] ? @[@"cpm"] : @[@"odi", @"kdi", @"cpm"];
-		panel.canChooseDirectories = FALSE;
+		panel.canChooseDirectories = NO;
 		panel.title = menuItem.title;
 
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)

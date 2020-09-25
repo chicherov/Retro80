@@ -46,9 +46,9 @@
 	{
 		[self performSelectorOnMainThread:@selector(debug:)
 							   withObject:nil
-							waitUntilDone:FALSE];
+							waitUntilDone:NO];
 
-		inDebugMode = TRUE;
+		inDebugMode = YES;
 	}
 
 	if (self.clock >= clki)
@@ -56,20 +56,20 @@
 		if ([self.snd respondsToSelector:@selector(flush:)])
 			[self.snd flush:clki];
 
-		return TRUE;
+		return YES;
 	}
 	else
 	{
-		return FALSE;
+		return NO;
 	}
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
 	if (menuItem.action == @selector(debug:))
-		return inDebugMode == FALSE;
+		return inDebugMode == NO;
 
-	if (menuItem.action == @selector(reset:))
+	if (sel_isEqual(menuItem.action, @selector(reset:)))
 		return YES;
 
 	return [super validateMenuItem:menuItem];
@@ -79,7 +79,7 @@
 {
 	@synchronized(self)
 	{
-		inDebugMode = TRUE;
+		inDebugMode = YES;
 	}
 
 	if (![self.debug.delegate isKindOfClass:Dbg80.class])
@@ -88,7 +88,7 @@
 	[(Dbg80 *) self.debug.delegate setCpu:self.cpu];
 	[(Dbg80 *) self.debug.delegate run];
 
-	inDebugMode = FALSE;
+	inDebugMode = NO;
 }
 
 - (IBAction)reset:(NSMenuItem *)menuItem

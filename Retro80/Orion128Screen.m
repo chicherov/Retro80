@@ -63,8 +63,8 @@
 			{
 				static uint32_t colors[2][2][2] =
 				{
-                        0xFF000000, 0xFF00AA00, 0xFF0000AA, 0xFFAA0000,
-						0xFFAAAA00, 0xFF00AAAA, 0xFFAAAAAA, 0xFFAA00AA
+						{{0xFF000000, 0xFF00AA00}, {0xFF0000AA, 0xFFAA0000}},
+						{{0xFFAAAA00, 0xFF00AAAA}, {0xFFAAAAAA, 0xFFAA00AA}}
 				};
 
 				for (uint16_t addr = 0x0000; addr < width * 32; addr++)
@@ -93,7 +93,7 @@
 		}
 
 		dispatch_async(dispatch_get_main_queue(), ^{
-			[self.display setNeedsDisplay:TRUE];
+			[self.display setNeedsDisplay:YES];
 		});
 	}
 }
@@ -104,7 +104,7 @@
 	color = 0x00;
 	page = 0x00;
 
-	IE = FALSE;
+	IE = NO;
 }
 
 - (BOOL)IRQ:(uint64_t)clock
@@ -115,7 +115,7 @@
 		return IE;
 	}
 
-	return FALSE;
+	return NO;
 }
 
 - (void)encodeWithCoder:(NSCoder *)encoder

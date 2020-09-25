@@ -16,17 +16,17 @@
 
 - (void)setDisplay:(Display *)display
 {
-	display.digit1.hidden = FALSE;
+	display.digit1.hidden = NO;
 	display.digit1.segments = segments[0];
-	display.digit2.hidden = FALSE;
+	display.digit2.hidden = NO;
 	display.digit2.segments = segments[1];
-	display.digit3.hidden = FALSE;
+	display.digit3.hidden = NO;
 	display.digit3.segments = segments[2];
-	display.digit4.hidden = FALSE;
+	display.digit4.hidden = NO;
 	display.digit4.segments = segments[3];
-	display.digit5.hidden = FALSE;
+	display.digit5.hidden = NO;
 	display.digit5.segments = segments[4];
-	display.digit6.hidden = FALSE;
+	display.digit6.hidden = NO;
 	display.digit6.segments = segments[5];
 
 	[super setDisplay:display];

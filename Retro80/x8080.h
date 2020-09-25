@@ -106,7 +106,10 @@
 
 - (instancetype)init8080:(uint32_t)start NS_DESIGNATED_INITIALIZER;
 - (instancetype)initZ80:(uint32_t)start;
+
+#ifndef GNUSTEP
 - (instancetype)init NS_UNAVAILABLE;
+#endif
 
 // -----------------------------------------------------------------------------
 

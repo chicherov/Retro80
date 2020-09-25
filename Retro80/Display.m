@@ -7,6 +7,14 @@
 
 *****/
 
+#ifndef GNUSTEP
+#import <OpenGL/gl.h>
+#else
+#define GL_GLEXT_PROTOTYPES
+#import <GL/gl.h>
+#import <GL/glext.h>
+#endif
+
 #import "Display.h"
 
 #import "WindowController.h"
@@ -53,7 +61,7 @@
 			[(WindowController *) self.window.windowController resize];
 		});
 
-		isSelected = FALSE;
+		isSelected = NO;
 		selected = NSZeroRect;
 		return data1.mutableBytes;
 	}
@@ -99,7 +107,7 @@
 			mode = 3;
 
 			dispatch_async(dispatch_get_main_queue(), ^{
-				[self setNeedsDisplay:TRUE];
+				[self setNeedsDisplay:YES];
 			});
 		}
 		else
@@ -107,7 +115,7 @@
 			mode = 1;
 
 			dispatch_async(dispatch_get_main_queue(), ^{
-				[self setNeedsDisplay:TRUE];
+				[self setNeedsDisplay:YES];
 			});
 		}
 	}
@@ -116,7 +124,7 @@
 		mode = 2;
 
 		dispatch_async(dispatch_get_main_queue(), ^{
-			[self setNeedsDisplay:TRUE];
+			[self setNeedsDisplay:YES];
 		});
 	}
 }
@@ -127,7 +135,11 @@
 {
 	@synchronized(self)
 	{
+#ifndef GNUSTEP
 		NSRect backingBounds = [self convertRectToBacking:[self bounds]];
+#else
+		NSRect backingBounds = [self bounds];
+#endif
 		glViewport(0, 0, backingBounds.size.width, backingBounds.size.height);
 
 		if (((mode & 1) == 0 || data1) && ((mode & 2) == 0 || data2))
@@ -319,16 +331,17 @@
 			glClear(GL_COLOR_BUFFER_BIT);
 		}
 
+        [[self openGLContext] flushBuffer];
 		glFlush();
 	}
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(selectAll:))
+	if (sel_isEqual(menuItem.action, @selector(selectAll:)))
 		return data1 != NULL;
 
-	if (menuItem.action == @selector(copy:))
+	if (sel_isEqual(menuItem.action, @selector(copy:)))
 		return isSelected;
 
 	if (menuItem.action == @selector(gigaScreen:))
@@ -345,7 +358,7 @@
 			return YES;
 		}
 
-		menuItem.state = FALSE;
+		menuItem.state = NO;
 		return NO;
 	}
 
@@ -417,7 +430,7 @@
 {
 	@synchronized(self)
 	{
-		isSelected = TRUE;
+		isSelected = YES;
 		selected.origin = NSZeroPoint;
 		selected.size = textScreen ? text : graphics;
 	}
@@ -433,8 +446,8 @@
 		mark.y = trunc(size.height - point.y/self.frame.size.height*size.height);
 		mark.x = trunc(point.x/self.frame.size.width*size.width);
 
-		isSelected = FALSE;
-		isMark = TRUE;
+		isSelected = NO;
+		isMark = YES;
 
 		NSCharacterSet *isAlphaNumber = [NSCharacterSet alphanumericCharacterSet];
 
@@ -446,7 +459,7 @@
 				selected.size.width = 1;
 
 				selected.origin = mark;
-				isSelected = TRUE;
+				isSelected = YES;
 
 				while (selected.origin.x + selected.size.width < text.width)
 				{
@@ -479,7 +492,7 @@
 
 - (void)mouseUp:(NSEvent *)theEvent
 {
-	isMark = FALSE;
+	isMark = NO;
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent
@@ -518,7 +531,7 @@
 					selected.size.width = point.x - mark.x + 1;
 				}
 
-				isSelected = TRUE;
+				isSelected = YES;
 			}
 		}
 	}
@@ -527,7 +540,7 @@
 - (void)keyDown:(NSEvent *)theEvent
 {
 	[super keyDown:theEvent];
-	isSelected = FALSE;
+	isSelected = NO;
 }
 
 - (IBAction)copy:(NSMenuItem *)menuItem
@@ -681,7 +694,7 @@
 			[pasteBoard setData:[image TIFFRepresentation]
 						forType:NSPasteboardTypeTIFF];
 
-			isSelected = FALSE;
+			isSelected = NO;
 		}
 	}
 }
@@ -690,7 +703,7 @@ static GLuint createShader(GLenum shaderType)
 {
 	NSString
 		*file = [NSBundle.mainBundle pathForResource:@"tvnoise" ofType:shaderType == GL_VERTEX_SHADER ? @"vs" : @"fs"],
-		*text = [NSString stringWithContentsOfFile:file encoding:NSASCIIStringEncoding error:nil];
+		*text = [NSString stringWithContentsOfFile:file encoding:NSASCIIStringEncoding error:NULL];
 
 	const GLchar *source = (GLchar *) [text cStringUsingEncoding:NSASCIIStringEncoding];
 
@@ -738,8 +751,10 @@ static GLuint createShader(GLenum shaderType)
 
 	mode = 1;
 
+#ifndef GNUSTEP
 	[self setWantsBestResolutionOpenGLSurface:YES];
 	[[self openGLContext] makeCurrentContext];
+#endif
 
 	GLuint fragmentShader = createShader(GL_FRAGMENT_SHADER);
 
@@ -789,7 +804,9 @@ static GLuint createShader(GLenum shaderType)
 
 	if (shaderProgram)
 	{
+#ifndef GNUSTEP
 		[[self openGLContext] makeCurrentContext];
+#endif
 		glDeleteProgram(shaderProgram);
 	}
 }

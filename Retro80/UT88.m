@@ -31,39 +31,39 @@
 			case 1:    // Монитор 0
 
 				menuItem.state = (self.cpu.PAGE & 0x01) != 0;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 
 			case 2:    // Монитор F
 
 				menuItem.state = (self.cpu.PAGE & 0x02) != 0;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return (self.cpu.PAGE & 0x04) != 0;
 
 			case 3:    // Дисплейный модуль
 
 				menuItem.state = (self.cpu.PAGE & 0x04) != 0;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 
 			case 4: // Старт с F800
 
 				menuItem.state = (self.cpu.START & 0xFFFF) == 0xF800;
-				menuItem.alternate = TRUE;
-				menuItem.hidden = FALSE;
+				menuItem.alternate = YES;
+				menuItem.hidden = NO;
 				return YES;
 
 			case 5: // Старт с 0000
 
 				menuItem.state = (self.cpu.START & 0xFFFF) == 0x0000;
-				menuItem.alternate = TRUE;
-				menuItem.hidden = FALSE;
+				menuItem.alternate = YES;
+				menuItem.hidden = NO;
 				return YES;
 
 			default:
 
-				menuItem.state = FALSE;
-				menuItem.hidden = TRUE;
+				menuItem.state = NO;
+				menuItem.hidden = YES;
 				return NO;
 		}
 	}
@@ -84,7 +84,7 @@
 				else if (self.ram.length == 0x1800)
 					menuItem.title = [menuItem.title stringByAppendingString:@": 4K"];
 
-				menuItem.state = FALSE;
+				menuItem.state = NO;
 				break;
 			}
 
@@ -105,12 +105,12 @@
 
 			default:
 
-				menuItem.state = FALSE;
-				menuItem.hidden = TRUE;
+				menuItem.state = NO;
+				menuItem.hidden = YES;
 				return NO;
 		}
 
-		menuItem.hidden = FALSE;
+		menuItem.hidden = NO;
 		return YES;
 	}
 
@@ -207,39 +207,39 @@
 - (BOOL)createObjects
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xEF800]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.monitor0 == nil && (self.monitor0 = [[ROM alloc] initWithContentsOfResource:@"UT88-0" mask:0x03FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.monitorF == nil && (self.monitorF = [[ROM alloc] initWithContentsOfResource:@"UT88-F" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x10800]) == nil)
-		return FALSE;
+		return NO;
 
 	self.ram.offset = 0x0800;
 
 	if (self.crt == nil && (self.crt = [[UT88Screen alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
-	self.snd.channel0 = TRUE;
-	self.snd.channel1 = TRUE;
-	self.snd.channel2 = TRUE;
+	self.snd.channel0 = YES;
+	self.snd.channel1 = YES;
+	self.snd.channel2 = YES;
 
 	if (self.kbd == nil && (self.kbd = [[UT88Keyboard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[RKSDCard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.sys == nil && (self.sys = [[UT88System alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -261,22 +261,22 @@
 	MEM *mem_C000;
 
 	if ((mem_C000 = [self.ram memoryAtOffest:0x0000 mask:0x03FF]) == nil)
-		return FALSE;
+		return NO;
 
 	MEM *mem_F400;
 
 	if ((mem_F400 = [self.ram memoryAtOffest:0x0400 mask:0x03FF]) == nil)
-		return FALSE;
+		return NO;
 
 	MEM *mem_3000;
 
 	if ((mem_3000 = [self.ram memoryAtOffest:0x0800 mask:0x0FFF]) == nil)
-		return FALSE;
+		return NO;
 
 	MEM *mem_0000;
 
 	if ((mem_0000 = [self.ram memoryAtOffest:0x1800 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.inpHook == nil)
 	{
@@ -340,8 +340,8 @@
 	[self.cpu mapObject:self.kbd atPort:0xA0 count:0x10];
 	[self.cpu mapObject:self.ext atPort:0xF0 count:0x10];
 
-	self.cpu.FF = TRUE;
-	return TRUE;
+	self.cpu.FF = YES;
+	return YES;
 }
 
 - (instancetype)init
@@ -378,36 +378,36 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.cpu = [coder decodeObjectForKey:@"cpu"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.monitor0 = [coder decodeObjectForKey:@"monitor0"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.monitorF = [coder decodeObjectForKey:@"monitorF"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ram = [coder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.crt = [coder decodeObjectForKey:@"crt"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.snd = [coder decodeObjectForKey:@"snd"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.kbd = [coder decodeObjectForKey:@"kbd"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ext = [coder decodeObjectForKey:@"ext"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.sys = [coder decodeObjectForKey:@"sys"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end

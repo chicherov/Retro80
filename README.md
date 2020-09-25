@@ -1,6 +1,7 @@
 # Ретро КР580
 Проект «**Ретро КР580**» — эмулятор некоторых, интересных мне, отечественных бытовых компьютеров 80-ых годов прошлого века.
 Эмулятор полностью написан на **Objective-C**, является документ-ориентированным приложением **macOS** и требует для своей работы *как минимум OS X Lion (10.7)*.
+Но теперь можно собрать и под [GNUstep](http://www.gnustep.org).
 
 ## Поддерживаемые компьютеры
 ### Радио-86РК
@@ -76,3 +77,15 @@
 * [СС] — **[Shift ⇧]**, в режиме «QWERTY» может игнорироваться.
 * [УС] — **[Control]**
 * [РУС/ЛАТ] — **[Option ⌥]** или **[Capslock ⇪]** для Микро-80/ЮТ-88
+
+## Сборка под GNUstep
+* Пока не реализован звук и работа с WAV файлами.
+* В эмуляции 86RKSD файлы и каталоги должны быть названы заглавными буквами.
+* GNUstep не умеет скрывать пункты меню и работать с альтернативными, отдельное меню не делалось, поэтому выглядит не очень.
+
+Собирать только с помощью clang (export CC=clang CXX=clang++):
+* [libdispatch](https://github.com/apple/swift-corelibs-libdispatch.git)
+* [tools-make](https://github.com/gnustep/tools-make) с опцией --enable-objc-arc
+* [libs-base](https://github.com/gnustep/libs-base)
+* [libs-gui](https://github.com/gnustep/libs-gui)
+* [libs-back](https://github.com/gnustep/libs-back)

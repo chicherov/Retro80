@@ -51,7 +51,7 @@
 
 + (Computer *)computerByTag:(NSInteger)tag
 {
-	NSUInteger index = (tag/100) - 1;
+	NSUInteger index = (NSUInteger) ((tag / 100) - 1);
 
 	if (index < self.factories.count)
 		return [self.factories[index] computerByTag:tag%100];

@@ -74,27 +74,27 @@ static uint32_t colors[] = {
 - (BOOL)createObjects
 {
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Microsha" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
     if ((self.kbd = [[MicroshaKeyboard alloc] init]) == nil)
-        return FALSE;
+        return NO;
 
     if ((self.ext = [[MicroshaExt alloc] init]) == nil)
-        return FALSE;
+        return NO;
 
     if (![super createObjects])
-        return FALSE;
+        return NO;
 
     if (self.fdd == nil && (self.fdd = [[RKFloppy alloc] init]) == nil)
-        return FALSE;
+        return NO;
 
 	uint8_t *ptr = [self.fdd BYTE:0xEDBF];
 
 	if (ptr && *ptr == 0xC1)
 		*ptr = 0xD1;
 
-	self.fdd.enabled = FALSE;
-    return TRUE;
+	self.fdd.enabled = NO;
+    return YES;
 }
 
 - (BOOL)mapObjects
@@ -140,7 +140,7 @@ static uint32_t colors[] = {
 	[self.cpu mapObject:self.outHook from:0xF89A to:0xF89A WR:self.dma];
 
 	if (![super mapObjects])
-		return FALSE;
+		return NO;
 
 	self.ext.nextResponder = self.fdd;
 	self.fdd.computer = self;
@@ -158,12 +158,12 @@ static uint32_t colors[] = {
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.fdd = [coder decodeObjectForKey:@"fdd"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end

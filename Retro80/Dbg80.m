@@ -82,50 +82,50 @@
 // -----------------------------------------------------------------------------
 
 static const char *rst[8][4] = {
-	"0", "00", "00", "00",
-	"1", "08", "08", "08",
-	"2", "10", "10", "10",
-	"3", "18", "18", "18",
-	"4", "20", "20", "20",
-	"5", "28", "28", "28",
-	"6", "30", "30", "30",
-	"7", "38", "38", "38"
+	{"0", "00", "00", "00"},
+	{"1", "08", "08", "08"},
+	{"2", "10", "10", "10"},
+	{"3", "18", "18", "18"},
+	{"4", "20", "20", "20"},
+	{"5", "28", "28", "28"},
+	{"6", "30", "30", "30"},
+	{"7", "38", "38", "38"}
 };
 
 static const char *reg[8][4] = {
-	"B", "B",    "B",       "B",
-	"C", "C",    "C",       "C",
-	"D", "D",    "D",       "D",
-	"E", "E",    "E",       "E",
-	"H", "H",    "IXH",     "IYH",
-	"L", "L",    "IXL",     "IYL",
-	"M", "(HL)", "(IX+%@)", "(IY+%@)",
-	"A", "A",    "A",       "A"
+	{"B", "B",    "B",       "B"},
+	{"C", "C",    "C",       "C"},
+	{"D", "D",    "D",       "D"},
+	{"E", "E",    "E",       "E"},
+	{"H", "H",    "IXH",     "IYH"},
+	{"L", "L",    "IXL",     "IYL"},
+	{"M", "(HL)", "(IX+%@)", "(IY+%@)"},
+	{"A", "A",    "A",       "A"}
 };
 
 static const char *push_rp[4][4] = {
-	"B",   "BC", "BC", "BC",
-	"D",   "DE", "DE", "DE",
-	"H",   "HL", "IX", "IY",
-	"PSW", "AF", "AF", "AF"
+	{"B",   "BC", "BC", "BC"},
+	{"D",   "DE", "DE", "DE"},
+	{"H",   "HL", "IX", "IY"},
+	{"PSW", "AF", "AF", "AF"}
 };
 
 static const char *rp[4][4] = {
-	"B",  "BC", "BC", "BC",
-	"D",  "DE", "DE", "DE",
-	"H",  "HL", "IX", "IY",
-	"SP", "SP", "SP", "SP"
+	{"B",  "BC", "BC", "BC"},
+	{"D",  "DE", "DE", "DE"},
+	{"H",  "HL", "IX", "IY"},
+	{"SP", "SP", "SP", "SP"}
 };
 
 static const char *bit[8][4] = {
-	0, "0", "0", "0",
-	0, "1", "1", "1",
-	0, "2", "2", "2",
-	0, "3", "3", "3",
-	0, "4", "4", "4",
-	0, "5", "5", "5",
-	0, "6", "6", "6",
-	0, "7", "7", "7"
+	{0, "0", "0", "0"},
+	{0, "1", "1", "1"},
+	{0, "2", "2", "2"},
+	{0, "3", "3", "3"},
+	{0, "4", "4", "4"},
+	{0, "5", "5", "5"},
+	{0, "6", "6", "6"},
+	{0, "7", "7", "7"}
 };
 
 static struct opcode_t {
@@ -142,189 +142,189 @@ static struct opcode_t {
 
 } opcodes[] = {
 
-	{ 0x00, 1, "NOP", "NOP" }, { 0x00, 1, "NOP*", 0, {0, 3, 7 }},
+	{ 0x00, 1, {"NOP", "NOP"} }, { 0x00, 1, {"NOP*", 0}, {{0, 3, 7} }},
 
-	{ 0x01, 3, "LXI", "LD ", {{ 3, 4, 3, rp }, { 2 }} },
-	{ 0x02, 1, "STAX", 0, { 3, 4, 1, rp } }, { 0x02, 1, 0, "LD ", {{ 13, 4, 1, rp }, {3, 0, 0, reg + 7 }}},
-	{ 0x03, 1, "INX", "INC ", { 3, 4, 3, rp } },
-	{ 0x04, 1, "INR", "INC ", { 3, 3, 7, reg } },
-	{ 0x05, 1, "DCR", "DEC ", { 3, 3, 7, reg } },
-	{ 0x06, 2, "MVI", "LD ", {{ 3, 3, 7, reg }, { 1 }} },
-	{ 0x07, 1, "RLC", "RLCA" },
-	{ 0x08, 1, 0, "EX AF,AF'" },
-	{ 0x09, 1, "DAD", 0, { 3, 4, 3, rp } }, { 0x09, 1, 0, "ADD ", {{ 3, 0, 0, rp + 2 }, { 3, 4, 3, rp }}},
-	{ 0x0A, 1, "LDAX", 0, { 3, 4, 1, rp } }, { 0x0A, 1, 0, "LD ", {{ 3, 0, 0, reg + 7 }, { 13, 4, 1, rp }}},
-	{ 0x0B, 1, "DCX", "DEC ", { 3, 4, 3, rp } },
-	{ 0x0F, 1, "RRC", "RRCA" },
+	{ 0x01, 3, {"LXI", "LD "}, {{ 3, 4, 3, rp }, { 2 }} },
+	{ 0x02, 1, {"STAX", 0}, { {3, 4, 1, rp} } }, { 0x02, 1, {0, "LD "}, {{ 13, 4, 1, rp }, {3, 0, 0, reg + 7 }}},
+	{ 0x03, 1, {"INX", "INC "}, { {3, 4, 3, rp} } },
+	{ 0x04, 1, {"INR", "INC "}, { {3, 3, 7, reg} } },
+	{ 0x05, 1, {"DCR", "DEC "}, { {3, 3, 7, reg} } },
+	{ 0x06, 2, {"MVI", "LD "}, {{ 3, 3, 7, reg }, { 1 }} },
+	{ 0x07, 1, {"RLC", "RLCA"} },
+	{ 0x08, 1, {0, "EX AF,AF'"} },
+	{ 0x09, 1, {"DAD", 0}, { {3, 4, 3, rp} } }, { 0x09, 1, {0, "ADD "}, {{ 3, 0, 0, rp + 2 }, { 3, 4, 3, rp }}},
+	{ 0x0A, 1, {"LDAX", 0}, { {3, 4, 1, rp} } }, { 0x0A, 1, {0, "LD "}, {{ 3, 0, 0, reg + 7 }, { 13, 4, 1, rp }}},
+	{ 0x0B, 1, {"DCX", "DEC "}, { {3, 4, 3, rp} } },
+	{ 0x0F, 1, {"RRC", "RRCA"} },
 
-	{ 0x10, 2, 0, "DJNZ ", { 4 } },
-	{ 0x17, 1, "RAL", "RLA" },
-	{ 0x18, 2, 0, "JR ", { 4 } },
-	{ 0x1F, 1, "RAR", "RRA" },
+	{ 0x10, 2, {0, "DJNZ "}, { {4} } },
+	{ 0x17, 1, {"RAL", "RLA"} },
+	{ 0x18, 2, {0, "JR "}, { {4} } },
+	{ 0x1F, 1, {"RAR", "RRA"} },
 
-	{ 0x20, 2, 0, "JR NZ,", { 4 } },
-	{ 0x22, 3, "SHLD", 0, { 2 } }, { 0x22, 3, 0, "LD ", {{ 12 }, { 3, 0, 0, rp + 2 }}},
-	{ 0x27, 1, "DAA", "DAA" },
-	{ 0x28, 2, 0, "JR Z,", { 4 } },
-	{ 0x2A, 3, "LHLD", 0, { 2 } }, { 0x2A, 3, 0, "LD ", {{ 3, 0, 0, rp + 2 }, { 12 }}},
-	{ 0x2F, 1, "CMA", "CPL" },
+	{ 0x20, 2, {0, "JR NZ,"}, { {4} } },
+	{ 0x22, 3, {"SHLD", 0}, { {2} } }, { 0x22, 3, {0, "LD "}, {{ 12 }, { 3, 0, 0, rp + 2 }}},
+	{ 0x27, 1, {"DAA", "DAA"} },
+	{ 0x28, 2, {0, "JR Z,"}, { {4} } },
+	{ 0x2A, 3, {"LHLD", 0}, { {2} } }, { 0x2A, 3, {0, "LD "}, {{ 3, 0, 0, rp + 2 }, { 12 }}},
+	{ 0x2F, 1, {"CMA", "CPL"} },
 
-	{ 0x30, 2, 0, "JR NC,", { 4 } },
-	{ 0x32, 3, "STA", 0, { 2 } }, { 0x32, 3, 0, "LD ", {{ 12 }, {3, 0, 0, reg + 7 }}},
-	{ 0x37, 1, "STC", "SCF" },
-	{ 0x38, 2, 0, "JR C,", { 4 } },
-	{ 0x3A, 3, "LDA", 0, { 2 } }, { 0x3A, 3, 0, "LD ", {{3, 0, 0, reg + 7 }, { 12 }}},
-	{ 0x3F, 1, "CMC", "CCF" },
+	{ 0x30, 2, {0, "JR NC,"}, { {4} } },
+	{ 0x32, 3, {"STA", 0}, { {2} } }, { 0x32, 3, {0, "LD "}, {{ 12 }, {3, 0, 0, reg + 7 }}},
+	{ 0x37, 1, {"STC", "SCF"} },
+	{ 0x38, 2, {0, "JR C,"}, { {4} } },
+	{ 0x3A, 3, {"LDA", 0}, { {2} } }, { 0x3A, 3, {0, "LD "}, {{3, 0, 0, reg + 7 }, { 12 }}},
+	{ 0x3F, 1, {"CMC", "CCF"} },
 
-	{ 0x76, 1, "HLT", "HALT" },
-	{ 0x40, 1, "MOV", "LD ", {{ 3, 3, 7, reg }, { 3, 0, 7, reg }} },
+	{ 0x76, 1, {"HLT", "HALT"} },
+	{ 0x40, 1, {"MOV", "LD "}, {{ 3, 3, 7, reg }, { 3, 0, 7, reg }} },
 
-	{ 0x80, 1, "ADD", "ADD A,", { 3, 0, 7, reg } },
-	{ 0x88, 1, "ADC", "ADC A,", { 3, 0, 7, reg } },
-	{ 0x90, 1, "SUB", "SUB ", { 3, 0, 7, reg } },
-	{ 0x98, 1, "SBB", "SBC A,", { 3, 0, 7, reg } },
-	{ 0xA0, 1, "ANA", "AND ", { 3, 0, 7, reg } },
-	{ 0xA8, 1, "XRA", "XOR ", { 3, 0, 7, reg } },
-	{ 0xB0, 1, "ORA", "OR ", { 3, 0, 7, reg } },
-	{ 0xB8, 1, "CMP", "CP ", { 3, 0, 7, reg } },
+	{ 0x80, 1, {"ADD", "ADD A,"}, { {3, 0, 7, reg} } },
+	{ 0x88, 1, {"ADC", "ADC A,"}, { {3, 0, 7, reg} } },
+	{ 0x90, 1, {"SUB", "SUB "}, { {3, 0, 7, reg} } },
+	{ 0x98, 1, {"SBB", "SBC A,"}, { {3, 0, 7, reg} } },
+	{ 0xA0, 1, {"ANA", "AND "}, { {3, 0, 7, reg} } },
+	{ 0xA8, 1, {"XRA", "XOR "}, { {3, 0, 7, reg} } },
+	{ 0xB0, 1, {"ORA", "OR "}, { {3, 0, 7, reg} } },
+	{ 0xB8, 1, {"CMP", "CP "}, { {3, 0, 7, reg} } },
 
-	{ 0xC0, 1, "RNZ", "RET NZ" },
-	{ 0xC1, 1, "POP", "POP ", { 3, 4, 3, push_rp } },
-	{ 0xC2, 3, "JNZ", "JP NZ,", { 2 } },
-	{ 0xC3, 3, "JMP", "JP ", { 2 } },
-	{ 0xC4, 3, "CNZ", "CALL NZ,", { 2 } },
-	{ 0xC5, 1, "PUSH", "PUSH ", { 3, 4, 3, push_rp } },
-	{ 0xC6, 2, "ADI", "ADD A,", { 1 } },
-	{ 0xC7, 1, "RST", "RST ", { 3, 3, 7, rst } },
-	{ 0xC8, 1, "RZ", "RET Z" },
-	{ 0xC9, 1, "RET", "RET" },
-	{ 0xCA, 3, "JZ", "JP Z,", { 2 } },
-	{ 0xCB, 3, "JMP*", 0, { 2 } },
-	{ 0xCC, 3, "CZ", "CALL Z,", { 2 } },
-	{ 0xCD, 3, "CALL", "CALL ", { 2 } },
-	{ 0xCE, 2, "ACI", "ADC A,", { 1 } },
+	{ 0xC0, 1, {"RNZ", "RET NZ"} },
+	{ 0xC1, 1, {"POP", "POP "}, { {3, 4, 3, push_rp} } },
+	{ 0xC2, 3, {"JNZ", "JP NZ,"}, { {2} } },
+	{ 0xC3, 3, {"JMP", "JP "}, { {2} } },
+	{ 0xC4, 3, {"CNZ", "CALL NZ,"}, { {2} } },
+	{ 0xC5, 1, {"PUSH", "PUSH "}, { {3, 4, 3, push_rp} } },
+	{ 0xC6, 2, {"ADI", "ADD A,"}, { {1} } },
+	{ 0xC7, 1, {"RST", "RST "}, { {3, 3, 7, rst} } },
+	{ 0xC8, 1, {"RZ", "RET Z"} },
+	{ 0xC9, 1, {"RET", "RET"} },
+	{ 0xCA, 3, {"JZ", "JP Z,"}, { {2} } },
+	{ 0xCB, 3, {"JMP*", 0}, { {2} } },
+	{ 0xCC, 3, {"CZ", "CALL Z,"}, { {2} } },
+	{ 0xCD, 3, {"CALL", "CALL "}, { {2} } },
+	{ 0xCE, 2, {"ACI", "ADC A,"}, { {1} } },
 
-	{ 0xD0, 1, "RNC", "RET NC" },
-	{ 0xD2, 3, "JNC", "JP NC,", { 2 } },
-	{ 0xD3, 2, "OUT", 0, { 1 } },
-	{ 0xD3, 2, 0, "OUT ", {{ 11 }, { 3, 0, 0, reg + 7 }}},
-	{ 0xD4, 3, "CNC", "CALL NC,", { 2 } },
-	{ 0xD6, 2, "SUI", "SUB ", { 1 } },
-	{ 0xD8, 1, "RC", "RET C" },
-	{ 0xD9, 1, "RET*", "EXX" },
-	{ 0xDA, 3, "JC", "JP C,", { 2 } },
-	{ 0xDB, 2, "IN", 0, { 1 } },
-	{ 0xDB, 2, 0, "IN ", {{ 3, 0, 0, reg + 7 }, { 11 } }},
-	{ 0xDC, 3, "CC", "CALL C,", { 2 } },
-	{ 0xDD, 3, "CALL*", 0, { 2 } },
-	{ 0xDE, 2, "SBI", "SBC A,", { 1 } },
+	{ 0xD0, 1, {"RNC", "RET NC"} },
+	{ 0xD2, 3, {"JNC", "JP NC,"}, { {2} } },
+	{ 0xD3, 2, {"OUT", 0}, { {1} } },
+	{ 0xD3, 2, {0, "OUT "}, {{ 11 }, { 3, 0, 0, reg + 7 }}},
+	{ 0xD4, 3, {"CNC", "CALL NC,"}, { {2} } },
+	{ 0xD6, 2, {"SUI", "SUB "}, { {1} } },
+	{ 0xD8, 1, {"RC", "RET C"} },
+	{ 0xD9, 1, {"RET*", "EXX"} },
+	{ 0xDA, 3, {"JC", "JP C,"}, { {2} } },
+	{ 0xDB, 2, {"IN", 0}, { {1} } },
+	{ 0xDB, 2, {0, "IN "}, {{ 3, 0, 0, reg + 7 }, { 11 } }},
+	{ 0xDC, 3, {"CC", "CALL C,"}, { {2} } },
+	{ 0xDD, 3, {"CALL*", 0}, { {2} } },
+	{ 0xDE, 2, {"SBI", "SBC A,"}, { {1} } },
 
-	{ 0xE0, 1, "RPO", "RET PO" },
-	{ 0xE2, 3, "JPO", "JP PO,", { 2 } },
-	{ 0xE3, 1, "XTHL", 0 }, { 0xE3, 1, 0, "EX (SP),", { 3, 0, 0, rp + 2 }},
+	{ 0xE0, 1, {"RPO", "RET PO"} },
+	{ 0xE2, 3, {"JPO", "JP PO,"}, { {2} } },
+	{ 0xE3, 1, {"XTHL", 0} }, { 0xE3, 1, {0, "EX (SP),"}, { {3, 0, 0, rp + 2} }},
 
-	{ 0xE4, 3, "CPO", "CALL PO,", { 2 } },
-	{ 0xE6, 2, "ANI", "AND ", { 1 } },
-	{ 0xE8, 1, "RPE", "RET PE" },
-	{ 0xE9, 1, "PCHL", 0 }, { 0xE9, 1, 0, "JP ", { 13, 0, 0, rp + 2 }},
-	{ 0xEA, 3, "JPE", "JP PE,", { 2 } },
-	{ 0xEB, 1, "XCHG", "EX DE,HL" },
-	{ 0xEC, 3, "CPE", "CALL PE,", { 2 } },
-	{ 0xEE, 2, "XRI", "XOR ", { 1 } },
-	{ 0xED, 3, "CALL*", 0, { 2 } },
+	{ 0xE4, 3, {"CPO", "CALL PO,"}, { {2} } },
+	{ 0xE6, 2, {"ANI", "AND "}, { {1} } },
+	{ 0xE8, 1, {"RPE", "RET PE"} },
+	{ 0xE9, 1, {"PCHL", 0} }, { 0xE9, 1, {0, "JP "}, { {13, 0, 0, rp + 2} }},
+	{ 0xEA, 3, {"JPE", "JP PE,"}, { {2} } },
+	{ 0xEB, 1, {"XCHG", "EX DE,HL"} },
+	{ 0xEC, 3, {"CPE", "CALL PE,"}, { {2} } },
+	{ 0xEE, 2, {"XRI", "XOR "}, { {1} } },
+	{ 0xED, 3, {"CALL*", 0}, { {2} } },
 
-	{ 0xF0, 1, "RP", "RET P" },
-	{ 0xF2, 3, "JP", "JP P,", { 2 } },
-	{ 0xF3, 1, "DI", "DI" },
-	{ 0xF4, 3, "CP", "CALL P,", { 2 } },
-	{ 0xF6, 2, "ORI", "OR ", { 1 } },
-	{ 0xF8, 1, "RM", "RET M" },
-	{ 0xF9, 1, "SPHL"}, { 0xF9, 1, 0, "LD SP,", { 3, 0, 0, rp + 2 }},
-	{ 0xFA, 3, "JM", "JP M,", { 2 } },
-	{ 0xFB, 1, "EI", "EI" },
-	{ 0xFC, 3, "CM", "CALL M,", { 2 } },
-	{ 0xFE, 2, "CPI", "CP ", { 1 } },
-	{ 0xFD, 3, "CALL*", 0, { 2 } },
+	{ 0xF0, 1, {"RP", "RET P"} },
+	{ 0xF2, 3, {"JP", "JP P,"}, { {2} } },
+	{ 0xF3, 1, {"DI", "DI"} },
+	{ 0xF4, 3, {"CP", "CALL P,"}, { {2} } },
+	{ 0xF6, 2, {"ORI", "OR "}, { {1} } },
+	{ 0xF8, 1, {"RM", "RET M"} },
+	{ 0xF9, 1, {"SPHL"}}, { 0xF9, 1, {0, "LD SP,"}, { {3, 0, 0, rp + 2} }},
+	{ 0xFA, 3, {"JM", "JP M,"}, { {2} } },
+	{ 0xFB, 1, {"EI", "EI"} },
+	{ 0xFC, 3, {"CM", "CALL M,"}, { {2} } },
+	{ 0xFE, 2, {"CPI", "CP "}, { {1} } },
+	{ 0xFD, 3, {"CALL*", 0}, { {2} } },
 
-	{ 0xCB00, 1, 0, "RLC ", { 3, 0, 7, reg } },
-	{ 0xCB08, 1, 0, "RRC ", { 3, 0, 7, reg } },
-	{ 0xCB10, 1, 0, "RL ", { 3, 0, 7, reg } },
-	{ 0xCB18, 1, 0, "RR ", { 3, 0, 7, reg } },
-	{ 0xCB20, 1, 0, "SLA ", { 3, 0, 7, reg } },
-	{ 0xCB28, 1, 0, "SRA ", { 3, 0, 7, reg } },
-	{ 0xCB30, 1, 0, "SLL ", { 3, 0, 7, reg } },
-	{ 0xCB38, 1, 0, "SRL ", { 3, 0, 7, reg } },
+	{ 0xCB00, 1, {0, "RLC "}, { {3, 0, 7, reg} } },
+	{ 0xCB08, 1, {0, "RRC "}, { {3, 0, 7, reg} } },
+	{ 0xCB10, 1, {0, "RL "}, { {3, 0, 7, reg} } },
+	{ 0xCB18, 1, {0, "RR "}, { {3, 0, 7, reg} } },
+	{ 0xCB20, 1, {0, "SLA "}, { {3, 0, 7, reg} } },
+	{ 0xCB28, 1, {0, "SRA "}, { {3, 0, 7, reg} } },
+	{ 0xCB30, 1, {0, "SLL "}, { {3, 0, 7, reg} } },
+	{ 0xCB38, 1, {0, "SRL "}, { {3, 0, 7, reg} } },
 
-	{ 0xCB40, 1, 0, "BIT ", {{ 3, 3, 7, bit }, { 3, 0, 7, reg }}},
-	{ 0xCB80, 1, 0, "RES ", {{ 3, 3, 7, bit }, { 3, 0, 7, reg }}},
-	{ 0xCBC0, 1, 0, "SET ", {{ 3, 3, 7, bit }, { 3, 0, 7, reg }}},
+	{ 0xCB40, 1, {0, "BIT "}, {{ 3, 3, 7, bit }, { 3, 0, 7, reg }}},
+	{ 0xCB80, 1, {0, "RES "}, {{ 3, 3, 7, bit }, { 3, 0, 7, reg }}},
+	{ 0xCBC0, 1, {0, "SET "}, {{ 3, 3, 7, bit }, { 3, 0, 7, reg }}},
 
-	{ 0xED70, 1, 0, "IN (C)" }, { 0xED40, 1, 0, "IN ", {{ 3, 3, 7, reg }, { 13, 0, 0, reg + 1 }}},
-	{ 0xED71, 1, 0, "OUT (C),0" }, { 0xED41, 1, 0, "OUT ", {{ 13, 0, 0, reg + 1 }, { 3, 3, 7, reg }}},
-	{ 0xED42, 1, 0, "SBC HL,", { 3, 4, 3, rp }},
-	{ 0xED43, 3, 0, "LD ", {{ 12 }, { 3, 4, 3, rp }}},
-	{ 0xED44, 1, 0, "NEG " },
-	{ 0xED45, 1, 0, "RETN" },
-	{ 0xED46, 1, 0, "IM 0" },
-	{ 0xED47, 1, 0, "LD I,A" },
-	{ 0xED4A, 1, 0, "ADC HL,", { 3, 4, 3, rp }},
-	{ 0xED4B, 3, 0, "LD ", {{ 3, 4, 3, rp }, { 12 }}},
-	{ 0xED4C, 1, 0, "NEG*" },
-	{ 0xED4D, 1, 0, "RETI" },
-	{ 0xED4E, 1, 0, "IM 0*" },
-	{ 0xED4F, 1, 0, "LD R,A" },
+	{ 0xED70, 1, {0, "IN (C)"} }, { 0xED40, 1, {0, "IN "}, {{ 3, 3, 7, reg }, { 13, 0, 0, reg + 1 }}},
+	{ 0xED71, 1, {0, "OUT (C),0"} }, { 0xED41, 1, {0, "OUT "}, {{ 13, 0, 0, reg + 1 }, { 3, 3, 7, reg }}},
+	{ 0xED42, 1, {0, "SBC HL,"}, { {3, 4, 3, rp} }},
+	{ 0xED43, 3, {0, "LD "}, {{ 12 }, { 3, 4, 3, rp }}},
+	{ 0xED44, 1, {0, "NEG "} },
+	{ 0xED45, 1, {0, "RETN"} },
+	{ 0xED46, 1, {0, "IM 0"} },
+	{ 0xED47, 1, {0, "LD I,A"} },
+	{ 0xED4A, 1, {0, "ADC HL,"}, { {3, 4, 3, rp} }},
+	{ 0xED4B, 3, {0, "LD "}, {{ 3, 4, 3, rp }, { 12 }}},
+	{ 0xED4C, 1, {0, "NEG*"} },
+	{ 0xED4D, 1, {0, "RETI"} },
+	{ 0xED4E, 1, {0, "IM 0*"} },
+	{ 0xED4F, 1, {0, "LD R,A"} },
 
-	{ 0xED54, 1, 0, "NEG*" },
-	{ 0xED55, 1, 0, "RETN*" },
-	{ 0xED56, 1, 0, "IM 1" },
-	{ 0xED57, 1, 0, "LD A,I" },
-	{ 0xED5C, 1, 0, "NEG*" },
-	{ 0xED5D, 1, 0, "RETN*" },
-	{ 0xED5E, 1, 0, "IM 2" },
-	{ 0xED5F, 1, 0, "LD A,R" },
+	{ 0xED54, 1, {0, "NEG*"} },
+	{ 0xED55, 1, {0, "RETN*"} },
+	{ 0xED56, 1, {0, "IM 1"} },
+	{ 0xED57, 1, {0, "LD A,I"} },
+	{ 0xED5C, 1, {0, "NEG*"} },
+	{ 0xED5D, 1, {0, "RETN*"} },
+	{ 0xED5E, 1, {0, "IM 2"} },
+	{ 0xED5F, 1, {0, "LD A,R"} },
 
-	{ 0xED64, 1, 0, "NEG*" },
-	{ 0xED65, 1, 0, "RETN*" },
-	{ 0xED66, 1, 0, "IM 0*" },
-	{ 0xED67, 1, 0, "RRD" },
-	{ 0xED6C, 1, 0, "NEG*" },
-	{ 0xED6D, 1, 0, "RETN*" },
-	{ 0xED6E, 1, 0, "IM 0*" },
-	{ 0xED6F, 1, 0, "RLD" },
+	{ 0xED64, 1, {0, "NEG*"} },
+	{ 0xED65, 1, {0, "RETN*"} },
+	{ 0xED66, 1, {0, "IM 0*"} },
+	{ 0xED67, 1, {0, "RRD"} },
+	{ 0xED6C, 1, {0, "NEG*"} },
+	{ 0xED6D, 1, {0, "RETN*"} },
+	{ 0xED6E, 1, {0, "IM 0*"} },
+	{ 0xED6F, 1, {0, "RLD"} },
 
-	{ 0xED74, 1, 0, "NEG*" },
-	{ 0xED75, 1, 0, "RETN*" },
-	{ 0xED76, 1, 0, "IM 1*" },
-	{ 0xED7C, 1, 0, "NEG*" },
-	{ 0xED7D, 1, 0, "RETN*" },
-	{ 0xED7E, 1, 0, "IM 2*" },
+	{ 0xED74, 1, {0, "NEG*"} },
+	{ 0xED75, 1, {0, "RETN*"} },
+	{ 0xED76, 1, {0, "IM 1*"} },
+	{ 0xED7C, 1, {0, "NEG*"} },
+	{ 0xED7D, 1, {0, "RETN*"} },
+	{ 0xED7E, 1, {0, "IM 2*"} },
 
-	{ 0xEDA0, 1, 0, "LDI" },
-	{ 0xEDA1, 1, 0, "CPI" },
-	{ 0xEDA2, 1, 0, "INI" },
-	{ 0xEDA3, 1, 0, "OUTI" },
+	{ 0xEDA0, 1, {0, "LDI"} },
+	{ 0xEDA1, 1, {0, "CPI"} },
+	{ 0xEDA2, 1, {0, "INI"} },
+	{ 0xEDA3, 1, {0, "OUTI"} },
 
-	{ 0xEDA8, 1, 0, "LDD" },
-	{ 0xEDA8, 1, 0, "CPD" },
-	{ 0xEDAA, 1, 0, "IND" },
-	{ 0xEDAB, 1, 0, "OUTD" },
+	{ 0xEDA8, 1, {0, "LDD"} },
+	{ 0xEDA8, 1, {0, "CPD"} },
+	{ 0xEDAA, 1, {0, "IND"} },
+	{ 0xEDAB, 1, {0, "OUTD"} },
 
-	{ 0xEDB0, 1, 0, "LDIR" },
-	{ 0xEDB1, 1, 0, "CPIR" },
-	{ 0xEDB2, 1, 0, "INIR" },
-	{ 0xEDB3, 1, 0, "OTIR" },
+	{ 0xEDB0, 1, {0, "LDIR"} },
+	{ 0xEDB1, 1, {0, "CPIR"} },
+	{ 0xEDB2, 1, {0, "INIR"} },
+	{ 0xEDB3, 1, {0, "OTIR"} },
 
-	{ 0xEDB8, 1, 0, "LDDR" },
-	{ 0xEDB8, 1, 0, "CPDR" },
-	{ 0xEDBA, 1, 0, "INDR" },
-	{ 0xEDBB, 1, 0, "OTDR" },
+	{ 0xEDB8, 1, {0, "LDDR"} },
+	{ 0xEDB8, 1, {0, "CPDR"} },
+	{ 0xEDBA, 1, {0, "INDR"} },
+	{ 0xEDBB, 1, {0, "OTDR"} },
 
 	// --
 
-	{ 0xED00, 1, 0, "NOP*", {0, 0, 255}},
-	{ 0x00, 1, 0, "NOP*", {0, 0, 255}},
+	{ 0xED00, 1, {0, "NOP*"}, {{0, 0, 255}}},
+	{ 0x00, 1, {0, "NOP*"}, {{0, 0, 255}}},
 
-	{ 0x00, 0, "???", "???" }
+	{ 0x00, 0, {"???", "???"} }
 };
 
 // -----------------------------------------------------------------------------
@@ -462,12 +462,12 @@ static NSString *koi8()
 	{
 		NSScanner *scanner = [NSScanner scannerWithString:string];
 
-		while (scanner.atEnd == NO)
+		while (scanner.isAtEnd == NO)
 		{
-			NSString *o = nil; if ([scanner scanCharactersFromSet:[NSCharacterSet characterSetWithCharactersInString:@"+-"] intoString:&o] ? o.length > 1 || scanner.atEnd : scanner.scanLocation != 0)
+			NSString *o = nil; if ([scanner scanCharactersFromSet:[NSCharacterSet characterSetWithCharactersInString:@"+-"] intoString:&o] ? o.length > 1 || scanner.isAtEnd : scanner.scanLocation != 0)
 				@throw @"Недопустимое значение";
 
-			NSString *p = nil; if ([scanner scanCharactersFromSet:[NSCharacterSet characterSetWithCharactersInString:@"#$'"] intoString:&p] && (p.length > 1 || scanner.atEnd))
+			NSString *p = nil; if ([scanner scanCharactersFromSet:[NSCharacterSet characterSetWithCharactersInString:@"#$'"] intoString:&p] && (p.length > 1 || scanner.isAtEnd))
 				@throw @"Недопустимое значение";
 
 			unsigned value; if (p)
@@ -519,7 +519,7 @@ static NSString *koi8()
 
 				else
 				{
-					NSString *s = nil; if (![scanner scanUpToString:@"'" intoString:&s] || s.length > 2 || ![scanner scanString:@"'" intoString:nil])
+					NSString *s = nil; if (![scanner scanUpToString:@"'" intoString:&s] || s.length > 2 || ![scanner scanString:@"'" intoString:NULL])
 						@throw @"Недопустимое значение";
 
 					NSRange range; if ((range = [unicode rangeOfString:[s substringToIndex:1]]).location == NSNotFound)
@@ -537,9 +537,9 @@ static NSString *koi8()
 				}
 			}
 
-			else if ([scanner scanString:@"^" intoString:nil])
+			else if ([scanner scanString:@"^" intoString:NULL])
 			{
-				int offset = 0; while ([scanner scanString:@"^" intoString:nil]) offset += 2;
+				int offset = 0; while ([scanner scanString:@"^" intoString:NULL]) offset += 2;
 				const uint8_t *ptr = [cpu BYTE:cpu.SP + offset]; value = ptr ? *ptr : 0;
 				value |= ((ptr = [cpu BYTE:cpu.SP + offset + 1]) ? *ptr : 0) << 8;
 			}
@@ -654,7 +654,7 @@ static NSString *koi8()
 			else
 				[debug print:@"  %04X:  ?? ", lastM];
 
-			return FALSE;
+			return NO;
 		}
 
 		else if (dbgCmd == 'A')
@@ -713,7 +713,7 @@ static NSString *koi8()
 						*ptr = data >> 8;
 
 					[debug print:@"  %04X:  ", lastA];
-					return FALSE;
+					return NO;
 				}
 				
 				@throw @"Недопустимый опкод";
@@ -727,7 +727,7 @@ static NSString *koi8()
 				cpu.PC = [self word:command last:0];
 
 			[debug print:@"  HL-%04X  ", cpu.HL];
-			dbgCmd++; return FALSE;
+			dbgCmd++; return NO;
 		}
 
 		else if (dbgCmd == '2')
@@ -736,7 +736,7 @@ static NSString *koi8()
 				cpu.HL = [self word:command last:0];
 
 			[debug print:@"  BC-%04X  ", cpu.BC];
-			dbgCmd++; return FALSE;
+			dbgCmd++; return NO;
 		}
 
 		else if (dbgCmd == '3')
@@ -745,7 +745,7 @@ static NSString *koi8()
 				cpu.BC = [self word:command last:0];
 
 			[debug print:@"  DE-%04X  ", cpu.DE];
-			dbgCmd++; return FALSE;
+			dbgCmd++; return NO;
 		}
 
 		else if (dbgCmd == '4')
@@ -754,7 +754,7 @@ static NSString *koi8()
 				cpu.DE = [self word:command last:0];
 
 			[debug print:@"  SP-%04X  ", cpu.SP];
-			dbgCmd++; return FALSE;
+			dbgCmd++; return NO;
 		}
 
 		else if (dbgCmd == '5')
@@ -763,7 +763,7 @@ static NSString *koi8()
 				cpu.SP = [self word:command last:0];
 
 			[debug print:@"  AF-%04X  ", cpu.AF];
-			dbgCmd++; return FALSE;
+			dbgCmd++; return NO;
 		}
 
 		else if (dbgCmd == '6')
@@ -785,7 +785,7 @@ static NSString *koi8()
 
 				cpu.breakpoints = 0;
 				[debug clear];
-				return TRUE;
+				return YES;
 			}
 
 			else if (cmd == '7')
@@ -813,7 +813,7 @@ static NSString *koi8()
 				for (NSUInteger i = 1; i < array.count && array[i].length; i++)
 					breakpoints[[self word:array[i] last:cpu.PC]] |= 0x20;
 
-				return TRUE;
+				return YES;
 			}
 
 			else if (cmd == 'B')
@@ -906,13 +906,13 @@ static NSString *koi8()
 					if ((cpu.Z80 ? *ptr : *ptr & 0xCF) == 0xCD || (*ptr & 0xC7) == 0xC4 || (*ptr & 0xC7) == 0xC2)	// CALL/Ccc/Jcc
 					{
 						breakpoints[cpu.PC + 3] |= 0x20;
-						return TRUE;
+						return YES;
 					}
 
 					else if ((*ptr & 0xC7) == 0xC7)	// RST
 					{
 						breakpoints[cpu.PC + 1] |= 0x20;
-						return TRUE;
+						return YES;
 					}
 
 					else if (cpu.Z80)
@@ -920,7 +920,7 @@ static NSString *koi8()
 						if (*ptr == 0x10 || *ptr == 0x20 || *ptr == 0x28 || *ptr == 0x30 || *ptr == 38)
 						{
 							breakpoints[cpu.PC + 2] |= 0x20;
-							return TRUE;
+							return YES;
 						}
 
 						else if (*ptr == 0xED)
@@ -928,7 +928,7 @@ static NSString *koi8()
 							if ((ptr = [cpu BYTE:cpu.PC + 1]) && *ptr >= 0xB0 && *ptr <= 0xBB)
 							{
 								breakpoints[cpu.PC + 2] |= 0x20;
-								return TRUE;
+								return YES;
 							}
 						}
 					}
@@ -1112,10 +1112,10 @@ static NSString *koi8()
 
 				NSSavePanel *panel = [NSSavePanel savePanel];
 				panel.allowedFileTypes = @[@"bin"];
-				panel.allowsOtherFileTypes = TRUE;
+				panel.allowsOtherFileTypes = YES;
 
 				if ([panel runModal] == NSFileHandlingPanelOKButton)
-					[data writeToURL:panel.URL atomically:TRUE];
+					[data writeToURL:panel.URL atomically:YES];
 			}
 
 			else if (cmd == 'M')
@@ -1131,7 +1131,7 @@ static NSString *koi8()
 					[debug print:@"  %04X:  ?? ", lastM];
 
 				dbgCmd = 'M';
-				return FALSE;
+				return NO;
 			}
 
 			else if (cmd == 'A')
@@ -1145,7 +1145,7 @@ static NSString *koi8()
 				[debug print:@"  %04X:  ", lastA];
 
 				dbgCmd = 'A';
-				return FALSE;
+				return NO;
 			}
 			
 			else if (cmd == 'X')
@@ -1156,7 +1156,7 @@ static NSString *koi8()
 				[debug print:@"  PC-%04X  ", cpu.PC];
 
 				dbgCmd = '1';
-				return FALSE;
+				return NO;
 			}
 
 			else if (cmd == 'H')
@@ -1195,17 +1195,17 @@ static NSString *koi8()
 	@catch (NSException *exception)
 	{
 		[debug print:@"%@\n# ", exception];
-		dbgCmd = 0; return FALSE;
+		dbgCmd = 0; return NO;
 	}
 	
 	@catch (NSString *string)
 	{
 		[debug print:@"%@\n# ", string];
-		dbgCmd = 0; return FALSE;
+		dbgCmd = 0; return NO;
 	}
 	
 	[debug print:@"# "];
-	dbgCmd = 0; return FALSE;
+	dbgCmd = 0; return NO;
 }
 
 // -----------------------------------------------------------------------------

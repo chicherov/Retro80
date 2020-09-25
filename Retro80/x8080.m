@@ -366,7 +366,7 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status)
 	if ([RD[PAGE][addr] respondsToSelector:@selector(BYTE:)])
 		return [(NSObject<BYTE> *)RD[PAGE][addr] BYTE:addr];
 	else
-		return nil;
+		return NULL;
 }
 
 // -----------------------------------------------------------------------------
@@ -381,7 +381,7 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status)
 - (void) mapObject:(NSObject<RD, WR> *)object atPort:(uint8_t)port
 {
 	IO[port] = object;
-	MEMIO = FALSE;
+	MEMIO = NO;
 
 	CallIOR[port] = object ? (void (*) (id, SEL, uint16_t, uint8_t *, uint64_t)) [object methodForSelector:@selector(RD:data:CLK:)] : 0;
 	CallIOW[port] = object ? (void (*) (id, SEL, uint16_t, uint8_t, uint64_t)) [object methodForSelector:@selector(WR:data:CLK:)] : 0;
@@ -720,7 +720,7 @@ static uint16_t AND[2][0x100][0x100];
 	PAGE = (START >> 16) & 0xF;
 	PC = START & 0xFFFF;
 
-	self.IF = FALSE;
+	self.IF = NO;
 	IM = 0;
 }
 
@@ -733,7 +733,7 @@ static uint16_t AND[2][0x100][0x100];
 	if (breakpoints && BREAK & 0x8000000000000000 && breakpoints[PC] & 0x30)
 	{
 		BREAK = ((uint64_t)breakpoints[PC] << 32) | ((uint64_t)PC << 16) | (BREAK & 0xFFFF);
-		return FALSE;
+		return NO;
 	}
 
 	while (CLK < CLKI)
@@ -2743,7 +2743,7 @@ static uint16_t AND[2][0x100][0x100];
 					
 				case 0xF3:	// DI
 				{
-					self.IF = FALSE;
+					self.IF = NO;
 					break;
 				}
 					
@@ -2807,7 +2807,7 @@ static uint16_t AND[2][0x100][0x100];
 					
 				case 0xFB:	// EI
 				{
-					self.IF = TRUE;
+					self.IF = YES;
 
 					if (Z80)
 					{
@@ -3655,7 +3655,7 @@ static uint16_t AND[2][0x100][0x100];
 
 			if (NMI && CallNMI(NMI, @selector(IRQ:), CLK))
 			{
-				CLK += 63; IF = FALSE; PC += HLD;
+				CLK += 63; IF = NO; PC += HLD;
 
 				put(self, --SP, PC >> 8, 0x04);
 				put(self, --SP, PC, 0x04);
@@ -3666,7 +3666,7 @@ static uint16_t AND[2][0x100][0x100];
 
 			if (IRQ && IF && CallIRQ(IRQ, @selector(IRQ:), CLK))
 			{
-				CLK += 63; IF = IFF2 = FALSE; PC += HLD;
+				CLK += 63; IF = IFF2 = NO; PC += HLD;
 				put(self, --SP, PC >> 8, 0x04);
 				put(self, --SP, PC, 0x04);
 
@@ -3701,11 +3701,11 @@ static uint16_t AND[2][0x100][0x100];
 				BREAK |= ((uint64_t)PC << 16) | ((uint64_t)breakpoints[PC] << 32);
 
 			if (BREAK & 0x3F00000000)
-				return FALSE;
+				return NO;
 		}
 	}
 
-	return TRUE;
+	return YES;
 }
 
 // -----------------------------------------------------------------------------
@@ -3717,7 +3717,7 @@ static uint16_t AND[2][0x100][0x100];
 {
 	if (self = [super init])
 	{
-		MEMIO = TRUE;
+		MEMIO = YES;
 		[X8080 ALU];
 
 		START = start;
@@ -3732,7 +3732,7 @@ static uint16_t AND[2][0x100][0x100];
 - (instancetype)initZ80:(uint32_t)start
 {
 	if (self = [self init8080:start])
-		Z80 = TRUE;
+		Z80 = YES;
 
 	return self;
 }

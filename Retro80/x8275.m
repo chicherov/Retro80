@@ -216,7 +216,7 @@ static uint32_t foreground[] =
 	}
 }
 
-- (void) setFonts:(const uint16 *)ptr
+- (void) setFonts:(const uint16_t *)ptr
 {
 	@synchronized(self)
 	{
@@ -260,11 +260,11 @@ static uint32_t foreground[] =
 {
 	if (IRQ)
 	{
-		IRQ = FALSE;
-		return TRUE;
+		IRQ = NO;
+		return YES;
 	}
 
-	return FALSE;
+	return NO;
 }
 
 // -----------------------------------------------------------------------------
@@ -279,7 +279,7 @@ static uint32_t foreground[] =
 		{
 			*data = status.byte;
 
-			status.IR = FALSE;
+			status.IR = NO;
 
 			status.IC = 0;
 			status.DU = 0;
@@ -324,7 +324,7 @@ static uint32_t foreground[] =
 			{
 				case 0x00:					// Команда Reset
 				{
-					status.IR = FALSE;
+					status.IR = NO;
 
 					status.VE = 0;
 					status.IE = 0;
@@ -384,7 +384,7 @@ static uint32_t foreground[] =
 						memset(screen, -1, sizeof(screen));
 						bitmap[1] = NULL;
 
-						[self.display draw:TRUE];
+						[self.display draw:YES];
 					}
 
 					break;
@@ -426,7 +426,7 @@ static uint32_t foreground[] =
 			if (++row >= config.R + config.V + 2)
 			{
 				[self.display draw:frame++ & 1 || colors == NULL];
-				row = 0; attr = 0x00; EoS = FALSE;
+				row = 0; attr = 0x00; EoS = NO;
 			}
 
 			if (row <= config.R)
@@ -437,16 +437,16 @@ static uint32_t foreground[] =
 				{
 					status.DU = 1;
 					dmaTimer = -2;
-					EoS = TRUE;
+					EoS = YES;
 				}
 
 				if (row == config.R && status.IE)
-					IRQ = status.IR = TRUE;
+					IRQ = status.IR = YES;
 
                 union i8275_char ch2;
                 ch2.value = 0;
                 
-				BOOL EoR = FALSE;
+				BOOL EoR = NO;
 
 				for (uint8_t col = 0, f = 0; col < config.H + 2; col++)
 				{
@@ -498,9 +498,9 @@ static uint32_t foreground[] =
 						else if ((ch2.byte & 0xF0) == 0xF0)					// 1111xxxx
 						{
 							if (ch2.byte & 0x02)
-								EoS = TRUE;
+								EoS = YES;
 							else
-								EoR = TRUE;
+								EoR = YES;
 
 							ch2.vsp = -1;
 						}

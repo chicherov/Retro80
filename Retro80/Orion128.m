@@ -38,38 +38,38 @@
 - (BOOL)createObjects
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xF800]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-2" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x40000 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.crt == nil && (self.crt = [[Orion128Screen alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.kbd == nil && (self.kbd = [[RKKeyboard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] initWithContentsOfResource:@"ORDOS-4.03"]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.prn == nil && (self.prn = [[X8255 alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.fdd == nil && (self.fdd = [[Orion128Floppy alloc] initWithQuartz:self.quartz]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.mem == nil && (self.mem = [self.ram memoryAtOffest:0]) == nil)
-		return FALSE;
+		return NO;
 
-	self.snd.channel0 = TRUE;
-	self.snd.rkmode = TRUE;
-	return TRUE;
+	self.snd.channel0 = YES;
+	self.snd.rkmode = YES;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -86,13 +86,13 @@
 	self.fdd.nextResponder = self.snd;
 
 	if (self.sys == nil && (self.sys = [[Orion128System alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	self.sys.orion = self;
 
 	self.cpu.INTE = self.snd;
 
-	self.cpu.FF = TRUE;
+	self.cpu.FF = YES;
 
 	self.crt.pMemory = self.ram.pMutableBytes;
 
@@ -154,7 +154,7 @@
 		}
 	}
 
-	return TRUE;
+	return YES;
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
@@ -168,7 +168,7 @@
 				menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 				menuItem.title = [menuItem.title stringByAppendingFormat:@": %luK", self.ram.length >> 10];
 
-				menuItem.state = FALSE;
+				menuItem.state = NO;
 				break;
 			}
 
@@ -179,12 +179,12 @@
 
 			default:
 
-				menuItem.state = FALSE;
-				menuItem.hidden = TRUE;
+				menuItem.state = NO;
+				menuItem.hidden = YES;
 				return NO;
 		}
 
-		menuItem.hidden = FALSE;
+		menuItem.hidden = NO;
 		return YES;
 	}
 
@@ -205,7 +205,7 @@
 		else
 		{
 			menuItem.state = [self.ext.URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath];
-			menuItem.hidden = FALSE;
+			menuItem.hidden = NO;
 		}
 
 		return YES;
@@ -277,41 +277,41 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.cpu = [coder decodeObjectForKey:@"cpu"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.rom = [coder decodeObjectForKey:@"rom"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ram = [coder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.crt = [coder decodeObjectForKey:@"crt"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.snd = [coder decodeObjectForKey:@"snd"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.kbd = [coder decodeObjectForKey:@"kbd"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ext = [coder decodeObjectForKey:@"ext"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.prn = [coder decodeObjectForKey:@"prn"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.fdd = [coder decodeObjectForKey:@"fdd"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.mem = [self.ram memoryAtOffest:0]) == nil)
-		return FALSE;
+		return NO;
 
 	self.mem.offset = [coder decodeIntegerForKey:@"mem"];
 
-	return TRUE;
+	return YES;
 }
 
 @end
@@ -323,25 +323,25 @@
 - (BOOL)createObjects
 {
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-1" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ram == nil)
 	{
 		if ((self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
-			return FALSE;
+			return NO;
 
 		self.ram.mutableBytes [0x10000] = 0xFF;
 	}
 
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] initWithContentsOfResource:@"ORDOS-2.40"]) == nil)
-		return FALSE;
+		return NO;
 
 	if (![super createObjects])
-		return FALSE;
+		return NO;
 
-	self.fdd.enabled = FALSE;
-	self.snd.enabled = FALSE;
-	return TRUE;
+	self.fdd.enabled = NO;
+	self.snd.enabled = NO;
+	return YES;
 }
 
 @end
@@ -353,10 +353,10 @@
 - (BOOL)createObjects
 {
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.1" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] initWithContentsOfResource:@"M3-EXT-1.3"]) == nil)
-		return FALSE;
+		return NO;
 
 	return [super createObjects];
 }
@@ -370,7 +370,7 @@
 - (BOOL)createObjects
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initZ80:0xF800]) == nil)
-		return FALSE;
+		return NO;
 
 	return [super createObjects];
 }
@@ -400,13 +400,13 @@
 - (BOOL)createObjects
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] initZ80:0xF800]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.2" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x80000 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	return [super createObjects];
 }
@@ -414,10 +414,10 @@
 -(BOOL)mapObjects
 {
 	if (![super mapObjects])
-		return FALSE;
+		return NO;
 
 	if (self.card == nil && (self.card = [[Z80CardII alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	self.card.orion = self;
 
@@ -427,7 +427,7 @@
 	self.cpu.RST = 0xFF;
 
 	self.cpu.INTE = nil;
-	return TRUE;
+	return YES;
 }
 
 @end
@@ -437,7 +437,7 @@
 - (BOOL)createObjects
 {
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Orion128-3.3" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	return [super createObjects];
 }
@@ -486,7 +486,7 @@
 
 - (void)RESET:(uint64_t)clock
 {
-	[self.orion.snd setBeeper:(beeper = FALSE) clock:clock];
+	[self.orion.snd setBeeper:(beeper = NO) clock:clock];
 	self.orion.ext.MSB = 0x00;
 }
 

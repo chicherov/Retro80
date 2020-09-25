@@ -34,7 +34,7 @@
 
 - (void)keyDown:(NSEvent *)theEvent
 {
-	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) != 0)
+	if ((theEvent.modifierFlags & NSCommandKeyMask) != 0)
 		return;
 
 	@synchronized (self)
@@ -52,7 +52,7 @@
 				{
 					if (chr2Map.length <= index || [chr2Map characterAtIndex:index] != [chr1Map characterAtIndex:index])
 					{
-						modifierFlags = theEvent.modifierFlags & ~NSShiftKeyMask; ignoreShift = TRUE;
+						modifierFlags = theEvent.modifierFlags & ~NSShiftKeyMask; ignoreShift = YES;
 					}
 					else if (ignoreShift)
 					{
@@ -71,7 +71,7 @@
 
 				else if ((index = [chr2Map rangeOfString:chr].location) != NSNotFound)
 				{
-					modifierFlags = theEvent.modifierFlags | NSShiftKeyMask; ignoreShift = TRUE;
+					modifierFlags = theEvent.modifierFlags | NSShiftKeyMask; ignoreShift = YES;
 
 					if (index < 72)
 					{
@@ -95,7 +95,7 @@
 
 - (void) keyUp:(NSEvent*)theEvent
 {
-	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) != 0)
+	if ((theEvent.modifierFlags & NSCommandKeyMask) != 0)
 		return;
 
 	@synchronized (self)
@@ -108,7 +108,7 @@
 			{
 				if (keyboard[i] == keyCode)
 				{
-					ignoreShift = FALSE;
+					ignoreShift = NO;
 					keyboard[i] = 0;
 				}
 			}
@@ -116,7 +116,7 @@
 		else
 		{
 			memset(keyboard, 0, sizeof(keyboard));
-			ignoreShift = FALSE;
+			ignoreShift = NO;
 			modifierFlags = 0;
 		}
 	}
@@ -124,7 +124,7 @@
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(paste:))
+	if (sel_isEqual(menuItem.action, @selector(paste:)))
 		return [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString] != nil;
 
 	if (menuItem.action == @selector(qwerty:))
@@ -163,8 +163,8 @@
 	{
 		if (pasteKey != NSNotFound && pasteKey < 72 && clock - pasteClock > 1000000)
 		{
-			modifierFlags &= ~NSEventModifierFlagShift;
-			keyboard[pasteKey] = FALSE;
+			modifierFlags &= ~NSShiftKeyMask;
+			keyboard[pasteKey] = NO;
 			pasteKey = NSNotFound;
 		}
 
@@ -177,14 +177,14 @@
 
 			if ((pasteKey = [chr1Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
 			{
-				modifierFlags &= ~NSEventModifierFlagShift;
-				keyboard[pasteKey] = TRUE;
+				modifierFlags &= ~NSShiftKeyMask;
+				keyboard[pasteKey] = YES;
 			}
 
 			else if ((pasteKey = [chr2Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
 			{
 				modifierFlags |= NSShiftKeyMask;
-				keyboard[pasteKey] = TRUE;
+				keyboard[pasteKey] = YES;
 			}
 
 			if (++pos == paste.length)
@@ -223,13 +223,13 @@
 {
 	uint8_t data = 0xFF & ~(RUSLAT | CTRL | SHIFT | TAPEI);
 
-	if (!(modifierFlags & NSEventModifierFlagOption))
+	if (!(modifierFlags & NSAlternateKeyMask))
 		data |= RUSLAT;
 
-	if (!(modifierFlags & NSEventModifierFlagControl))
+	if (!(modifierFlags & NSControlKeyMask))
 		data |= CTRL;
 
-	if (!(modifierFlags & NSEventModifierFlagShift))
+	if (!(modifierFlags & NSShiftKeyMask))
 		data |= SHIFT;
 
 	if (TAPEI && [self.computer.sound input:self.computer.clock])
@@ -267,7 +267,7 @@
 
 	chr1Map = @"XYZ[\\]^ PQRSTUVWHIJKLMNO@ABCDEFG89:;,-./01234567\t\x03\r\x7F\x1B";
 	chr2Map = @"ЬЫЗШЭЩЧ ПЯРСТУЖВХИЙКЛМНОЮАБЦДЕФГ()*+<=>? !\"#$%&'\t\x03\r\x7F\x1B";
-	upperCase = TRUE;
+	upperCase = YES;
 
 	RUSLAT = 0x80;
 	SHIFT = 0x20;
@@ -282,7 +282,7 @@
 	if (self = [super init])
 	{
 		[self keyboardInit];
-		qwerty = TRUE;
+		qwerty = YES;
 	}
 
 	return self;

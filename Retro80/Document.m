@@ -102,7 +102,7 @@
 			computer = object;
 
 			[windowController startComputer];
-			return TRUE;
+			return YES;
 		}
 	}
 	@catch(NSException *exception)
@@ -110,7 +110,7 @@
 		NSLog(@"%@", exception);
 	}
 
-	return FALSE;
+	return NO;
 }
 
 - (void)makeWindowControllers

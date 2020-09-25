@@ -92,7 +92,7 @@
         if ((mutableData = [[NSMutableData alloc] initWithLength:len]) == nil)
             return self = nil;
         
-        if ((mutableBytes = mutableData.mutableBytes) == nil)
+        if ((mutableBytes = mutableData.mutableBytes) == NULL)
             return self = nil;
 
         if ((length = mutableData.length) != len)
@@ -142,7 +142,7 @@
         if ((mutableData = [decoder decodeObjectForKey:@"dump"]) == nil)
             return self = nil;
         
-        if ((mutableBytes = mutableData.mutableBytes) == nil)
+        if ((mutableBytes = mutableData.mutableBytes) == NULL)
             return self = nil;
         
         length = mutableData.length;
@@ -177,7 +177,7 @@
 		if ((mutableData = [NSMutableData dataWithData:data]) == nil)
 			return self = nil;
 
-        if ((mutableBytes = mutableData.mutableBytes) == nil)
+        if ((mutableBytes = mutableData.mutableBytes) == NULL)
             return self = nil;
         
         if ((length = mutableData.length) == 0)

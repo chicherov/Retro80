@@ -17,7 +17,7 @@
 @property(nonatomic,getter=isEnabled) BOOL enabled;
 @end
 
-@interface Computer : NSResponder<NSCoding>
+@interface Computer : NSResponder<NSCoding, NSMenuItemValidation>
 
 @property(class, nonatomic, readonly) NSString *title;
 
@@ -41,7 +41,10 @@
 
 - (instancetype)initWithQuartz:(unsigned)quartz NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithCoder:(NSCoder *)coder NS_DESIGNATED_INITIALIZER;
+
+#ifndef GNUSTEP
 - (instancetype)init NS_UNAVAILABLE;
+#endif
 
 - (BOOL)createObjects;
 - (BOOL)mapObjects;

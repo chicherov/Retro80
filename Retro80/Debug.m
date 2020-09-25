@@ -33,7 +33,7 @@
 - (void)flush
 {
 	[textView replaceCharactersInRange:NSMakeRange(fence, textView.textStorage.length - fence) withString:buffer];
-	[textView scrollRangeToVisible:NSMakeRange(fence, buffer.length)];
+    [textView scrollRangeToVisible: [textView selectedRange]];
 	buffer = nil; fence = textView.textStorage.length;
 
 	if (fence > 2000000)
@@ -105,7 +105,7 @@
 
 		if ([self.delegate Debugger:array.count == 1 ? @"." : string])
 		{
-			[panel setIsVisible:FALSE];
+			[panel setIsVisible:NO];
 			[NSApp stopModal];
 		}
 		else
@@ -114,6 +114,16 @@
 		}
 	}
 }
+
+#ifdef GNUSTEP
+
+- (void)windowDidResize:(NSNotification *)notification
+{
+    NSSize size = [panel contentRectForFrameRect:panel.frame].size;
+    [textView.superview.superview setFrame:NSMakeRect(0.0, 0.0, size.width, size.height)];
+}
+
+#endif
 
 // ---------------------------------------------------------------------------------------------------------------------
 

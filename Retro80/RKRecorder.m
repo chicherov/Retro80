@@ -54,16 +54,16 @@
 			{
 				[self performSelectorOnMainThread:@selector(openPanel)
 									   withObject:nil
-									waitUntilDone:TRUE];
+									waitUntilDone:YES];
 
 				[self performSelectorOnMainThread:@selector(open)
 									   withObject:nil
-									waitUntilDone:FALSE];
+									waitUntilDone:NO];
 			}
 
 			else
 			{
-				cancel = TRUE;
+				cancel = YES;
 			}
 		}
 	}
@@ -71,7 +71,7 @@
 	else
 	{
 		[self.mem RD:addr data:data CLK:clock];
-		cancel = FALSE;
+		cancel = NO;
 	}
 
 	return;
@@ -178,14 +178,14 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 					else
 					{
 						self.buffer = nil;
-						cancel = TRUE;
+						cancel = YES;
 					}
 				}
 
 				else
 				{
 					self.buffer = nil;
-					cancel = TRUE;
+					cancel = YES;
 				}
 			}
 
@@ -230,7 +230,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 				else
 				{
 					self.buffer = nil;
-					cancel = TRUE;
+					cancel = YES;
 				}
 			}
 		}
@@ -238,7 +238,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 
 	else
 	{
-		cancel = TRUE;
+		cancel = YES;
 	}
 
 	panel = nil;
@@ -290,7 +290,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 
 					[self performSelectorOnMainThread:@selector(save)
 										   withObject:nil
-										waitUntilDone:FALSE];
+										waitUntilDone:NO];
 				}
 			}
 
@@ -445,7 +445,7 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 		if (length && *ptr == 0xE6)
 			self.buffer = [NSMutableData dataWithBytes:++ptr length:--length];
 
-		[self.buffer writeToURL:savePanel.URL atomically:TRUE];
+		[self.buffer writeToURL:savePanel.URL atomically:YES];
 
 		self.buffer = nil;
 	}

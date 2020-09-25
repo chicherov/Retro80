@@ -35,29 +35,29 @@
 
 - (BOOL)parseMenu:(NSMenuItem *)menu tag:(NSInteger)tag
 {
-	BOOL done = FALSE;
+	BOOL done = NO;
 
 	for (NSMenuItem *menuItem in [menu.submenu itemArray])
 	{
 		if (menuItem.hasSubmenu)
 		{
 			if ([self parseMenu:menuItem tag:tag])
-				menuItem.state = done = TRUE;
+				menuItem.state = done = YES;
 			else
-				menuItem.state = FALSE;
+				menuItem.state = NO;
 		}
 
 		else if (menuItem.tag == tag)
 		{
 			menuItem.keyEquivalentModifierMask = NSCommandKeyMask;
 			menuItem.keyEquivalent = @"n";
-			menuItem.state = done = TRUE;
+			menuItem.state = done = YES;
 		}
 
 		else
 		{
 			menuItem.keyEquivalent = @"";
-			menuItem.state = FALSE;
+			menuItem.state = NO;
 		}
 	}
 
@@ -73,7 +73,7 @@
 		NSMenuItem *menuItem = [menuNew.submenu itemAtIndex:0];
 		menuItem.keyEquivalentModifierMask = NSCommandKeyMask;
 		menuItem.keyEquivalent = @"n";
-		menuItem.state = TRUE;
+		menuItem.state = YES;
 	}
 }
 

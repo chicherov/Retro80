@@ -12,11 +12,7 @@
 @interface Sound : NSResponder
 
 @property(nonatomic, assign) Computer *computer;
-
-@property(nonatomic, readonly) BOOL isOutput;
-@property(nonatomic, readonly) BOOL isInput;
-
-- (void)openWave:(NSURL *)URL;
+@property IBOutlet NSTextField *textField;
 
 - (BOOL)start;
 - (void)stop;
@@ -26,6 +22,12 @@
 
 - (void)flush:(uint64_t)clock;
 
+- (void)openWave:(NSURL *)URL;
+
 - (BOOL)input:(uint64_t)clock;
+
+- (BOOL)isOutput;
+
+- (BOOL)isInput;
 
 @end

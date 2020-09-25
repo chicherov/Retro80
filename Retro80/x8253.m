@@ -138,7 +138,7 @@ static void change_gate(X8253 *sound, struct i8253_timer *timer, BOOL gate, uint
 					{
 						timer->zero = clock + (uint64_t) timer->count*timer->clk;
 
-						if (timer->output == FALSE)
+						if (timer->output == NO)
 							timer->reload = timer->zero;
 					}
 					else
@@ -154,7 +154,7 @@ static void change_gate(X8253 *sound, struct i8253_timer *timer, BOOL gate, uint
 					if (gate)
 					{
 						if (timer->output)
-							change_output(sound, timer, FALSE, clock + timer->clk);
+							change_output(sound, timer, NO, clock + timer->clk);
 						else
 							timer->zero = timer->reload = clock + timer->reloadLo;
 					}
@@ -174,7 +174,7 @@ static void change_gate(X8253 *sound, struct i8253_timer *timer, BOOL gate, uint
 					{
 						timer->count = count(timer, clock);
 
-						change_output(sound, timer, TRUE, clock);
+						change_output(sound, timer, YES, clock);
 						timer->reload = 0;
 					}
 
@@ -302,14 +302,14 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 		if (timer->bLow)
 		{
 			if (timer->mode.RL == 3)
-				timer->bLow = FALSE;
+				timer->bLow = NO;
 
 			*data = value & 0xFF;
 		}
 		else
 		{
 			if (timer->mode.RL == 3)
-				timer->bLow = TRUE;
+				timer->bLow = YES;
 
 			*data = value >> 8;
 		}
@@ -334,7 +334,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 					if (timer->mode.RL != 3 || timer->bLow)
 					{
 						timer->latch = count(timer, clock + timer->clk);
-						timer->bLatch = TRUE;
+						timer->bLatch = YES;
 					}
 				}
 				else
@@ -354,7 +354,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 					timer->mode = mode;
 
 					timer->bLow = mode.RL != 2;
-					timer->bLatch = FALSE;
+					timer->bLatch = NO;
 
 					timer->reloadHi = 0;
 					timer->reloadLo = 0;
@@ -375,12 +375,12 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 			{
 				timer->latch = ((0xFF - data) << 8) | data;
 
-				timer->bLatch = TRUE;
-				timer->bLow = FALSE;
+				timer->bLatch = YES;
+				timer->bLow = NO;
 
 				if (timer->mode.MODE == 0)
 				{
-					change_output(self, timer, FALSE, clock + timer->clk);
+					change_output(self, timer, NO, clock + timer->clk);
 
 					timer->count = count(timer, clock + timer->clk);
 					timer->zero = 0;
@@ -395,8 +395,8 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 				{
 					timer->count = (data << 8) | (timer->latch & 0xFF);
 
-					timer->bLatch = FALSE;
-					timer->bLow = TRUE;
+					timer->bLatch = NO;
+					timer->bLow = YES;
 				}
 
 				else if (timer->mode.RL == 2)
@@ -418,7 +418,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 				{
 					case 0:
 
-						change_output(self, timer, FALSE, clock);
+						change_output(self, timer, NO, clock);
 
 						timer->zero = clock + (uint64_t) (timer->count ? timer->count + 3 : 0x10003)*timer->clk;
 
@@ -550,8 +550,8 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 {
 	if (self = [super init])
 	{
-		enabled = TRUE;
-		rkmode = FALSE;
+		enabled = YES;
+		rkmode = NO;
 
 		timers[0].zero = timers[1].zero = timers[2].zero = random();
 		timers[0].clk = timers[1].clk = timers[2].clk = 9;
@@ -580,8 +580,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 	[coder encodeBool:self.enabled forKey:@"enabled"];
 	[coder encodeBool:self.rkmode forKey:@"rkmode"];
 
-	[coder encodeObject:[NSData dataWithBytes:&timers length:sizeof(timers)]
-				   forKey:[NSString stringWithUTF8String:@encode(struct i8253_timer)]];
+    [coder encodeObject:[NSData dataWithBytes:&timers length:sizeof(timers)] forKey:@"timers"];
 }
 
 - (id)initWithCoder:(NSCoder *)coder
@@ -593,10 +592,10 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 
 		NSData *data;
 
-		if ((data = [coder decodeObjectForKey:[NSString stringWithUTF8String:@encode(struct i8253_timer)]]) == nil)
+		if ((data = [coder decodeObjectForKey:@"timers"]) == nil)
 			return self = nil;
 
-		[data getBytes:&timers];
+		[data getBytes:&timers length:sizeof(timers)];
 	}
 
 	return self;
@@ -604,14 +603,14 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
 {
-	if (menuItem.action == @selector(VI53:))
+	if (sel_isEqual(menuItem.action, @selector(VI53:)))
 	{
 		menuItem.state = self.enabled;
-		menuItem.hidden = FALSE;
+		menuItem.hidden = NO;
 		return YES;
 	}
 
-	return [super validateMenuItem:menuItem];
+	return NO;
 }
 
 - (IBAction)VI53:(id)sender

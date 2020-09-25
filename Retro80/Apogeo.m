@@ -50,25 +50,25 @@ static uint32_t colors[] = {
 - (BOOL)createObjects
 {
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Apogeo" mask:0x0FFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ram = [[RAM alloc] initWithLength:0xEC00 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ext = [[RKSDCard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (![super createObjects])
-		return FALSE;
+		return NO;
 
 	[self.crt selectFont:0x2000];
 
-	self.snd.channel0 = TRUE;
-	self.snd.channel1 = TRUE;
-	self.snd.channel2 = TRUE;
+	self.snd.channel0 = YES;
+	self.snd.channel1 = YES;
+	self.snd.channel2 = YES;
 
-	self.colorScheme = TRUE;
-	return TRUE;
+	self.colorScheme = YES;
+	return YES;
 }
 
 - (BOOL)mapObjects

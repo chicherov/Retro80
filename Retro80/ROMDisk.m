@@ -108,12 +108,12 @@
 	NSNumber *fileSize = nil;
 
 	if (![url getResourceValue:&fileSize forKey:NSURLFileSizeKey error:outError])
-		return FALSE;
+		return NO;
 
 	NSUInteger size = fileSize.unsignedIntegerValue;
 
 	if (size == 0x80000 || size == 0x40000 || size == 0x100000)
-		return TRUE;
+		return YES;
 
 	return size && size <= 0x10000;
 }
@@ -125,10 +125,10 @@
 	if ([[NSFileManager defaultManager] fileExistsAtPath:url.path.stringByResolvingSymlinksInPath
 											 isDirectory:&isDirectory])
 	{
-		return isDirectory || [self validateFile:url error:nil];
+		return isDirectory || [self validateFile:url error:NULL];
 	}
 
-	return FALSE;
+	return NO;
 }
 
 - (BOOL)panel:(id)sender validateURL:(NSURL *)url error:(NSError **)outError
@@ -144,7 +144,7 @@
 			return [self validateFile:url error:outError];
 	}
 
-	return FALSE;
+	return NO;
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
@@ -170,14 +170,14 @@
 			{
 				menuItem.state = [URL.URLByDeletingLastPathComponent.path isEqualToString:[NSBundle mainBundle].resourcePath];
 				menuItem.alternate = !menuItem.state;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 			}
 		}
 	}
 
-	menuItem.alternate = FALSE;
-	menuItem.hidden = TRUE;
+	menuItem.alternate = NO;
+	menuItem.hidden = YES;
 	return NO;
 }
 
@@ -195,7 +195,7 @@
 
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 	panel.allowedFileTypes = @[@"rom", @"bin"];
-	panel.canChooseDirectories = TRUE;
+	panel.canChooseDirectories = YES;
 	panel.title = menuItem.title;
 	panel.delegate = self;
 

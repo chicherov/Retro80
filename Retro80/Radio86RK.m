@@ -27,25 +27,25 @@
 			case 1:
 
 				menuItem.state = self.colorScheme != 0;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 
 			case 2:
 
 				menuItem.state = self.colorScheme == 1;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 				
 			case 3:
 
 				menuItem.state = self.colorScheme == 2;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 				
 			default:
 
-				menuItem.hidden = TRUE;
-				menuItem.state = FALSE;
+				menuItem.hidden = YES;
+				menuItem.state = NO;
 				return NO;
 		}
 	}
@@ -111,22 +111,22 @@ static uint32_t colors[2][16] = {
 - (BOOL)createObjects
 {
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Radio86RK" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[Radio86RKExt alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (![super createObjects])
-		return FALSE;
+		return NO;
 
-	self.snd.channel0 = TRUE;
-	self.snd.rkmode = TRUE;
+	self.snd.channel0 = YES;
+	self.snd.rkmode = YES;
 
 	if (self.fdd == nil && (self.fdd = [[RKFloppy alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	self.colorScheme = 1;
-	return TRUE;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -178,7 +178,7 @@ static uint32_t colors[2][16] = {
 	[self.cpu mapObject:self.outHook from:0xFC46 to:0xFC46 WR:self.dma];
 
 	if (![super mapObjects])
-		return FALSE;
+		return NO;
 
 	self.ext.nextResponder = self.fdd;
 	self.fdd.computer = self;
@@ -198,12 +198,12 @@ static uint32_t colors[2][16] = {
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.fdd = [coder decodeObjectForKey:@"fdd"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end

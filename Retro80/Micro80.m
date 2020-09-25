@@ -36,7 +36,7 @@
 				else
 					menuItem.title = [menuItem.title componentsSeparatedByString:@":"].firstObject;
 
-				menuItem.state = FALSE;
+				menuItem.state = NO;
 				break;
 
 			case 2:
@@ -50,12 +50,12 @@
 
 			default:
 
-				menuItem.state = FALSE;
-				menuItem.hidden = TRUE;
+				menuItem.state = NO;
+				menuItem.hidden = YES;
 				return NO;
 		}
 
-		menuItem.hidden = FALSE;
+		menuItem.hidden = NO;
 		return YES;
 	}
 
@@ -96,21 +96,21 @@
 - (BOOL)createObjects
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0x0F800]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Micro80" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0xF800 mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.crt == nil && (self.crt = [[Micro80Screen alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.kbd == nil && (self.kbd = [[Micro80Keyboard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -119,12 +119,12 @@
 	self.kbd.computer = self;
 
 	if (self.snd == nil && (self.snd = [[Micro80Recorder alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	MEM *mem;
 
 	if ((mem = [self.ram memoryAtOffest:2048]) == nil)
-		return FALSE;
+		return NO;
 
 	self.crt.mem = mem;
 
@@ -160,8 +160,8 @@
 	[self.cpu mapObject:self.snd atPort:0x00 count:0x04];
 	[self.cpu mapObject:self.kbd atPort:0x04 count:0x04];
 
-	self.cpu.FF = TRUE;
-	return TRUE;
+	self.cpu.FF = YES;
+	return YES;
 }
 
 - (instancetype)init
@@ -194,24 +194,24 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.cpu = [coder decodeObjectForKey:@"cpu"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.rom = [coder decodeObjectForKey:@"rom"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ram = [coder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.crt = [coder decodeObjectForKey:@"crt"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.kbd = [coder decodeObjectForKey:@"kbd"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end
@@ -223,18 +223,18 @@
 - (BOOL)createObjects
 {
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"M80RK86" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[RKSDCard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	return [super createObjects];
 }
 
 - (BOOL)mapObjects
 {
-	if ([super mapObjects] == FALSE)
-		return FALSE;
+	if ([super mapObjects] == NO)
+		return NO;
 
 	self.kbd.nextResponder = self.ext;
 	self.ext.computer = self;
@@ -248,7 +248,7 @@
 
 	self.outHook.extension = @"rk";
 	self.outHook.type = 1;
-	return TRUE;
+	return YES;
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
@@ -260,12 +260,12 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.ext = [coder decodeObjectForKey:@"ext"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end

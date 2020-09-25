@@ -62,10 +62,10 @@
 
 	NSScanner *scanner = [NSScanner scannerWithString:url.lastPathComponent.stringByDeletingPathExtension];
 
-	if (![scanner scanCharactersFromSet:[NSCharacterSet alphanumericCharacterSet] intoString:nil])
+	if (![scanner scanCharactersFromSet:[NSCharacterSet alphanumericCharacterSet] intoString:NULL])
 		return nil;
 
-	if (![scanner scanCharactersFromSet:[NSCharacterSet characterSetWithCharactersInString:@"_"] intoString:nil])
+	if (![scanner scanCharactersFromSet:[NSCharacterSet characterSetWithCharactersInString:@"_"] intoString:NULL])
 		return nil;
 
 	if (scanner.scanLocation != 3)
@@ -139,7 +139,7 @@
 		if ([pathExtension isEqualToString:@"i80"])
 		{
 			info = [[[[NSString stringWithContentsOfURL:[url.URLByDeletingPathExtension URLByAppendingPathExtension:@"cpu"]
-											   encoding:NSASCIIStringEncoding error:nil] componentsSeparatedByString:@"\r"]
+											   encoding:NSASCIIStringEncoding error:NULL] componentsSeparatedByString:@"\r"]
 				componentsJoinedByString:@""] componentsSeparatedByString:@"\n"];
 		}
 		else if ([pathExtension isEqualToString:@"cpu"])

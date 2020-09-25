@@ -140,8 +140,8 @@
 		if (![self mapObjects])
 			return self = nil;
 
-		self.inpHook.enabled = TRUE;
-		self.outHook.enabled = TRUE;
+		self.inpHook.enabled = YES;
+		self.outHook.enabled = YES;
 	}
 
 	return self;
@@ -169,9 +169,9 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if ((quartz = [coder decodeInt32ForKey:@"quartz"]) == 0)
-		return FALSE;
+		return NO;
 	else
-		return TRUE;
+		return YES;
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
@@ -184,12 +184,12 @@
 
 - (BOOL)createObjects
 {
-	return FALSE;
+	return NO;
 }
 
 - (BOOL)mapObjects
 {
-	return FALSE;
+	return NO;
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem
@@ -211,8 +211,8 @@
 		}
 	}
 
-	menuItem.alternate = FALSE;
-	menuItem.state = FALSE;
+	menuItem.alternate = NO;
+	menuItem.state = NO;
 	return NO;
 }
 

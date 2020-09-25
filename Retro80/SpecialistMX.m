@@ -31,7 +31,7 @@
 				menuItem.title = [[menuItem.title componentsSeparatedByString:@":"].firstObject
 					stringByAppendingFormat:@": 64K + %luK", (self.ram.length >> 10) - 64];
 
-				menuItem.state = FALSE;
+				menuItem.state = NO;
 				break;
 			}
 
@@ -45,12 +45,12 @@
 
 			default:
 
-				menuItem.state = FALSE;
-				menuItem.hidden = TRUE;
+				menuItem.state = NO;
+				menuItem.hidden = YES;
 				return NO;
 		}
 
-		menuItem.hidden = FALSE;
+		menuItem.hidden = NO;
 		return YES;
 	}
 
@@ -63,7 +63,7 @@
 		}
 		else
 		{
-			menuItem.state = FALSE;
+			menuItem.state = NO;
 			return NO;
 		}
 	}
@@ -119,34 +119,34 @@
 - (BOOL)createObjects
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0x20000]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX_RAMFOS" mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x20000 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	self.ram.offset = 0x10000;
 
 	if (self.kbd == nil && (self.kbd = [[SpecialistMXKeyboard alloc] initRAMFOS]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[ROMDisk alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
-	if ([super createObjects] == FALSE)
-		return FALSE;
+	if ([super createObjects] == NO)
+		return NO;
 
 	if (self.fdd == nil && (self.fdd = [[VG93 alloc] initWithQuartz:self.quartz]) == nil)
-		return FALSE;
+		return NO;
 
-	self.crt.isColor = TRUE;
+	self.crt.isColor = YES;
 	self.crt.color = 0x70;
 
-	self.snd.channel0 = TRUE;
-	self.snd.rkmode = TRUE;
-	return TRUE;
+	self.snd.channel0 = YES;
+	self.snd.rkmode = YES;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -174,7 +174,7 @@
 	[self.cpu mapObject:mem atPage:2 from:0xC000 to:0xFFBF];
 
 	if (self.sys == nil && (self.sys = [[SpecialistMXSystem alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	for (uint8_t page = 0; page <= 2; page++)
 	{
@@ -191,7 +191,7 @@
 
 	self.sys.specialist = self;
 	self.cpu.HLDA = self.fdd;
-	return TRUE;
+	return YES;
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder
@@ -203,12 +203,12 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.fdd = [coder decodeObjectForKey:@"fdd"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end
@@ -220,15 +220,15 @@
 - (BOOL)createObjects
 {
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX_Commander" mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.kbd == nil && (self.kbd = [[SpecialistMXKeyboard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
-	if ([super createObjects] == FALSE)
-		return FALSE;
+	if ([super createObjects] == NO)
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end
@@ -245,13 +245,13 @@
 - (BOOL)mapObjects
 {
 	if (self.sys == nil && (self.sys = [[SpecialistMX2System alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (![super mapObjects])
-		return FALSE;
+		return NO;
 
 	if (self.rom.length <= 0x8000)
-		return FALSE;
+		return NO;
 
 	MEM *mem = [self.ram memoryAtOffest:0x0000];
 
@@ -284,24 +284,24 @@
 		[self.cpu mapObject:self.kbd atPage:page from:0xF800 to:0xFFFF];
 	}
 
-	return TRUE;
+	return YES;
 }
 
 - (BOOL)createObjects
 {
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistMX2" mask:0x7FFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0x40000]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[SpecialistMX2Flash alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (![super createObjects])
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end

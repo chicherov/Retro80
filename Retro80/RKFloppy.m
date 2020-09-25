@@ -42,7 +42,7 @@
 	{
 		[file seekToFileOffset:offset];
 		[file writeData:[NSData dataWithBytes:buffer length:sizeof(buffer)]];
-		update = FALSE;
+		update = NO;
 	}
 }
 
@@ -105,8 +105,8 @@
 	if (ready && (C & 0x01) == 0x00)
 	{
 		buffer[pos] = data;
-		update = TRUE;
-		ready = FALSE;
+		update = YES;
+		ready = NO;
 	}
 }
 
@@ -116,7 +116,7 @@
 	if (ready && (C & 0x01) == 0x01)
 	{
 		D = buffer[pos];
-		ready = FALSE;
+		ready = NO;
 	}
 
 	return D;
@@ -143,7 +143,7 @@
 
 			if (pos != p)
 			{
-				ready = TRUE;
+				ready = YES;
 				pos = p;
 			}
 
@@ -247,7 +247,7 @@
 		if (rkdos.length != 0x1000)
 			return self = nil;
 
-		enabled = TRUE;
+		enabled = YES;
 	}
 
 	return self;
@@ -320,7 +320,7 @@
 
 			default:
 			{
-				menuItem.state = FALSE;
+				menuItem.state = NO;
 				return NO;
 			}
 
@@ -357,7 +357,7 @@
 		@synchronized(self.computer)
 		{
 			[self.computer registerUndoWithMenuItem:menuItem];
-			self.enabled = self.isEnabled ? selected != 0 : TRUE;
+			self.enabled = self.isEnabled ? selected != 0 : YES;
 		}
 	}
 
@@ -365,7 +365,7 @@
 	{
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
 		panel.allowedFileTypes = @[@"rkdisk"];
-		panel.canChooseDirectories = FALSE;
+		panel.canChooseDirectories = NO;
 		panel.title = menuItem.title;
 
 		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)

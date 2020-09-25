@@ -90,7 +90,7 @@
 		D9B274D21D9090A400D46CF8 /* Micro80Keyboard.m in Sources */ = {isa = PBXBuildFile; fileRef = D9B274D11D9090A400D46CF8 /* Micro80Keyboard.m */; };
 		D9B274D51D9103E200D46CF8 /* Micro80Recorder.m in Sources */ = {isa = PBXBuildFile; fileRef = D9B274D41D9103E200D46CF8 /* Micro80Recorder.m */; };
 		D9B6E5ED1AFBDAF300175E50 /* SpecialistMX_Commander.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */; };
-		D9C219251E842B05003FADFA /* ApplicationDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = D9C219241E842B05003FADFA /* ApplicationDelegate.m */; };
+		D9C219251E842B05003FADFA /* Application.m in Sources */ = {isa = PBXBuildFile; fileRef = D9C219241E842B05003FADFA /* Application.m */; };
 		D9C219281E843CE1003FADFA /* SpecialistSDCard.m in Sources */ = {isa = PBXBuildFile; fileRef = D9C219271E843CE1003FADFA /* SpecialistSDCard.m */; };
 		D9C2192B1E84FCE3003FADFA /* SpecialistMX2Flash.m in Sources */ = {isa = PBXBuildFile; fileRef = D9C2192A1E84FCE3003FADFA /* SpecialistMX2Flash.m */; };
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
@@ -261,8 +261,8 @@
 		D9B274D31D9103E200D46CF8 /* Micro80Recorder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Micro80Recorder.h; sourceTree = "<group>"; };
 		D9B274D41D9103E200D46CF8 /* Micro80Recorder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Micro80Recorder.m; sourceTree = "<group>"; };
 		D9B6E5EC1AFBDAF300175E50 /* SpecialistMX_Commander.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = SpecialistMX_Commander.bin; path = Retro80/ROM/SpecialistMX_Commander.bin; sourceTree = "<group>"; };
-		D9C219231E842B05003FADFA /* ApplicationDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplicationDelegate.h; sourceTree = "<group>"; };
-		D9C219241E842B05003FADFA /* ApplicationDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ApplicationDelegate.m; sourceTree = "<group>"; };
+		D9C219231E842B05003FADFA /* Application.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Application.h; sourceTree = "<group>"; };
+		D9C219241E842B05003FADFA /* Application.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Application.m; sourceTree = "<group>"; };
 		D9C219261E843CE1003FADFA /* SpecialistSDCard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistSDCard.h; sourceTree = "<group>"; };
 		D9C219271E843CE1003FADFA /* SpecialistSDCard.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistSDCard.m; sourceTree = "<group>"; };
 		D9C219291E84FCE3003FADFA /* SpecialistMX2Flash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecialistMX2Flash.h; sourceTree = "<group>"; };
@@ -519,8 +519,8 @@
 				D974FCD419ADF2310041DF91 /* DocumentController.m */,
 				D9A443901E7166E2007282D1 /* WindowController.h */,
 				D974FCCE19ADEBF00041DF91 /* WindowController.m */,
-				D9C219231E842B05003FADFA /* ApplicationDelegate.h */,
-				D9C219241E842B05003FADFA /* ApplicationDelegate.m */,
+				D9C219231E842B05003FADFA /* Application.h */,
+				D9C219241E842B05003FADFA /* Application.m */,
 				D98E6C561E81008F0053FDF3 /* ComputerFactory.h */,
 				D98E6C571E81008F0053FDF3 /* ComputerFactory.m */,
 				36A9C6512334E477443228B0 /* Computer.h */,
@@ -739,7 +739,7 @@
 				D92701881B07429F00CC51BD /* Orion128Screen.m in Sources */,
 				D977B7D319FD724A003A5FB6 /* DocumentController.m in Sources */,
 				D91FBD7E19AE60A70002128E /* Sound.m in Sources */,
-				D9C219251E842B05003FADFA /* ApplicationDelegate.m in Sources */,
+				D9C219251E842B05003FADFA /* Application.m in Sources */,
 				D9B274D51D9103E200D46CF8 /* Micro80Recorder.m in Sources */,
 				D9D41F6A1E8247A8005C4AC5 /* SpecialistFactory.m in Sources */,
 				D9EBB62519B47E8B00C833CA /* x8255.m in Sources */,

@@ -1,0 +1,19 @@
+#ifdef __OBJC__
+#import <Cocoa/Cocoa.h>
+
+@protocol NSMenuItemValidation <NSMenuValidation>
+@end
+
+@interface NSLayoutConstraint(GNUstep)
+- (void) setConstant:(CGFloat)constant;
+@end
+
+@interface NSMenuItem(GNUstep)
+@property BOOL hidden;
+@end
+
+@interface NSDocument(GNUstep)
+- (BOOL) inViewingMode;
+@end
+
+#endif

@@ -14,7 +14,7 @@
 
 - (BOOL)validateFile:(NSURL *)url error:(NSError **)outError
 {
-	return FALSE;
+	return NO;
 }
 
 - (NSString *)sdbiosrk

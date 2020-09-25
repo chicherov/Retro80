@@ -11,42 +11,78 @@
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
+			<key>CFBundleTypeName</key>
+			<string>ru.uart.retro80</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>retro80</string>
+			</array>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>ru.uart.retro80</string>
 			</array>
-			<key>NSDocumentClass</key>
-			<string>Document</string>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>ru.uart.rk.binary</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+					<string>rk</string>
+					<string>gam</string>
+					<string>pki</string>
+					<string>rk8</string>
+					<string>rkr</string>
+					<string>rkm</string>
+					<string>rka</string>
+					<string>rkp</string>
+					<string>rks</string>
+					<string>rko</string>
+					<string>rku</string>
+			</array>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>ru.uart.rk.binary</string>
 			</array>
-			<key>NSDocumentClass</key>
-			<string>Document</string>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>ru.uart.rk.sp580</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>sp580</string>
+			</array>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>ru.uart.rk.sp580</string>
 			</array>
-			<key>NSDocumentClass</key>
-			<string>Document</string>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>ru.uart.rk.spmx</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>mon</string>
+				<string>cpu</string>
+				<string>i80</string>
+			</array>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
 			<key>LSItemContentTypes</key>
 			<array>
 				<string>ru.uart.rk.spmx</string>
 			</array>
-			<key>NSDocumentClass</key>
-			<string>Document</string>
 		</dict>
 	</array>
 	<key>CFBundleExecutable</key>
@@ -75,7 +111,7 @@ All rights reserved.</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
+	<string>Application</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

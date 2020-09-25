@@ -23,7 +23,7 @@
 {
 	if (segments != value)
 	{
-		segments = value; self.needsDisplay = TRUE;
+		segments = value; self.needsDisplay = YES;
 	}
 }
 

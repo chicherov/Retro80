@@ -24,7 +24,7 @@
 	{
 		case 0x10:    // D3.1 (pF0 - захват)
 
-			specialist.fdd.HOLD = TRUE;
+			specialist.fdd.HOLD = YES;
 			break;
 
 		case 0x11:    // D3.2 (pF1 - мотор)

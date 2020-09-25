@@ -140,10 +140,10 @@
 	{
 		mode.byte = data;
 
-		if (mode.a == FALSE)
-			status.U = FALSE;
+		if (mode.a == NO)
+			status.U = NO;
 
-		latch = FALSE;
+		latch = NO;
 	}
 }
 
@@ -180,7 +180,7 @@
 		{
 			dma[2].address = dma[3].address;
 			dma[2].count = dma[3].count;
-			status.U = FALSE;
+			status.U = NO;
 		}
 
 		if (dma[channel].type == 1)
@@ -200,7 +200,7 @@
 			status.byte |= 1 << channel;
 
 			if (channel == 2 && mode.a)
-				status.U = TRUE;
+				status.U = YES;
 
 			else if (mode.t)
 				mode.byte &= ~(1 << channel);

@@ -32,7 +32,7 @@
 		chr1Map = @"\x1B\x7F;1234567890-jcukeng[]zh:fywaproldv\\.q^smitxb@,/_\0\0\0 \t\x03\r";
 		chr2Map = @"\x1B\x7F+!\"#$%&'() =JCUKENG{}ZH*FYWAPROLDV|>Q~SMITXB`<?\0\0\0\0 \t\x03\r";
 
-		upperCase = FALSE;
+		upperCase = NO;
 	}
 }
 
@@ -40,7 +40,7 @@
 {
 	if (menuItem.action == @selector(ramfos:))
 	{
-		menuItem.hidden = FALSE;
+		menuItem.hidden = NO;
 		menuItem.state = ramfos;
 		return YES;
 	}
@@ -68,7 +68,7 @@
 
 - (instancetype)initRAMFOS
 {
-	ramfos = TRUE;
+	ramfos = YES;
 	return self = [super init];
 }
 

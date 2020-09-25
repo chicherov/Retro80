@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="13771" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="3.0" toolsVersion="15705" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
         <deployment identifier="macosx"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="13771"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="15705"/>
     </dependencies>
     <objects>
-        <customObject id="-2" userLabel="File's Owner" customClass="NSApplication">
-            <connections>
-                <outlet property="delegate" destination="7PA-cd-xni" id="hpK-Cp-0Lj"/>
-            </connections>
-        </customObject>
+        <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customObject id="Ro2-68-5SS" customClass="DocumentController">
@@ -17,7 +13,6 @@
                 <outlet property="menuNew" destination="Was-JA-tGl" id="ugE-AR-Sd0"/>
             </connections>
         </customObject>
-        <customObject id="7PA-cd-xni" customClass="ApplicationDelegate"/>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
             <items>
                 <menuItem title="Retro80" id="1Xt-HY-uBw">
@@ -614,30 +609,30 @@
                         <items>
                             <menuItem title="Воспроизвести" keyEquivalent="p" id="ql2-uB-791">
                                 <connections>
-                                    <action selector="play:" target="-1" id="hID-XZ-BRO"/>
+                                    <action selector="tape_play:" target="-1" id="q1q-lu-RgI"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Останов" keyEquivalent="." id="QF3-Lz-rPR">
                                 <connections>
-                                    <action selector="stop:" target="-1" id="Zxk-2Z-5u7"/>
+                                    <action selector="tape_stop:" target="-1" id="RND-Co-MnC"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="ZuV-hw-ZDt"/>
                             <menuItem title="Перемотка вперед" keyEquivalent="" id="Ibp-Wc-RPb">
                                 <connections>
-                                    <action selector="stepForward:" target="-1" id="bIe-7d-Wd3"/>
+                                    <action selector="tape_forward:" target="-1" id="bTZ-6I-Pbr"/>
                                 </connections>
                             </menuItem>
                             <menuItem title="Перемотка назад" keyEquivalent="" id="pCX-rb-Nc6">
                                 <connections>
-                                    <action selector="stepBackward:" target="-1" id="QVc-5W-uE7"/>
+                                    <action selector="tape_backward:" target="-1" id="pKe-iA-plK"/>
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="NA1-K6-duq"/>
                             <menuItem title="Запись" keyEquivalent="r" id="d1W-jw-bX2">
                                 <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                 <connections>
-                                    <action selector="record:" target="-1" id="xEu-GG-1uk"/>
+                                    <action selector="tape_record:" target="-1" id="cag-ey-D77"/>
                                 </connections>
                             </menuItem>
                         </items>
@@ -755,6 +750,7 @@ DQ
                     </menu>
                 </menuItem>
             </items>
+            <point key="canvasLocation" x="140" y="154"/>
         </menu>
     </objects>
 </document>

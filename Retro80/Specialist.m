@@ -33,27 +33,27 @@
 - (BOOL)createObjects
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xC000]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.rom == nil && (self.rom = [[ROM alloc] initWithContentsOfResource:@"Specialist1" mask:0x3FFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0xC000 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.crt == nil && (self.crt = [[SpecialistScreen alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.snd == nil && (self.snd = [[X8253 alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.kbd == nil && (self.kbd = [[SpecialistKeyboard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.ext == nil && (self.ext = [[X8255 alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -95,7 +95,7 @@
 	[self.cpu mapObject:self.inpHook from:0xC377 to:0xC377 WR:nil];
 	[self.cpu mapObject:self.outHook from:0xC3D0 to:0xC3D0 WR:nil];
 
-	return TRUE;
+	return YES;
 }
 
 - (instancetype)initWithData:(NSData *)data
@@ -122,30 +122,30 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.cpu = [coder decodeObjectForKey:@"cpu"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.rom = [coder decodeObjectForKey:@"rom"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ram = [coder decodeObjectForKey:@"ram"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.crt = [coder decodeObjectForKey:@"crt"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.snd = [coder decodeObjectForKey:@"snd"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.kbd = [coder decodeObjectForKey:@"kbd"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ext = [coder decodeObjectForKey:@"ext"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 @end
@@ -163,25 +163,25 @@
 			case 1:
 
 				menuItem.state = self.crt.isColor;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 
 			case 5:
 
 				menuItem.state = self.crt.isColor && self.kbd.colorScheme == 1;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 
 			case 8:
 
 				menuItem.state = self.crt.isColor && self.kbd.colorScheme == 2;
-				menuItem.hidden = FALSE;
+				menuItem.hidden = NO;
 				return YES;
 
 			default:
 
-				menuItem.hidden = TRUE;
-				menuItem.state = FALSE;
+				menuItem.hidden = YES;
+				menuItem.state = NO;
 				return YES;
 		}
 	}
@@ -207,13 +207,13 @@ static uint8_t path[] = {
 		case 5:
 
 			self.kbd.colorScheme = 1;
-			self.crt.isColor = TRUE;
+			self.crt.isColor = YES;
 			break;
 
 		case 8:
 
 			self.kbd.colorScheme = 2;
-			self.crt.isColor = TRUE;
+			self.crt.isColor = YES;
 			break;
 	}
 
@@ -240,7 +240,7 @@ static uint8_t path[] = {
 		return NO;
 
 	if (![super createObjects])
-		return FALSE;
+		return NO;
 
 	uint8_t *ptr = self.rom.mutableBytes + 6;
 
@@ -248,8 +248,8 @@ static uint8_t path[] = {
 		memcpy(ptr, path, 9);
 
 	self.kbd.colorScheme = 2;
-	self.crt.isColor = TRUE;
-	return TRUE;
+	self.crt.isColor = YES;
+	return YES;
 }
 
 @end
@@ -290,7 +290,7 @@ static uint8_t path[] = {
 	if (![super mapObjects])
 		return NO;
 
-	self.crt.isColor = FALSE;
+	self.crt.isColor = NO;
 
 	[self.cpu mapObject:[self.rom memoryAtOffest:0 mask:0xFF] from:0xF800 to:0xF8FF];
 

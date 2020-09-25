@@ -55,46 +55,46 @@
 - (BOOL)createObjects
 {
 	if ((self.cpu = [[X8080 alloc] init8080:0x00000]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"Partner" mask:0x1FFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.basic = [[ROM alloc] initWithContentsOfResource:@"Basic" mask:0x1FFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ram = [[RAM alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.kbd = [[PartnerKeyboard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (![super createObjects])
-		return FALSE;
+		return NO;
 
 	if ((self.sys2 = [[PartnerSystem2 alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.mcpgbios = [[ROM alloc] initWithContentsOfResource:@"mcpg" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.mcpgfont = [[RAM alloc] initWithLength:0x1000 mask:0x0FFF]) == nil)
-		return FALSE;
+		return NO;
 
-	self.colorScheme = TRUE;
+	self.colorScheme = YES;
 
-	self.snd.channel0 = TRUE;
-	self.snd.channel1 = TRUE;
-	self.snd.channel2 = TRUE;
+	self.snd.channel0 = YES;
+	self.snd.channel1 = YES;
+	self.snd.channel2 = YES;
 
 	if ((self.fddbios = [[ROM alloc] initWithContentsOfResource:@"fdd" mask:0x07FF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.fdd = [[VG93 alloc] initWithQuartz:self.quartz]) == nil)
-		return FALSE;
+		return NO;
 
 	self.dma.tick = 12;
-	return TRUE;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -102,13 +102,13 @@
 	// Системный регистр 1 и окошки для внешних устройств
 
 	if (self.sys1 == nil && (self.sys1 = [[PartnerSystem1 alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.win1 == nil && (self.win1 = [[PartnerExternal alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if (self.win2 == nil && (self.win2 = [[PartnerExternal alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	// Магнитофон
 
@@ -239,10 +239,10 @@
 	self.dma.DMA0 = self.fdd;
 
 	self.dma.DMA3 = self.sys1;
-	self.cpu.FF = TRUE;
+	self.cpu.FF = YES;
 
 	if (![super mapObjects])
-		return FALSE;
+		return NO;
 
 	self.kbd.nextResponder = self.fdd;
 	self.fdd.computer = self;
@@ -266,27 +266,27 @@
 - (BOOL)decodeWithCoder:(NSCoder *)coder
 {
 	if (![super decodeWithCoder:coder])
-		return FALSE;
+		return NO;
 
 	if ((self.basic = [coder decodeObjectForKey:@"basic"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.sys2 = [coder decodeObjectForKey:@"sys2"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.mcpgbios = [coder decodeObjectForKey:@"mcpgbios"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.mcpgfont = [coder decodeObjectForKey:@"mcpgfont"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.fddbios = [coder decodeObjectForKey:@"fddbios"]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.fdd = [coder decodeObjectForKey:@"fdd"]) == nil)
-		return FALSE;
+		return NO;
 
-	return TRUE;
+	return YES;
 }
 
 - (instancetype)initWithData:(NSData *)data
@@ -432,7 +432,7 @@
 - (void)RESET:(uint64_t)clock
 {
 	[partner.fdd RESET:clock];
-	self.mcpg = FALSE;
+	self.mcpg = NO;
 }
 
 - (void)encodeWithCoder:(NSCoder *)coder

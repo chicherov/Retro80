@@ -15,23 +15,23 @@
 - (BOOL)createObjects
 {
 	if ((self.rom = [[ROM alloc] initWithContentsOfResource:@"SpecialistSP580" mask:0x0FFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ram = [[RAM alloc] initWithLength:0x10000 mask:0xFFFF]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.kbd = [[SpecialistSP580Keyboard alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
 	if ((self.ext = [[ROMDisk alloc] init]) == nil)
-		return FALSE;
+		return NO;
 
-	if ([super createObjects] == FALSE)
-		return FALSE;
+	if ([super createObjects] == NO)
+		return NO;
 
-	self.snd.channel0 = TRUE;
-	self.snd.rkmode = TRUE;
-	return TRUE;
+	self.snd.channel0 = YES;
+	self.snd.rkmode = YES;
+	return YES;
 }
 
 - (BOOL)mapObjects
@@ -53,7 +53,7 @@
 	[self.cpu mapObject:self.kbd from:0xF000 to:0xF7FF];
 	[self.cpu mapObject:self.rom from:0xF800 to:0xFFFF WR:nil];
 
-	return TRUE;
+	return YES;
 }
 
 @end
