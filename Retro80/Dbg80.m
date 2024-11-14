@@ -1063,7 +1063,7 @@ static NSString *koi8()
 
 				NSOpenPanel *panel = [NSOpenPanel openPanel];
 
-				if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+				if ([panel runModal] == NSModalResponseOK && panel.URLs.count == 1)
 				{
 					NSData *data = [NSData dataWithContentsOfURL:panel.URLs.firstObject];
 
@@ -1114,7 +1114,7 @@ static NSString *koi8()
 				panel.allowedFileTypes = @[@"bin"];
 				panel.allowsOtherFileTypes = YES;
 
-				if ([panel runModal] == NSFileHandlingPanelOKButton)
+				if ([panel runModal] == NSModalResponseOK)
 					[data writeToURL:panel.URL atomically:YES];
 			}
 

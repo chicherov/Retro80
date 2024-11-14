@@ -245,7 +245,7 @@
 
 - (void)windowDidResignKey:(NSNotification *)notification
 {
-	[super keyUp:[NSEvent keyEventWithType:NSKeyUp
+	[super keyUp:[NSEvent keyEventWithType:NSEventTypeKeyUp
 								  location:NSZeroPoint
 							 modifierFlags:0
 								 timestamp:0
@@ -299,7 +299,7 @@
 
 - (void)keyDown:(NSEvent *)theEvent
 {
-	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0 && !theEvent.isARepeat)
+	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) == 0 && !theEvent.isARepeat)
 	{
 		if (theEvent.characters.length != 0)
 		{

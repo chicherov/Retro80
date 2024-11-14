@@ -199,7 +199,7 @@
 	panel.title = menuItem.title;
 	panel.delegate = self;
 
-	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+	if ([panel runModal] == NSModalResponseOK && panel.URLs.count == 1)
 	{
 		@synchronized(self.computer)
 		{

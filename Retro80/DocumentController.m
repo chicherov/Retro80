@@ -49,7 +49,7 @@
 
 		else if (menuItem.tag == tag)
 		{
-			menuItem.keyEquivalentModifierMask = NSCommandKeyMask;
+			menuItem.keyEquivalentModifierMask = NSEventModifierFlagCommand;
 			menuItem.keyEquivalent = @"n";
 			menuItem.state = done = YES;
 		}
@@ -71,7 +71,7 @@
 	if (tag == 0 || ![self parseMenu:menuNew tag:tag])
 	{
 		NSMenuItem *menuItem = [menuNew.submenu itemAtIndex:0];
-		menuItem.keyEquivalentModifierMask = NSCommandKeyMask;
+		menuItem.keyEquivalentModifierMask = NSEventModifierFlagCommand;
 		menuItem.keyEquivalent = @"n";
 		menuItem.state = YES;
 	}

@@ -17,7 +17,7 @@
 
 - (uint8_t)A
 {
-	keyboard[60] = (modifierFlags & NSAlternateKeyMask) != 0;
+	keyboard[60] = (modifierFlags & NSEventModifierFlagOption) != 0;
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++)
 	{
@@ -33,7 +33,7 @@
 
 - (uint8_t)B
 {
-	keyboard[60] = (modifierFlags & NSAlternateKeyMask) != 0;
+	keyboard[60] = (modifierFlags & NSEventModifierFlagOption) != 0;
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++)
 	{
@@ -47,7 +47,7 @@
 	if ([self.computer.sound input:self.computer.clock])
 		data &= ~0x01;
 
-	if ((modifierFlags & NSShiftKeyMask))
+	if ((modifierFlags & NSEventModifierFlagShift))
 		data &= ~0x02;
 
 	return data;
@@ -55,7 +55,7 @@
 
 - (uint8_t)C
 {
-	keyboard[60] = (modifierFlags & NSAlternateKeyMask) != 0;
+	keyboard[60] = (modifierFlags & NSEventModifierFlagOption) != 0;
 
 	uint8_t data = 0xFF; for (int i = 0; i < 72; i++)
 	{

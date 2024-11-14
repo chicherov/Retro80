@@ -29,6 +29,10 @@
 
 static NSImage *image;
 
+#ifdef GNUSTEP
+const NSCompositingOperation NSCompositingOperationSourceOver = NSCompositeSourceOver;
+#endif
+
 - (void)drawRect:(NSRect)rect
 {
 	if (image == nil)
@@ -37,7 +41,7 @@ static NSImage *image;
 
 	[image drawInRect:rect
 			 fromRect:NSMakeRect((segments & 15)*60, (~(segments >> 4) & 7)*100, 60, 100)
-			operation:NSCompositeSourceOver
+			operation:NSCompositingOperationSourceOver
 			 fraction:1.0
 	];
 }

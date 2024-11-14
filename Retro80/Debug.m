@@ -122,7 +122,6 @@
     NSSize size = [panel contentRectForFrameRect:panel.frame].size;
     [textView.superview.superview setFrame:NSMakeRect(0.0, 0.0, size.width, size.height)];
 }
-
 #endif
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -132,7 +131,13 @@
 	[panel setBackgroundColor:[NSColor colorWithCalibratedWhite:1.0 alpha:0.0]];
 	[panel setOpaque:NO];
 
-	[textView setFont:[NSFont fontWithName:@"Monaco" size:16]];
+	NSFont *font = [NSFont fontWithName:@"Monaco" size:16];
+
+	if(font == nil)
+		font = [NSFont userFixedPitchFontOfSize:16];
+
+	if(font != nil)
+		[textView setFont:font];
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

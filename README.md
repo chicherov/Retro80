@@ -79,13 +79,16 @@
 * [РУС/ЛАТ] — **[Option ⌥]** или **[Capslock ⇪]** для Микро-80/ЮТ-88
 
 ## Сборка под GNUstep
-* Пока не реализован звук и работа с WAV файлами.
-* В эмуляции 86RKSD файлы и каталоги должны быть названы заглавными буквами.
 * GNUstep не умеет скрывать пункты меню и работать с альтернативными, отдельное меню не делалось, поэтому выглядит не очень.
+* В эмуляции 86RKSD файлы и каталоги должны быть названы заглавными буквами.
+* Пока не реализован звук и работа с WAV файлами.
+* Клавиатура работает только в режиме «QWERTY».
 
+GNUstep необходимо собрать самостоятельно, так как в большинстве дистрибутивов он собран с использованием устаревшей версии библиотеки libobj.
 Собирать только с помощью clang (export CC=clang CXX=clang++):
-* [libdispatch](https://github.com/apple/swift-corelibs-libdispatch.git)
-* [tools-make](https://github.com/gnustep/tools-make) с опцией --enable-objc-arc
+* [libobjc2](https://github.com/gnustep/libobjc2)
+* [libdispatch](https://github.com/swiftlang/swift-corelibs-libdispatch)
+* [tools-make](https://github.com/gnustep/tools-make) --with-runtime-abi=gnustep-2.2 --enable-objc-arc
 * [libs-base](https://github.com/gnustep/libs-base)
 * [libs-gui](https://github.com/gnustep/libs-gui)
 * [libs-back](https://github.com/gnustep/libs-back)

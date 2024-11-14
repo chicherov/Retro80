@@ -30,13 +30,13 @@
 {
 	uint8_t data = 0xFF & ~(RUSLAT | CTRL | SHIFT);
 
-	if (!(modifierFlags & NSAlphaShiftKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagCapsLock))
 		data |= RUSLAT;
 
-	if (!(modifierFlags & NSControlKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagControl))
 		data |= CTRL;
 
-	if (!(modifierFlags & NSShiftKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagShift))
 		data |= SHIFT;
 
 	else if (self.qwerty)

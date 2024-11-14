@@ -125,7 +125,7 @@ static uint16_t csum(const uint8_t* ptr, size_t size, int type)
 	if ([self.extension isEqualToString:@"rko"])
 		panel.allowedFileTypes = [panel.allowedFileTypes arrayByAddingObjectsFromArray:@[@"ord", @"bru", @"ori"]];
 
-	if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+	if ([panel runModal] == NSModalResponseOK && panel.URLs.count == 1)
 	{
 		NSString *fileExt = [panel.URLs.firstObject pathExtension].lowercaseString;
 
@@ -437,7 +437,7 @@ static NSString* stringFromRK(const uint8_t *ptr, NSUInteger length)
 		}
 	}
 
-	if ([savePanel runModal] == NSFileHandlingPanelOKButton) @synchronized(self)
+	if ([savePanel runModal] == NSModalResponseOK) @synchronized(self)
 	{
 		const uint8_t *ptr = self.buffer.bytes;
 		NSUInteger length = self.buffer.length;

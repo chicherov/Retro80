@@ -569,7 +569,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 		NSOpenPanel *panel = [NSOpenPanel openPanel];
 		panel.allowedFileTypes = @[@"wav"];
 
-		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		if ([panel runModal] == NSModalResponseOK && panel.URLs.count == 1)
 			[self openWave:panel.URLs.firstObject];
 	}
 	else
@@ -664,7 +664,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 		NSSavePanel *savePanel = [NSSavePanel savePanel];
 		savePanel.allowedFileTypes = @[@"wav"];
 
-		if ([savePanel runModal] == NSFileHandlingPanelOKButton)
+		if ([savePanel runModal] == NSModalResponseOK)
 		{
 			@synchronized(computer)
 			{

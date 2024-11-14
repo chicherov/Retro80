@@ -818,7 +818,7 @@
 		panel.canChooseDirectories = NO;
 		panel.title = menuItem.title;
 
-		if ([panel runModal] == NSFileHandlingPanelOKButton && panel.URLs.count == 1)
+		if ([panel runModal] == NSModalResponseOK && panel.URLs.count == 1)
 		{
 			@synchronized(self.computer)
 			{

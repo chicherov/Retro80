@@ -23,10 +23,10 @@
 
 - (void)flagsChanged:(NSEvent *)theEvent
 {
-	if ((theEvent.modifierFlags & NSCommandKeyMask) == 0)
+	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) == 0)
 	{
 		if (ignoreShift)
-			modifierFlags = (theEvent.modifierFlags & ~NSShiftKeyMask) | (modifierFlags & NSShiftKeyMask);
+			modifierFlags = (theEvent.modifierFlags & ~NSEventModifierFlagShift) | (modifierFlags & NSEventModifierFlagShift);
 		else
 			modifierFlags = theEvent.modifierFlags;
 	}
@@ -34,7 +34,7 @@
 
 - (void)keyDown:(NSEvent *)theEvent
 {
-	if ((theEvent.modifierFlags & NSCommandKeyMask) != 0)
+	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) != 0)
 		return;
 
 	@synchronized (self)
@@ -52,11 +52,11 @@
 				{
 					if (chr2Map.length <= index || [chr2Map characterAtIndex:index] != [chr1Map characterAtIndex:index])
 					{
-						modifierFlags = theEvent.modifierFlags & ~NSShiftKeyMask; ignoreShift = YES;
+						modifierFlags = theEvent.modifierFlags & ~NSEventModifierFlagShift; ignoreShift = YES;
 					}
 					else if (ignoreShift)
 					{
-						modifierFlags = (theEvent.modifierFlags & ~NSShiftKeyMask) | (modifierFlags & NSShiftKeyMask);
+						modifierFlags = (theEvent.modifierFlags & ~NSEventModifierFlagShift) | (modifierFlags & NSEventModifierFlagShift);
 					}
 					else
 					{
@@ -71,7 +71,7 @@
 
 				else if ((index = [chr2Map rangeOfString:chr].location) != NSNotFound)
 				{
-					modifierFlags = theEvent.modifierFlags | NSShiftKeyMask; ignoreShift = YES;
+					modifierFlags = theEvent.modifierFlags | NSEventModifierFlagShift; ignoreShift = YES;
 
 					if (index < 72)
 					{
@@ -95,7 +95,7 @@
 
 - (void) keyUp:(NSEvent*)theEvent
 {
-	if ((theEvent.modifierFlags & NSCommandKeyMask) != 0)
+	if ((theEvent.modifierFlags & NSEventModifierFlagCommand) != 0)
 		return;
 
 	@synchronized (self)
@@ -163,7 +163,7 @@
 	{
 		if (pasteKey != NSNotFound && pasteKey < 72 && clock - pasteClock > 1000000)
 		{
-			modifierFlags &= ~NSShiftKeyMask;
+			modifierFlags &= ~NSEventModifierFlagShift;
 			keyboard[pasteKey] = NO;
 			pasteKey = NSNotFound;
 		}
@@ -177,13 +177,13 @@
 
 			if ((pasteKey = [chr1Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
 			{
-				modifierFlags &= ~NSShiftKeyMask;
+				modifierFlags &= ~NSEventModifierFlagShift;
 				keyboard[pasteKey] = YES;
 			}
 
 			else if ((pasteKey = [chr2Map rangeOfString:chr].location) != NSNotFound && pasteKey < 72)
 			{
-				modifierFlags |= NSShiftKeyMask;
+				modifierFlags |= NSEventModifierFlagShift;
 				keyboard[pasteKey] = YES;
 			}
 
@@ -223,13 +223,13 @@
 {
 	uint8_t data = 0xFF & ~(RUSLAT | CTRL | SHIFT | TAPEI);
 
-	if (!(modifierFlags & NSAlternateKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagOption))
 		data |= RUSLAT;
 
-	if (!(modifierFlags & NSControlKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagControl))
 		data |= CTRL;
 
-	if (!(modifierFlags & NSShiftKeyMask))
+	if (!(modifierFlags & NSEventModifierFlagShift))
 		data |= SHIFT;
 
 	if (TAPEI && [self.computer.sound input:self.computer.clock])

@@ -12,7 +12,7 @@
 
 - (void)sendEvent:(NSEvent *)theEvent
 {
-    if(theEvent.type == NSKeyDown && (theEvent.modifierFlags & NSCommandKeyMask) == 0 && [@"\r\t\x1B" rangeOfString:theEvent.characters].location != NSNotFound)
+    if(theEvent.type == NSEventTypeKeyDown && (theEvent.modifierFlags & NSEventModifierFlagCommand) == 0 && [@"\r\t\x1B" rangeOfString:theEvent.characters].location != NSNotFound)
     {
         if([theEvent.window.windowController isKindOfClass:WindowController.class])
             [theEvent.window.windowController keyDown:theEvent];
