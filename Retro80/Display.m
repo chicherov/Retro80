@@ -718,7 +718,7 @@ static GLuint createShader(GLenum shaderType)
 	glShaderSource(shader, 1, &source, NULL);
 	glCompileShader(shader);
 
-#if defined(DEBUG)
+#ifndef NDEBUG
 	GLint logLength; glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
 
 	if (logLength > 0)
@@ -769,7 +769,7 @@ static GLuint createShader(GLenum shaderType)
 			glAttachShader(shaderProgram, vertexShader);
 			glLinkProgram(shaderProgram);
 
-#if defined(DEBUG)
+#ifndef NDEBUG
 			GLint logLength; glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &logLength);
 
 			if (logLength > 0)
@@ -798,7 +798,7 @@ static GLuint createShader(GLenum shaderType)
 
 - (void)dealloc
 {
-#ifdef DEBUG
+#ifndef NDEBUG
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));
 #endif
 

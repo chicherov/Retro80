@@ -53,7 +53,7 @@
 
 - (void)thread
 {
-#ifdef DEBUG
+#ifndef NDEBUG
 	NSLog(@"%@ thread start", NSStringFromClass(self.class));
 #endif
 
@@ -83,7 +83,7 @@
 	[condition signal];
 	[condition unlock];
 
-#ifdef DEBUG
+#ifndef NDEBUG
 	NSLog(@"%@ thread stop", NSStringFromClass(self.class));
 #endif
 }
@@ -121,7 +121,7 @@
 
 	[condition unlock];
 
-#ifdef DEBUG
+#ifndef NDEBUG
 	NSLog(@"%@ stop", NSStringFromClass(self.class));
 #endif
 }
@@ -226,7 +226,7 @@
 	self.outHook.enabled = !self.outHook.enabled;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

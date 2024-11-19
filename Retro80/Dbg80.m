@@ -51,9 +51,12 @@
 	if (unicode == nil)
 		unicode = koi7();
 
-	if (cpu.BREAK & 0x2000000000)
+	if (cpu.BREAK & 0x3000000000)
 	{
 		[self regs];
+
+		lastD = (cpu.BREAK >> 16) & 0xFFFF;
+		lastL = cpu.BREAK & 0xFFFF;
 	}
 
 	else if (cpu.BREAK & 0xFFFFFFFF00000000)
@@ -1212,7 +1215,7 @@ static NSString *koi8()
 // DEBUG: dealloc
 // -----------------------------------------------------------------------------
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void) dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

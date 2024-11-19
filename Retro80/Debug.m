@@ -144,7 +144,7 @@
 // DEBUG: dealloc
 // ---------------------------------------------------------------------------------------------------------------------
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

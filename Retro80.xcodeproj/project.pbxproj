@@ -67,6 +67,8 @@
 		D97AD7D11CE925D300015D1C /* tvnoise.vs in Resources */ = {isa = PBXBuildFile; fileRef = D97AD7D01CE925D300015D1C /* tvnoise.vs */; };
 		D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E319BCACFE005350CC /* Radio86RK.m */; };
 		D982B4E719BCB62C005350CC /* RKFloppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E619BCB62C005350CC /* RKFloppy.m */; };
+		D985A4232CEB73C200F4EBCC /* x8080.mm in Sources */ = {isa = PBXBuildFile; fileRef = D985A4222CEB73C200F4EBCC /* x8080.mm */; };
+		D985A4262CEB741600F4EBCC /* cpu80.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D985A4242CEB741600F4EBCC /* cpu80.cpp */; };
 		D988F7BE1A091D5A00079E0A /* GenerateThumbnailForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */; };
 		D988F7C01A091D5A00079E0A /* GeneratePreviewForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BF1A091D5A00079E0A /* GeneratePreviewForURL.m */; };
 		D988F7C21A091D5A00079E0A /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D988F7C11A091D5A00079E0A /* main.c */; };
@@ -100,7 +102,6 @@
 		D9DE3A281B18E84C006B4104 /* UT88.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3E219B4584200C3ED9A /* UT88.m */; };
 		D9DE3A2B1B18EAA2006B4104 /* UT88-F.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9DE3A291B18EAA2006B4104 /* UT88-F.bin */; };
 		D9E7ED591BC42AEC00AA5F43 /* Orion128-3.2.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9E7ED581BC42AEC00AA5F43 /* Orion128-3.2.bin */; };
-		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
 		D9F1C41A1AE189F900E927F7 /* Debug.m in Sources */ = {isa = PBXBuildFile; fileRef = D9F1C4191AE189F900E927F7 /* Debug.m */; };
@@ -222,6 +223,9 @@
 		D982B4E319BCACFE005350CC /* Radio86RK.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Radio86RK.m; sourceTree = "<group>"; };
 		D982B4E519BCB62C005350CC /* RKFloppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RKFloppy.h; sourceTree = "<group>"; };
 		D982B4E619BCB62C005350CC /* RKFloppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RKFloppy.m; sourceTree = "<group>"; };
+		D985A4222CEB73C200F4EBCC /* x8080.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = x8080.mm; sourceTree = "<group>"; };
+		D985A4242CEB741600F4EBCC /* cpu80.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpu80.cpp; sourceTree = "<group>"; };
+		D985A4252CEB741600F4EBCC /* cpu80.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cpu80.h; sourceTree = "<group>"; };
 		D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QLRetro80.qlgenerator; sourceTree = BUILT_PRODUCTS_DIR; };
 		D988F7BC1A091D5A00079E0A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GenerateThumbnailForURL.m; sourceTree = "<group>"; };
@@ -277,7 +281,6 @@
 		D9DE3A291B18EAA2006B4104 /* UT88-F.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "UT88-F.bin"; path = "Retro80/ROM/UT88-F.bin"; sourceTree = "<group>"; };
 		D9E7ED581BC42AEC00AA5F43 /* Orion128-3.2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "Orion128-3.2.bin"; path = "Retro80/ROM/Orion128-3.2.bin"; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
-		D9EBB61F19B47E1300C833CA /* x8080.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8080.m; sourceTree = "<group>"; };
 		D9EBB62219B47E8B00C833CA /* mem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mem.h; sourceTree = "<group>"; };
 		D9EBB62319B47E8B00C833CA /* x8255.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8255.h; sourceTree = "<group>"; };
 		D9EBB62419B47E8B00C833CA /* x8255.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8255.m; sourceTree = "<group>"; };
@@ -444,6 +447,7 @@
 				D967B3E419B4588800C3ED9A /* Micro80 */,
 				36A9CF28488EC5CEBF268C00 /* Specialist */,
 				D92701821B073DF900CC51BD /* Orion128 */,
+				D985A4212CEB735900F4EBCC /* C++ */,
 				D974FC9A19ADE9450041DF91 /* Supporting Files */,
 				D95560AF19BF8EE100B2F098 /* Resources */,
 			);
@@ -489,6 +493,15 @@
 				D982B4E619BCB62C005350CC /* RKFloppy.m */,
 			);
 			name = Radio86RK;
+			sourceTree = "<group>";
+		};
+		D985A4212CEB735900F4EBCC /* C++ */ = {
+			isa = PBXGroup;
+			children = (
+				D985A4252CEB741600F4EBCC /* cpu80.h */,
+				D985A4242CEB741600F4EBCC /* cpu80.cpp */,
+			);
+			name = "C++";
 			sourceTree = "<group>";
 		};
 		D988F7BA1A091D5A00079E0A /* QLRetro80 */ = {
@@ -546,7 +559,7 @@
 				D974FCEC19AE1D3D0041DF91 /* Retro80.h */,
 				D9FE179C19B9F874008EBD32 /* Retro80.m */,
 				D9EBB61E19B47E1300C833CA /* x8080.h */,
-				D9EBB61F19B47E1300C833CA /* x8080.m */,
+				D985A4222CEB73C200F4EBCC /* x8080.mm */,
 				D9D8CBB01CC2A8C600E2DD3A /* Dbg80.h */,
 				D9D8CBB11CC2A8C600E2DD3A /* Dbg80.m */,
 				D9A4244D19B8310B00DAA3E0 /* x8253.h */,
@@ -729,6 +742,7 @@
 				D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */,
 				D9A4245319B8310B00DAA3E0 /* x8253.m in Sources */,
 				D90D94141B09A27300CE2475 /* Orion128Floppy.m in Sources */,
+				D985A4232CEB73C200F4EBCC /* x8080.mm in Sources */,
 				D982B4E719BCB62C005350CC /* RKFloppy.m in Sources */,
 				D9F1C41A1AE189F900E927F7 /* Debug.m in Sources */,
 				D9B274CF1D9089BD00D46CF8 /* Micro80Screen.m in Sources */,
@@ -745,7 +759,6 @@
 				D9EBB62519B47E8B00C833CA /* x8255.m in Sources */,
 				D9A4245419B8310B00DAA3E0 /* x8257.m in Sources */,
 				D967B3E019B457E000C3ED9A /* Micro80.m in Sources */,
-				D9EBB62019B47E1300C833CA /* x8080.m in Sources */,
 				D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */,
 				D929488319B5850C009BC312 /* RKRecorder.m in Sources */,
 				D9EBB62919B47ECA00C833CA /* mem.m in Sources */,
@@ -758,6 +771,7 @@
 				D974FCCC19ADEA080041DF91 /* Display.m in Sources */,
 				D9728AC41DAAC60C00D52694 /* UT88System.m in Sources */,
 				D915D6C41DBDDD640098AA98 /* MicroshaKeyboard.m in Sources */,
+				D985A4262CEB741600F4EBCC /* cpu80.cpp in Sources */,
 				36A9CA557FE8877B01CD4181 /* Specialist.m in Sources */,
 				D98E6C5C1E8113460053FDF3 /* Radio86RKFactory.m in Sources */,
 				D974E81D1E730002004CC92E /* Digit.m in Sources */,
@@ -931,11 +945,14 @@
 		D974FCC519ADE9450041DF91 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				INFOPLIST_FILE = "Retro80/Retro80-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.retro80;
@@ -947,11 +964,14 @@
 		D974FCC619ADE9450041DF91 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				INFOPLIST_FILE = "Retro80/Retro80-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.retro80;
@@ -967,10 +987,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				INFOPLIST_FILE = QLRetro80/Info.plist;
 				INSTALL_PATH = /Library/QuickLook;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
@@ -988,6 +1005,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				INFOPLIST_FILE = QLRetro80/Info.plist;
 				INSTALL_PATH = /Library/QuickLook;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";

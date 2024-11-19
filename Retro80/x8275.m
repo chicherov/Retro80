@@ -137,8 +137,6 @@
 
 	BOOL EoS;
 
-	BOOL IRQ;
-	
 	// -------------------------------------------------------------------------
 	// Внешние настройки
 	// -------------------------------------------------------------------------
@@ -250,21 +248,6 @@ static uint32_t foreground[] =
 - (void) INTE:(BOOL)IF clock:(uint64_t)clock
 {
 	[self selectFont:IF ? 0x2400 : 0x2000];
-}
-
-// -----------------------------------------------------------------------------
-// Прерывание для Партнер 01.01
-// -----------------------------------------------------------------------------
-
-- (BOOL) IRQ:(uint64_t)clock
-{
-	if (IRQ)
-	{
-		IRQ = NO;
-		return YES;
-	}
-
-	return NO;
 }
 
 // -----------------------------------------------------------------------------
@@ -441,7 +424,10 @@ static uint32_t foreground[] =
 				}
 
 				if (row == config.R && status.IE)
-					IRQ = status.IR = YES;
+				{
+					self.cpu.IRQ = 0;
+					status.IR = YES;
+				}
 
                 union i8275_char ch2;
                 ch2.value = 0;
@@ -853,7 +839,6 @@ static uint32_t foreground[] =
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:status.byte forKey:@"status"];
-	[encoder encodeBool:IRQ forKey:@"IRQ"];
 	[encoder encodeInt32:config.value forKey:@"config"];
 	[encoder encodeInt:cursor.value forKey:@"cursor"];
 	[encoder encodeInt:mode.byte forKey:@"mode"];
@@ -881,7 +866,6 @@ static uint32_t foreground[] =
 			return self = nil;
 
 		status.byte = [decoder decodeIntForKey:@"status"];
-		IRQ = [decoder decodeBoolForKey:@"IRQ"];
 		config.value = [decoder decodeInt32ForKey:@"config"];
 		cursor.value = [decoder decodeIntForKey:@"cursor"];
 		mode.byte = [decoder decodeIntForKey:@"mode"];
@@ -908,7 +892,7 @@ static uint32_t foreground[] =
 // DEBUG: dealloc
 // -----------------------------------------------------------------------------
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void) dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

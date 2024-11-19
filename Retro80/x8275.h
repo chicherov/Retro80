@@ -11,7 +11,9 @@
 #import "Display.h"
 #import "x8257.h"
 
-@interface X8275 : NSObject <CRT, TextScreen, RD, WR, HLDA, DMA, INTE, IRQ, NSCoding>
+@interface X8275 : NSObject <CRT, TextScreen, RD, WR, HLDA, DMA, INTE, NSCoding>
+
+@property (weak) X8080 *cpu;
 
 - (void) setColors:(const uint32_t *)colors
 	attributesMask:(uint8_t)attributesMask

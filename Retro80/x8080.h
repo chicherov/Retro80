@@ -1,9 +1,7 @@
 /*****
 
- Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
-
- Центральные процессоры КР580ВМ80А (Intel 8080A) и Zilog Z80
+Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
+ Copyright © 2014-2024 Andrey Chicherov <andrey@chicherov.ru>
 
  *****/
 
@@ -35,12 +33,6 @@
 
 @protocol HLDA
 - (unsigned) HLDA:(uint64_t)clock clk:(unsigned)clk;
-@end
-
-// -----------------------------------------------------------------------------
-
-@protocol IRQ
-- (BOOL) IRQ:(uint64_t)clock;
 @end
 
 // -----------------------------------------------------------------------------
@@ -84,15 +76,18 @@
 @property uint8_t I;
 @property uint8_t R;
 
-@property NSObject<IRQ> *NMI;
-@property NSObject<IRQ> *IRQ;
 @property uint8_t RST;
 @property uint8_t IM;
+
+@property uint64_t NMI;
+@property uint64_t IRQ;
+@property uint32_t IRQLoop;
 
 @property NSObject<INTE> *INTE;
 @property BOOL IF, IFF2;
 
 @property NSObject<HLDA> *HLDA;
+@property uint64_t HOLD;
 
 // -----------------------------------------------------------------------------
 
@@ -146,8 +141,15 @@
 
 // -----------------------------------------------------------------------------
 
-void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
-uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+	extern "C"
+	{
+#endif
+		void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
+		uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+	};
+#endif
 
 // -----------------------------------------------------------------------------
 
@@ -160,8 +162,15 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
 
 // -----------------------------------------------------------------------------
 
-void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
-uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+extern "C"
+	{
+#endif
+		void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
+		uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+	};
+#endif
 
 // -----------------------------------------------------------------------------
 

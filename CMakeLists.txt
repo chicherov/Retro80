@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
-set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
+#set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
 project(Retro80 VERSION 0.92 LANGUAGES OBJC)
 
 set(CMAKE_OBJC_STANDARD 99)
 add_compile_options(-Werror -fobjc-arc -fmodules)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
+
+set(CMAKE_OBJCXX_COMPILER clang++)
+set(CMAKE_CXX_COMPILER clang++)
+
+enable_language(CXX OBJCXX)
+set(CMAKE_CXX_STANDARD 20)
 
 if(NOT APPLE)
 
@@ -29,9 +36,6 @@ if(NOT APPLE)
 	add_compile_definitions(GNUSTEP)
 
 endif()
-
-set(CMAKE_OBJC_FLAGS_DEBUG "${CMAKE_OBJC_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
 
 ##
 ## Retro80 Files
@@ -73,7 +77,7 @@ set(RETRO80_X8080_SOURCES
 		Retro80/Retro80.h
 		Retro80/Retro80.m
 		Retro80/x8080.h
-		Retro80/x8080.m
+		Retro80/x8080.mm
 		Retro80/Dbg80.h
 		Retro80/Dbg80.m
 		Retro80/x8253.h
@@ -166,6 +170,10 @@ set(RETRO80_ORION_SOURCES
 		Retro80/Orion128Floppy.h
 		Retro80/Orion128Floppy.m)
 
+set(RETRO80_CXX_SOURCES
+		Retro80/cpu80.h
+		Retro80/cpu80.cpp)
+
 set(RETRO80_SOURCES
 		${RETRO80_BASE_SOURCES}
 		${RETRO80_X8080_SOURCES}
@@ -173,6 +181,7 @@ set(RETRO80_SOURCES
 		${RETRO80_MICRO80_SOURCES}
 		${RETRO80_SPECIALIST_SOURCES}
 		${RETRO80_ORION_SOURCES}
+		${RETRO80_CXX_SOURCES}
         Retro80/main.m)
 
 set(RETRO80_GLOBAL_RESOURCES

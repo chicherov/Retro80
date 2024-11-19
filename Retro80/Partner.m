@@ -231,7 +231,7 @@
 
 	// Контроллер прерывания
 
-	self.cpu.IRQ = self.crt;
+	self.crt.cpu = self.cpu;
 	self.cpu.RST = 0xF7;
 
 	// Контроллер НГМД

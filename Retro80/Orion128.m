@@ -423,9 +423,7 @@
 
 	[self.cpu mapObject:self.card atPort:0xF8 count:8];
 
-	self.cpu.IRQ = self.crt;
-	self.cpu.RST = 0xFF;
-
+	self.cpu.IRQLoop = 900000;
 	self.cpu.INTE = nil;
 	return YES;
 }
@@ -517,7 +515,11 @@
 
 			self.orion.cpu.PAGE = ((~data & 0x80) >> 6) | ((data & 0x20) >> 5);
 			self.orion.mem.offset = (data & 0x1F) << 14;
-			self.orion.crt.IE = data & 0x40;
+
+			if(data & 0x40)
+				self.orion.cpu.IRQ = (self.orion.cpu.CLK / 900000 + 1) * 900000;
+			else
+				self.orion.cpu.IRQ = -1;
 			break;
 
 		case 0xFC:

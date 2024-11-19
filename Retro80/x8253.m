@@ -618,7 +618,7 @@ static uint16_t count(struct i8253_timer *timer, uint64_t clock)
 	self.enabled = !self.enabled;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

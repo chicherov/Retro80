@@ -14,7 +14,6 @@
 {
 	uint32_t *bitmap;
 	NSUInteger width;
-	uint64_t IRQ;
 }
 
 @synthesize display;
@@ -22,8 +21,6 @@
 @synthesize pMemory;
 @synthesize color;
 @synthesize page;
-
-@synthesize IE;
 
 - (void)draw
 {
@@ -103,28 +100,12 @@
 	bitmap = NULL;
 	color = 0x00;
 	page = 0x00;
-
-	IE = NO;
-}
-
-- (BOOL)IRQ:(uint64_t)clock
-{
-	if (IRQ <= clock)
-	{
-		IRQ += 900000;
-		return IE;
-	}
-
-	return NO;
 }
 
 - (void)encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:color forKey:@"color"];
 	[encoder encodeInt:page forKey:@"page"];
-
-	[encoder encodeInt64:IRQ forKey:@"IRQ"];
-	[encoder encodeBool:IE forKey:@"IE"];
 }
 
 - (instancetype)initWithCoder:(NSCoder *)decoder
@@ -133,15 +114,12 @@
 	{
 		color = [decoder decodeIntForKey:@"color"];
 		page = [decoder decodeIntForKey:@"page"];
-
-		IRQ = [decoder decodeInt64ForKey:@"IRQ"];
-		IE = [decoder decodeBoolForKey:@"IE"];
 	}
 
 	return self;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

@@ -78,7 +78,7 @@
 	specialist.fdd.selected = 1;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

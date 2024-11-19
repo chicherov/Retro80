@@ -12,8 +12,6 @@
 @implementation UT88System
 {
 	NSUInteger offset;
-	uint64_t IRQ;
-
 	MEM *mem;
 }
 
@@ -22,17 +20,6 @@
 - (MEM *)RAMDISK:(RAM *)ram
 {
 	return mem = [ram memoryAtOffest:offset];
-}
-
-- (BOOL)IRQ:(uint64_t)clock
-{
-	if (IRQ <= clock)
-	{
-		IRQ += 16000000;
-		return YES;
-	}
-
-	return NO;
 }
 
 - (void)RD:(uint16_t)addr data:(uint8_t *)data CLK:(uint64_t)clock
@@ -72,7 +59,6 @@
 	if (self = [super init])
 	{
 		offset = [coder decodeIntegerForKey:@"offset"];
-		IRQ = [coder decodeInt64ForKey:@"IRQ"];
 	}
 
 	return self;
@@ -81,7 +67,6 @@
 - (void)encodeWithCoder:(NSCoder *)coder
 {
 	[coder encodeInteger:mem.offset forKey:@"offset"];
-	[coder encodeInt64:IRQ forKey:@"IRQ"];
 }
 
 @end

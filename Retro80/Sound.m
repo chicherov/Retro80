@@ -166,7 +166,7 @@ static OSStatus audioConverterComplexInputDataProc(AudioConverterRef inAudioConv
 
 	[self flush:frame + interval];
 
-#ifdef DEBUG
+#ifndef NDEBUG
 	if (inAudioFile == 0 && audioBufferSize)
 		NSLog(@"audioBufferSize=%d", audioBufferSize);
 
@@ -294,7 +294,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 
 			--audioBufferSize;
 		}
-#ifdef DEBUG
+#ifndef NDEBUG
 		else NSLog(@"bug 1");
 #endif
 
@@ -318,7 +318,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 
 				--audioBufferSize;
 			}
-#ifdef DEBUG
+#ifndef NDEBUG
 			else NSLog(@"bug 2");
 #endif
 
@@ -468,7 +468,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 		if ((err = AudioQueueStart(audioQueue, nil)) != noErr)
 			@throw [NSString stringWithFormat:@"AudioQueueStart error: %d", err];
 
-#ifdef DEBUG
+#ifndef NDEBUG
 		NSLog(@"Sound start");
 #endif
 
@@ -517,7 +517,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	if ((err = AudioQueueDispose(audioQueue, YES)) != noErr)
 		NSLog(@"AudioQueueDispose error: %d", err);
 
-#ifdef DEBUG
+#ifndef NDEBUG
 	NSLog(@"Sound stop");
 #endif
 }
@@ -700,7 +700,7 @@ static void audioQueueOutputCallback(void *__nullable inUserData, AudioQueueRef 
 	streamFormat.mReserved = 0;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void)dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

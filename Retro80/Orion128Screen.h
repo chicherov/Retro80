@@ -9,13 +9,11 @@
 
 #import "Retro80.h"
 
-@interface Orion128Screen : NSObject<CRT, IRQ, RESET, NSCoding>
+@interface Orion128Screen : NSObject<CRT, RESET, NSCoding>
 
 @property(nonatomic) uint8_t **pMemory;
 
 @property(nonatomic) uint8_t color;
 @property(nonatomic) uint8_t page;
-
-@property(nonatomic) BOOL IE;
 
 @end

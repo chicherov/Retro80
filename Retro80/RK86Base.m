@@ -28,6 +28,8 @@
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xF800]) == nil)
 		return NO;
 
+	self.cpu.HOLD = 0;
+
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0xFFFF]) == nil)
 		return NO;
 

@@ -10,7 +10,7 @@
 #import "Retro80.h"
 #import "mem.h"
 
-@interface UT88System : NSObject<RD, WR, IRQ, RESET>
+@interface UT88System : NSObject<RD, WR, RESET>
 @property(nonatomic, assign) X8080 *cpu;
 - (MEM *)RAMDISK:(RAM *)ram;
 @end

@@ -40,7 +40,10 @@
 {
 	if (self.cpu.M1 && enabled && !self.snd.sound.isInput && !cancel)
 	{
-		*data = 0x76; if (panel == nil)
+		self.cpu.PC--;
+		*data = 0x00;
+
+		if (panel == nil)
 		{
 			if (pos != 0 && self.cpu.A == 0xFF)
 				while (pos < self.buffer.length && ((const uint8_t *) self.buffer.bytes) [pos++] != 0xE6);
