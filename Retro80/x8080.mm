@@ -507,82 +507,24 @@ extern "C"
 - (void) encodeWithCoder:(NSCoder *)encoder
 {
 	[encoder encodeInt:START forKey:@"START"];
-
-	[encoder encodeInt64:self.CLK forKey:@"CLK"];
-	[encoder encodeBool:self.IF forKey:@"IF"];
-
 	[encoder encodeInt:PAGE forKey:@"PAGE"];
 
-	[encoder encodeInt:self.PC forKey:@"PC"];
-	[encoder encodeInt:self.SP forKey:@"SP"];
-	[encoder encodeInt:self.AF forKey:@"AF"];
-	[encoder encodeInt:self.BC forKey:@"BC"];
-	[encoder encodeInt:self.DE forKey:@"DE"];
-	[encoder encodeInt:self.HL forKey:@"HL"];
-
-	[encoder encodeInt64:self.HOLD forKey:@"HOLD"];
-
-	[encoder encodeInt64:self.IRQ forKey:@"IRQ"];
-	[encoder encodeInt32:self.IRQLoop forKey:@"IRQLoop"];
-
-	[encoder encodeBool:self.Z80 forKey:@"Z80"];
-
-	if (self.Z80)
-	{
-		[encoder encodeBool:self.IFF2 forKey:@"IFF2"];
-		[encoder encodeInt:self.IM forKey:@"IM"];
-
-		[encoder encodeInt:self.AF1 forKey:@"AF1"];
-		[encoder encodeInt:self.BC1 forKey:@"BC1"];
-		[encoder encodeInt:self.DE1 forKey:@"DE1"];
-		[encoder encodeInt:self.HL1 forKey:@"HL1"];
-
-		[encoder encodeInt:self.I forKey:@"IR_I"];
-		[encoder encodeInt:self.R forKey:@"IR_R"];
-		[encoder encodeInt:self.IX forKey:@"IX"];
-		[encoder encodeInt:self.IY forKey:@"IY"];
-
-		[encoder encodeInt64:self.NMI forKey:@"NMI"];
-	}
+	[encoder encodeDataObject:Encoder().encode(*(cpu->m_core), *cpu).dataObject()];
 }
 
 - (id) initWithCoder:(NSCoder *)decoder
 {
 	if (self = [self init8080:[decoder decodeIntForKey:@"START"]])
 	{
-		self.CLK = [decoder decodeInt64ForKey:@"CLK"];
-		self.IF = [decoder decodeBoolForKey:@"IF"];
-
 		PAGE = [decoder decodeIntForKey:@"PAGE"];
 
-		self.PC = [decoder decodeIntForKey:@"PC"];
-		self.SP = [decoder decodeIntForKey:@"SP"];
-		self.AF = [decoder decodeIntForKey:@"AF"];
-		self.BC = [decoder decodeIntForKey:@"BC"];
-		self.DE = [decoder decodeIntForKey:@"DE"];
-		self.HL = [decoder decodeIntForKey:@"HL"];
-
-		self.HOLD = [decoder decodeInt64ForKey:@"HOLD"];
-
-		self.IRQ = [decoder decodeInt64ForKey:@"IRQ"];
-		self.IRQLoop = [decoder decodeInt32ForKey:@"IRQLoop"];
-
-		if((self.Z80 = [decoder decodeBoolForKey:@"Z80"]))
+		try
 		{
-			self.IFF2 = [decoder decodeBoolForKey:@"IFF2"];
-			self.IM = [decoder decodeIntForKey:@"IM"];
-
-			self.AF1 = [decoder decodeIntForKey:@"AF1"];
-			self.BC1 = [decoder decodeIntForKey:@"BC1"];
-			self.DE1 = [decoder decodeIntForKey:@"DE1"];
-			self.HL1 = [decoder decodeIntForKey:@"HL1"];
-
-			self.I = [decoder decodeIntForKey:@"IR_I"];
-			self.R = [decoder decodeIntForKey:@"IR_R"];
-			self.IX = [decoder decodeIntForKey:@"IX"];
-			self.IY = [decoder decodeIntForKey:@"IY"];
-
-			self.NMI = [decoder decodeInt64ForKey:@"NMI"];
+			Decoder([decoder decodeDataObject]).decode(*(cpu->m_core), *cpu);
+		}
+		catch(const std::exception &e)
+		{
+			return self = nil;
 		}
 	}
 

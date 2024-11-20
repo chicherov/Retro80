@@ -223,6 +223,8 @@
 		D982B4E319BCACFE005350CC /* Radio86RK.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Radio86RK.m; sourceTree = "<group>"; };
 		D982B4E519BCB62C005350CC /* RKFloppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RKFloppy.h; sourceTree = "<group>"; };
 		D982B4E619BCB62C005350CC /* RKFloppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RKFloppy.m; sourceTree = "<group>"; };
+		D984D93A2CEE385200E7ED28 /* core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = core.h; sourceTree = "<group>"; };
+		D984D93B2CEE385200E7ED28 /* coder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = coder.h; sourceTree = "<group>"; };
 		D985A4222CEB73C200F4EBCC /* x8080.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = x8080.mm; sourceTree = "<group>"; };
 		D985A4242CEB741600F4EBCC /* cpu80.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpu80.cpp; sourceTree = "<group>"; };
 		D985A4252CEB741600F4EBCC /* cpu80.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cpu80.h; sourceTree = "<group>"; };
@@ -498,6 +500,8 @@
 		D985A4212CEB735900F4EBCC /* C++ */ = {
 			isa = PBXGroup;
 			children = (
+				D984D93B2CEE385200E7ED28 /* coder.h */,
+				D984D93A2CEE385200E7ED28 /* core.h */,
 				D985A4252CEB741600F4EBCC /* cpu80.h */,
 				D985A4242CEB741600F4EBCC /* cpu80.cpp */,
 			);

@@ -10,53 +10,7 @@
 #include <cstdint>
 #include <limits>
 
-//
-
-struct ICore
-{
-	uint64_t CLOCK = 0;
-
-	virtual void MEMW(uint16_t addr, uint8_t data, uint8_t status) = 0;
-	virtual uint8_t MEMR(uint16_t addr, uint8_t status) = 0;
-
-	virtual void IOW(uint16_t addr, uint8_t data, uint8_t status)
-	{
-		MEMW(addr, data, status);
-	}
-
-	virtual uint8_t IOR(uint16_t addr, uint8_t status)
-	{
-		return MEMR(addr, status);
-	}
-
-	virtual uint8_t INTA(uint16_t addr, uint8_t status)
-	{
-		return 0xFF;
-	}
-
-	virtual void HLTA(uint16_t addr, uint8_t status)
-	{
-	}
-
-	uint64_t HOLD = std::numeric_limits<uint64_t>::max();
-
-	virtual bool HLDA(bool)
-	{
-		return false;
-	}
-
-	uint64_t NMI = std::numeric_limits<uint64_t>::max();
-	uint64_t IRQ = std::numeric_limits<uint64_t>::max();
-	uint32_t IRQLoop = 0;
-
-	virtual void INTE(bool)
-	{
-	}
-
-	virtual ~ICore() = default;
-};
-
-//
+#include "core.h"
 
 struct CPU
 {
@@ -74,6 +28,8 @@ struct CPU
 	union { uint16_t DE{}; struct { uint8_t E; uint8_t D; }; };
 	union { uint16_t HL{}; struct { uint8_t L; uint8_t H; }; };
 
+	bool HLT{}, IF{};
+
 	// Z80
 
 	union { uint16_t AF1{}; struct { uint8_t F1; uint8_t A1; }; };
@@ -87,8 +43,8 @@ struct CPU
 	uint8_t R{};
 	uint8_t I{};
 
-	bool HLT{}, IF{}, IFF2{};
 	uint8_t IM{};
+	bool IFF2{};
 
 	//
 
@@ -103,8 +59,12 @@ struct CPU
 	{
 	}
 
+	void encode(Encoder &) const;
+	void decode(Decoder &);
+
 	uint8_t *m_breakpoints = nullptr;
 	uint64_t m_break{};
+
 
 private:
 

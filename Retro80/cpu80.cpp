@@ -7,6 +7,8 @@
 
 #include "cpu80.h"
 #include <utility>
+#include "coder.h"
+#include <sstream>
 
 namespace
 {
@@ -3643,4 +3645,20 @@ bool CPU::execute(uint64_t limit)
 		case Type::Z80:
 			return internal<Type::Z80>(limit);
 	}
+}
+
+void CPU::encode(Encoder &encoder) const
+{
+	encoder.encode(m_cpuType, PC, SP, AF, BC, DE, HL, HLT, IF);
+
+	if(m_cpuType == CPU::Type::Z80)
+		encoder.encode(AF1, BC1, DE1, HL1, IX, IY, R, I, IM, IFF2);
+}
+
+void CPU::decode(Decoder &decoder)
+{
+	decoder.decode(m_cpuType, PC, SP, AF, BC, DE, HL, HLT, IF);
+
+	if(m_cpuType == CPU::Type::Z80)
+		decoder.decode(AF1, BC1, DE1, HL1, IX, IY, R, I, IM, IFF2);
 }

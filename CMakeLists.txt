@@ -171,6 +171,8 @@ set(RETRO80_ORION_SOURCES
 		Retro80/Orion128Floppy.m)
 
 set(RETRO80_CXX_SOURCES
+		Retro80/coder.h
+		Retro80/core.h
 		Retro80/cpu80.h
 		Retro80/cpu80.cpp)
 
