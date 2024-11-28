@@ -705,44 +705,34 @@ static uint32_t foreground[] =
 
 }
 
-- (void) WR:(uint8_t)data clock:(uint64_t)clock
+- (void)WR:(uint8_t)data clock:(uint64_t)clock
 {
-	dmaTimer = bpos == config.H ? -1 : (bpos + 1) % (1 << mode.B) ? 0 : clock + (mode.S ? mode.S << 3 : 1) * 12 - clock % 12;
+	dmaTimer = bpos == config.H ? -1 : (bpos + fpos + 1) % (1 << mode.B) ? 0 : clock + (mode.S ? mode.S << 3 : 1) * 12 - clock % 12;
 
-	if ((buffer[bpos] & 0xF1) == 0xF1)
+	if((buffer[bpos] & 0xF1) == 0xF1)
 	{
 		dmaTimer = buffer[bpos] & 0x02 ? -2 : -1;
 		bpos = config.H + 1;
 	}
-
-	else
+	else if((buffer[bpos] & 0xC0) == 0x80 && config.F == 0)
 	{
-		if ((buffer[bpos] & 0xC0) == 0x80 && config.F == 0)
+		fifo[fpos++ & 0x0F] = data & 0x7F;
+		if(fpos == 17) status.FO = 1;
+		bpos++;
+	}
+	else if(((buffer[bpos] = data) & 0xC0) != 0x80 || config.F != 0)
+	{
+		if((buffer[bpos] & 0xF1) == 0xF1)
 		{
-			fifo[fpos++ & 0x0F] = data & 0x7F;
-			if (fpos == 17) status.FO = 1;
-			bpos++;
+			if(dmaTimer)
+			{
+				dmaTimer = buffer[bpos] & 0x02 ? -2 : -1;
+				bpos = config.H + 1;
+			}
 		}
 		else
 		{
-			if (((buffer[bpos] = data) & 0xC0) == 0x80 && config.F == 0)
-			{
-				dmaTimer = 0;
-			}
-
-			else if ((buffer[bpos] & 0xF1) == 0xF1)
-			{
-				if (dmaTimer)
-				{
-					dmaTimer = buffer[bpos] & 0x02 ? -2 : -1;
-					bpos = config.H + 1;
-				}
-			}
-
-			else
-			{
-				bpos++;
-			}
+			bpos++;
 		}
 	}
 }
