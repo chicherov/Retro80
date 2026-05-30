@@ -1,7 +1,7 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  Интерфейс графического экрана ПЭВМ «Специалист»
 
@@ -107,7 +107,7 @@
 	return self;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void) dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

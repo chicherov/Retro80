@@ -1,7 +1,7 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  Отладчик для центрального процессора из класса X8080
 
@@ -51,9 +51,12 @@
 	if (unicode == nil)
 		unicode = koi7();
 
-	if (cpu.BREAK & 0x2000000000)
+	if (cpu.BREAK & 0x3000000000)
 	{
 		[self regs];
+
+		lastD = (cpu.BREAK >> 16) & 0xFFFF;
+		lastL = cpu.BREAK & 0xFFFF;
 	}
 
 	else if (cpu.BREAK & 0xFFFFFFFF00000000)
@@ -1212,7 +1215,7 @@ static NSString *koi8()
 // DEBUG: dealloc
 // -----------------------------------------------------------------------------
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void) dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

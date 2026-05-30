@@ -1,14 +1,17 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  КР1818ВГ93
 
  *****/
 
 #import "vg93.h"
-#undef DEBUG
+
+#ifndef NDEBUG
+	#define NDEBUG
+#endif
 
 @implementation VG93
 {
@@ -333,7 +336,7 @@
 
 			if ((data & 0xF0) == 0xD0)	// Принудительное прерывание
 			{
-#ifdef DEBUG
+#ifndef NDEBUG
 				NSLog(@"ВГ93 Принудительное прерывание: %02X", data);
 #endif
 				if (started && command.code == 0xF)
@@ -351,7 +354,7 @@
 				status.byte = 0;
 				started = clock;
 
-#ifdef DEBUG
+#ifndef NDEBUG
 				switch (command.code)
 				{
 					case 0x0:	// Восстановление
@@ -424,7 +427,7 @@
 
 							if ((command.code & 2) == 0)
 							{
-#ifdef DEBUG
+#ifndef NDEBUG
 								NSLog(@"ВГ93 Read from drive %c: track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
 #endif
 								if ((read = [file readDataOfLength:SECSIZE]).length != SECSIZE)
@@ -434,7 +437,7 @@
 							}
 							else
 							{
-#ifdef DEBUG
+#ifndef NDEBUG
 								NSLog(@"ВГ93 Write to drive %c:  track %d head %d sector %d", selected - 1 + 'A', cylinder, head, sector);
 #endif
 								write = [[NSMutableData alloc] initWithLength:SECSIZE];
@@ -840,7 +843,7 @@
 	}
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
 - (void) dealloc
 {
 	NSLog(@"%@ dealloc", NSStringFromClass(self.class));

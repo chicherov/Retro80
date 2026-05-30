@@ -1,11 +1,9 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
- Центральные процессоры КР580ВМ80А (Intel 8080A) и Zilog Z80
-
- *****/
+*****/
 
 // -----------------------------------------------------------------------------
 
@@ -39,12 +37,6 @@
 
 // -----------------------------------------------------------------------------
 
-@protocol IRQ
-- (BOOL) IRQ:(uint64_t)clock;
-@end
-
-// -----------------------------------------------------------------------------
-
 @protocol INTE
 - (void) INTE:(BOOL)IF clock:(uint64_t)clock;
 @end
@@ -53,7 +45,7 @@
 
 @interface X8080 : NSObject <NSCoding, BYTE>
 
-@property BOOL Z80;
+@property (readonly) BOOL Z80;
 
 @property uint64_t CLK;
 @property uint8_t PAGE;
@@ -84,15 +76,18 @@
 @property uint8_t I;
 @property uint8_t R;
 
-@property NSObject<IRQ> *NMI;
-@property NSObject<IRQ> *IRQ;
 @property uint8_t RST;
 @property uint8_t IM;
+
+@property uint64_t NMI;
+@property uint64_t IRQ;
+@property uint32_t IRQLoop;
 
 @property NSObject<INTE> *INTE;
 @property BOOL IF, IFF2;
 
 @property NSObject<HLDA> *HLDA;
+@property uint64_t HOLD;
 
 // -----------------------------------------------------------------------------
 
@@ -105,7 +100,7 @@
 // -----------------------------------------------------------------------------
 
 - (instancetype)init8080:(uint32_t)start NS_DESIGNATED_INITIALIZER;
-- (instancetype)initZ80:(uint32_t)start;
+- (instancetype)initZ80:(uint32_t)start NS_DESIGNATED_INITIALIZER;
 
 #ifndef GNUSTEP
 - (instancetype)init NS_UNAVAILABLE;
@@ -146,8 +141,15 @@
 
 // -----------------------------------------------------------------------------
 
-void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
-uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+	extern "C"
+	{
+#endif
+		void MEMW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
+		uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+	};
+#endif
 
 // -----------------------------------------------------------------------------
 
@@ -160,8 +162,15 @@ uint8_t MEMR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
 
 // -----------------------------------------------------------------------------
 
-void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
-uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+extern "C"
+	{
+#endif
+		void IOW(X8080 *cpu, uint16_t addr, uint8_t data, uint64_t clock, uint8_t status);
+		uint8_t IOR(X8080 *cpu, uint16_t addr, uint64_t clock, uint8_t status);
+#ifdef __cplusplus
+	};
+#endif
 
 // -----------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  ПЭВМ «Специалист MX»
 
@@ -191,6 +191,7 @@
 
 	self.sys.specialist = self;
 	self.cpu.HLDA = self.fdd;
+	self.cpu.HOLD = 0;
 	return YES;
 }
 

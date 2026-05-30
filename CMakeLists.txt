@@ -4,11 +4,19 @@ project(Retro80 VERSION 0.92 LANGUAGES OBJC)
 
 set(CMAKE_OBJC_STANDARD 99)
 add_compile_options(-Werror -fobjc-arc -fmodules)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
+
+set(CMAKE_OBJCXX_COMPILER clang++)
+set(CMAKE_CXX_COMPILER clang++)
+
+enable_language(CXX OBJCXX)
+set(CMAKE_CXX_STANDARD 20)
 
 if(NOT APPLE)
 
 	find_path(GNUSTEP_HEADERS Cocoa/Cocoa.h
 			PATHS
+			/usr/local/include
 			/usr/GNUstep/System/Library/Headers
 			/usr/GNUstep/Local/Library/Headers
 			/include/GNUstep
@@ -16,8 +24,9 @@ if(NOT APPLE)
 
 	include_directories(${GNUSTEP_HEADERS})
 
-	find_path(GNUSTEP_LIBRARIES gnustep-gui
+	find_path(GNUSTEP_LIBRARIES libgnustep-gui.so
 			PATHS
+			/usr/local/lib
 			/usr/GNUstep/System/Library/Libraries
 			/usr/GNUstep/Local/Library/Libraries
 			/lib/GNUstep
@@ -30,8 +39,18 @@ if(NOT APPLE)
 
 endif()
 
-set(CMAKE_OBJC_FLAGS_DEBUG "${CMAKE_OBJC_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
+
+##
+## Library
+##
+
+set(KR580_SOURCES
+		libkr580/i8080.h
+		libkr580/i8080.cpp)
+
+add_library(kr580 STATIC ${KR580_SOURCES})
+target_include_directories(kr580 INTERFACE libkr580)
+
 
 ##
 ## Retro80 Files
@@ -73,7 +92,7 @@ set(RETRO80_X8080_SOURCES
 		Retro80/Retro80.h
 		Retro80/Retro80.m
 		Retro80/x8080.h
-		Retro80/x8080.m
+		Retro80/x8080.mm
 		Retro80/Dbg80.h
 		Retro80/Dbg80.m
 		Retro80/x8253.h
@@ -173,72 +192,95 @@ set(RETRO80_SOURCES
 		${RETRO80_MICRO80_SOURCES}
 		${RETRO80_SPECIALIST_SOURCES}
 		${RETRO80_ORION_SOURCES}
-        Retro80/main.m)
+		Retro80/main.m)
 
 set(RETRO80_GLOBAL_RESOURCES
-        Retro80.icns
-        Retro80/ROM/Apogeo.bin
-        Retro80/ROM/Basic.bin
-        Retro80/ROM/Lik.bin
-        Retro80/ROM/M3-EXT-1.3.rom
-        Retro80/ROM/M80RK86.bin
-        Retro80/ROM/Micro80.bin
-        Retro80/ROM/Micro80.fnt
-        Retro80/ROM/Microsha.bin
-        Retro80/ROM/ORDOS-2.40.rom
-        Retro80/ROM/ORDOS-4.03.rom
-        Retro80/ROM/Orion128-1.bin
-        Retro80/ROM/Orion128-2.bin
-        Retro80/ROM/Orion128-3.1.bin
-        Retro80/ROM/Orion128-3.2.bin
-        Retro80/ROM/Orion128-3.3.bin
-        Retro80/ROM/Partner.bin
-        Retro80/ROM/Radio86RK.bin
-        Retro80/ROM/SYMGEN.BIN
-        Retro80/ROM/Specialist-2.7.bin
-        Retro80/ROM/Specialist-3.3.bin
-        Retro80/ROM/Specialist1.bin
-        Retro80/ROM/Specialist2.bin
-        Retro80/ROM/Specialist2SD.bin
-        Retro80/ROM/SpecialistMX2.bin
-        Retro80/ROM/SpecialistMX_Commander.bin
-        Retro80/ROM/SpecialistMX_RAMFOS.bin
-        Retro80/ROM/SpecialistSP580.bin
-        Retro80/ROM/UT88-0.bin
-        Retro80/ROM/UT88-F.bin
-        Retro80/ROM/dos29.bin
-        Retro80/ROM/fdd.bin
-        Retro80/ROM/mcpg.bin
-        Retro80/digits.png
-        Retro80/tvnoise.fs
-        Retro80/tvnoise.vs)
+		Retro80.icns
+		Retro80/ROM/Apogeo.bin
+		Retro80/ROM/Basic.bin
+		Retro80/ROM/Lik.bin
+		Retro80/ROM/M3-EXT-1.3.rom
+		Retro80/ROM/M80RK86.bin
+		Retro80/ROM/Micro80.bin
+		Retro80/ROM/Micro80.fnt
+		Retro80/ROM/Microsha.bin
+		Retro80/ROM/ORDOS-2.40.rom
+		Retro80/ROM/ORDOS-4.03.rom
+		Retro80/ROM/Orion128-1.bin
+		Retro80/ROM/Orion128-2.bin
+		Retro80/ROM/Orion128-3.1.bin
+		Retro80/ROM/Orion128-3.2.bin
+		Retro80/ROM/Orion128-3.3.bin
+		Retro80/ROM/Partner.bin
+		Retro80/ROM/Radio86RK.bin
+		Retro80/ROM/SYMGEN.BIN
+		Retro80/ROM/Specialist-2.7.bin
+		Retro80/ROM/Specialist-3.3.bin
+		Retro80/ROM/Specialist1.bin
+		Retro80/ROM/Specialist2.bin
+		Retro80/ROM/Specialist2SD.bin
+		Retro80/ROM/SpecialistMX2.bin
+		Retro80/ROM/SpecialistMX_Commander.bin
+		Retro80/ROM/SpecialistMX_RAMFOS.bin
+		Retro80/ROM/SpecialistSP580.bin
+		Retro80/ROM/UT88-0.bin
+		Retro80/ROM/UT88-F.bin
+		Retro80/ROM/dos29.bin
+		Retro80/ROM/fdd.bin
+		Retro80/ROM/mcpg.bin
+		Retro80/digits.png
+		Retro80/tvnoise.fs
+		Retro80/tvnoise.vs)
 
 set(RETRO80_RU_RESOURCES
-		Retro80/ru.lproj/InfoPlist.strings
-        Retro80/ru.lproj/Document.xib
-        Retro80/ru.lproj/MainMenu.xib)
+		Retro80/ru.lproj/InfoPlist.strings)
+
+if(NOT APPLE OR XCODE)
+	set(RETRO80_RU_RESOURCES
+			${RETRO80_RU_RESOURCES}
+			Retro80/ru.lproj/Document.xib
+			Retro80/ru.lproj/MainMenu.xib)
+endif()
 
 set(RETRO80_RESOURCES
-        ${RETRO80_GLOBAL_RESOURCES}
-        ${RETRO80_RU_RESOURCES})
+		${RETRO80_GLOBAL_RESOURCES}
+		${RETRO80_RU_RESOURCES})
 
 set_source_files_properties(
 		${RETRO80_RESOURCES}
-		PROPERTIES MACOSX_PACKAGE_LOCATION Resources
-)
+		PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 
 ##
 ## Retro80
 ##
 
 add_executable(Retro80 MACOSX_BUNDLE
-        ${RETRO80_SOURCES}
-        ${RETRO80_RESOURCES})
+		${RETRO80_SOURCES}
+		${RETRO80_RESOURCES})
+#		${KR580_SOURCES})
+
+target_link_libraries(Retro80 kr580)
 
 if(APPLE)
 
 	set_target_properties(Retro80 PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Retro80/Retro80-Info.plist)
 	target_precompile_headers(Retro80 PRIVATE Retro80/Retro80-Prefix.pch)
+
+	if(NOT XCODE)
+
+		set_source_files_properties(
+				Retro80/ru.lproj/InfoPlist.strings
+				PROPERTIES MACOSX_PACKAGE_LOCATION Resources/ru.lproj)
+
+		find_program(IBTOOL ibtool REQUIRED)
+
+		foreach(XIBFILE Document MainMenu)
+			add_custom_command(TARGET Retro80 POST_BUILD
+					COMMAND ${IBTOOL} --compile ${CMAKE_CURRENT_BINARY_DIR}/Retro80.app/Contents/Resources/ru.lproj/${XIBFILE}.nib ${CMAKE_CURRENT_SOURCE_DIR}/Retro80/ru.lproj/${XIBFILE}.xib
+					COMMENT "Compiling NIB file ${XIBFILE}.nib")
+		endforeach()
+
+	endif()
 
 else()
 

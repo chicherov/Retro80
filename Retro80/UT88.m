@@ -1,7 +1,7 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  ПЭВМ «ЮТ-88»
 
@@ -209,6 +209,8 @@
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xEF800]) == nil)
 		return NO;
 
+	self.cpu.IRQ = self.cpu.CLK;
+
 	if (self.monitor0 == nil && (self.monitor0 = [[ROM alloc] initWithContentsOfResource:@"UT88-0" mask:0x03FF]) == nil)
 		return NO;
 
@@ -253,7 +255,7 @@
 	self.ext.nextResponder = self.snd;
 
 	self.sys.cpu = self.cpu;
-	self.cpu.IRQ = self.sys;
+	self.cpu.IRQLoop = 16000000;
 	self.cpu.RST = 0xFF;
 
 	self.crt.mem = self.ram;

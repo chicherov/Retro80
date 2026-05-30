@@ -1,7 +1,7 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  Базовый вариант РК86 без ПЗУ и распределения памяти
 
@@ -27,6 +27,8 @@
 {
 	if (self.cpu == nil && (self.cpu = [[X8080 alloc] init8080:0xF800]) == nil)
 		return NO;
+
+	self.cpu.HOLD = 0;
 
 	if (self.ram == nil && (self.ram = [[RAM alloc] initWithLength:0x8000 mask:0xFFFF]) == nil)
 		return NO;

@@ -67,6 +67,7 @@
 		D97AD7D11CE925D300015D1C /* tvnoise.vs in Resources */ = {isa = PBXBuildFile; fileRef = D97AD7D01CE925D300015D1C /* tvnoise.vs */; };
 		D982B4E419BCACFE005350CC /* Radio86RK.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E319BCACFE005350CC /* Radio86RK.m */; };
 		D982B4E719BCB62C005350CC /* RKFloppy.m in Sources */ = {isa = PBXBuildFile; fileRef = D982B4E619BCB62C005350CC /* RKFloppy.m */; };
+		D985A4232CEB73C200F4EBCC /* x8080.mm in Sources */ = {isa = PBXBuildFile; fileRef = D985A4222CEB73C200F4EBCC /* x8080.mm */; };
 		D988F7BE1A091D5A00079E0A /* GenerateThumbnailForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */; };
 		D988F7C01A091D5A00079E0A /* GeneratePreviewForURL.m in Sources */ = {isa = PBXBuildFile; fileRef = D988F7BF1A091D5A00079E0A /* GeneratePreviewForURL.m */; };
 		D988F7C21A091D5A00079E0A /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D988F7C11A091D5A00079E0A /* main.c */; };
@@ -96,11 +97,13 @@
 		D9D0DB2919BF07220034BD20 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D9CC91F319BEF8840038106A /* InfoPlist.strings */; };
 		D9D41F6A1E8247A8005C4AC5 /* SpecialistFactory.m in Sources */ = {isa = PBXBuildFile; fileRef = D9D41F691E8247A8005C4AC5 /* SpecialistFactory.m */; };
 		D9D41F6D1E824800005C4AC5 /* Orion128Factory.m in Sources */ = {isa = PBXBuildFile; fileRef = D9D41F6C1E824800005C4AC5 /* Orion128Factory.m */; };
+		D9D6905E2FC78E6500706872 /* i8080.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9D6905C2FC78E6500706872 /* i8080.cpp */; };
+		D9D6905F2FC78E6500706872 /* i8080.h in Headers */ = {isa = PBXBuildFile; fileRef = D9D6905D2FC78E6500706872 /* i8080.h */; };
+		D9D690652FC7909C00706872 /* libkr580.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D9D690512FC78E2000706872 /* libkr580.a */; };
 		D9D8CBB21CC2A8C600E2DD3A /* Dbg80.m in Sources */ = {isa = PBXBuildFile; fileRef = D9D8CBB11CC2A8C600E2DD3A /* Dbg80.m */; };
 		D9DE3A281B18E84C006B4104 /* UT88.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3E219B4584200C3ED9A /* UT88.m */; };
 		D9DE3A2B1B18EAA2006B4104 /* UT88-F.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9DE3A291B18EAA2006B4104 /* UT88-F.bin */; };
 		D9E7ED591BC42AEC00AA5F43 /* Orion128-3.2.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9E7ED581BC42AEC00AA5F43 /* Orion128-3.2.bin */; };
-		D9EBB62019B47E1300C833CA /* x8080.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB61F19B47E1300C833CA /* x8080.m */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
 		D9F1C41A1AE189F900E927F7 /* Debug.m in Sources */ = {isa = PBXBuildFile; fileRef = D9F1C4191AE189F900E927F7 /* Debug.m */; };
@@ -114,6 +117,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = D988F7B81A091D5A00079E0A;
 			remoteInfo = QLRetro80;
+		};
+		D9D690622FC7902C00706872 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D974FC8819ADE9450041DF91 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D9D690502FC78E2000706872;
+			remoteInfo = kr580;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -222,6 +232,7 @@
 		D982B4E319BCACFE005350CC /* Radio86RK.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Radio86RK.m; sourceTree = "<group>"; };
 		D982B4E519BCB62C005350CC /* RKFloppy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RKFloppy.h; sourceTree = "<group>"; };
 		D982B4E619BCB62C005350CC /* RKFloppy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RKFloppy.m; sourceTree = "<group>"; };
+		D985A4222CEB73C200F4EBCC /* x8080.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = x8080.mm; sourceTree = "<group>"; };
 		D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QLRetro80.qlgenerator; sourceTree = BUILT_PRODUCTS_DIR; };
 		D988F7BC1A091D5A00079E0A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D988F7BD1A091D5A00079E0A /* GenerateThumbnailForURL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GenerateThumbnailForURL.m; sourceTree = "<group>"; };
@@ -272,12 +283,14 @@
 		D9D41F691E8247A8005C4AC5 /* SpecialistFactory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SpecialistFactory.m; sourceTree = "<group>"; };
 		D9D41F6B1E824800005C4AC5 /* Orion128Factory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Orion128Factory.h; sourceTree = "<group>"; };
 		D9D41F6C1E824800005C4AC5 /* Orion128Factory.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Orion128Factory.m; sourceTree = "<group>"; };
+		D9D690512FC78E2000706872 /* libkr580.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libkr580.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		D9D6905C2FC78E6500706872 /* i8080.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = i8080.cpp; path = libkr580/i8080.cpp; sourceTree = SOURCE_ROOT; };
+		D9D6905D2FC78E6500706872 /* i8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = i8080.h; path = libkr580/i8080.h; sourceTree = SOURCE_ROOT; };
 		D9D8CBB01CC2A8C600E2DD3A /* Dbg80.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Dbg80.h; sourceTree = "<group>"; };
 		D9D8CBB11CC2A8C600E2DD3A /* Dbg80.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Dbg80.m; sourceTree = "<group>"; };
 		D9DE3A291B18EAA2006B4104 /* UT88-F.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "UT88-F.bin"; path = "Retro80/ROM/UT88-F.bin"; sourceTree = "<group>"; };
 		D9E7ED581BC42AEC00AA5F43 /* Orion128-3.2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "Orion128-3.2.bin"; path = "Retro80/ROM/Orion128-3.2.bin"; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
-		D9EBB61F19B47E1300C833CA /* x8080.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8080.m; sourceTree = "<group>"; };
 		D9EBB62219B47E8B00C833CA /* mem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mem.h; sourceTree = "<group>"; };
 		D9EBB62319B47E8B00C833CA /* x8255.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8255.h; sourceTree = "<group>"; };
 		D9EBB62419B47E8B00C833CA /* x8255.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = x8255.m; sourceTree = "<group>"; };
@@ -290,17 +303,25 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		D974FC8D19ADE9450041DF91 /* Frameworks */ = {
+		D988F7B51A091D5A00079E0A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D988F7B51A091D5A00079E0A /* Frameworks */ = {
+		D9D6904F2FC78E2000706872 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D9D690642FC7908300706872 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9D690652FC7909C00706872 /* libkr580.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -419,8 +440,10 @@
 				D99555051A051B2300BC4868 /* Retro80.icns */,
 				D974FC9919ADE9450041DF91 /* Retro80 */,
 				D988F7BA1A091D5A00079E0A /* QLRetro80 */,
+				D9D690522FC78E2000706872 /* kr580 */,
 				D974FC9119ADE9450041DF91 /* Products */,
 				36A9C2DF2C660CF1E61D0B5B /* README.md */,
+				D9D690602FC78F7B00706872 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -429,6 +452,7 @@
 			children = (
 				D974FC9019ADE9450041DF91 /* Retro80.app */,
 				D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */,
+				D9D690512FC78E2000706872 /* libkr580.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -540,13 +564,29 @@
 			name = Base;
 			sourceTree = "<group>";
 		};
+		D9D690522FC78E2000706872 /* kr580 */ = {
+			isa = PBXGroup;
+			children = (
+				D9D6905C2FC78E6500706872 /* i8080.cpp */,
+				D9D6905D2FC78E6500706872 /* i8080.h */,
+			);
+			path = kr580;
+			sourceTree = "<group>";
+		};
+		D9D690602FC78F7B00706872 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		D9EBB62119B47E1A00C833CA /* X8080 */ = {
 			isa = PBXGroup;
 			children = (
 				D974FCEC19AE1D3D0041DF91 /* Retro80.h */,
 				D9FE179C19B9F874008EBD32 /* Retro80.m */,
 				D9EBB61E19B47E1300C833CA /* x8080.h */,
-				D9EBB61F19B47E1300C833CA /* x8080.m */,
+				D985A4222CEB73C200F4EBCC /* x8080.mm */,
 				D9D8CBB01CC2A8C600E2DD3A /* Dbg80.h */,
 				D9D8CBB11CC2A8C600E2DD3A /* Dbg80.m */,
 				D9A4244D19B8310B00DAA3E0 /* x8253.h */,
@@ -575,6 +615,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D9D6904D2FC78E2000706872 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9D6905F2FC78E6500706872 /* i8080.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -583,13 +631,14 @@
 			buildConfigurationList = D974FCC419ADE9450041DF91 /* Build configuration list for PBXNativeTarget "Retro80" */;
 			buildPhases = (
 				D974FC8C19ADE9450041DF91 /* Sources */,
-				D974FC8D19ADE9450041DF91 /* Frameworks */,
+				D9D690642FC7908300706872 /* Frameworks */,
 				D974FC8E19ADE9450041DF91 /* Resources */,
 				D971486A1A0ED5ED006348B1 /* Copy Files */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				D9D690632FC7902C00706872 /* PBXTargetDependency */,
 				D9D330BB1A10A71800CB2F8A /* PBXTargetDependency */,
 			);
 			name = Retro80;
@@ -615,6 +664,23 @@
 			productReference = D988F7B91A091D5A00079E0A /* QLRetro80.qlgenerator */;
 			productType = "com.apple.product-type.bundle";
 		};
+		D9D690502FC78E2000706872 /* kr580 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D9D6905B2FC78E2000706872 /* Build configuration list for PBXNativeTarget "kr580" */;
+			buildPhases = (
+				D9D6904D2FC78E2000706872 /* Headers */,
+				D9D6904E2FC78E2000706872 /* Sources */,
+				D9D6904F2FC78E2000706872 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = kr580;
+			productName = kr580;
+			productReference = D9D690512FC78E2000706872 /* libkr580.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -635,6 +701,10 @@
 					D988F7B81A091D5A00079E0A = {
 						CreatedOnToolsVersion = 6.1;
 					};
+					D9D690502FC78E2000706872 = {
+						CreatedOnToolsVersion = 14.2;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = D974FC8B19ADE9450041DF91 /* Build configuration list for PBXProject "Retro80" */;
@@ -651,6 +721,7 @@
 			targets = (
 				D974FC8F19ADE9450041DF91 /* Retro80 */,
 				D988F7B81A091D5A00079E0A /* QLRetro80 */,
+				D9D690502FC78E2000706872 /* kr580 */,
 			);
 		};
 /* End PBXProject section */
@@ -729,6 +800,7 @@
 				D9A4246019B8974A00DAA3E0 /* ROMDisk.m in Sources */,
 				D9A4245319B8310B00DAA3E0 /* x8253.m in Sources */,
 				D90D94141B09A27300CE2475 /* Orion128Floppy.m in Sources */,
+				D985A4232CEB73C200F4EBCC /* x8080.mm in Sources */,
 				D982B4E719BCB62C005350CC /* RKFloppy.m in Sources */,
 				D9F1C41A1AE189F900E927F7 /* Debug.m in Sources */,
 				D9B274CF1D9089BD00D46CF8 /* Micro80Screen.m in Sources */,
@@ -745,7 +817,6 @@
 				D9EBB62519B47E8B00C833CA /* x8255.m in Sources */,
 				D9A4245419B8310B00DAA3E0 /* x8257.m in Sources */,
 				D967B3E019B457E000C3ED9A /* Micro80.m in Sources */,
-				D9EBB62019B47E1300C833CA /* x8080.m in Sources */,
 				D974FCDF19ADFD460041DF91 /* RK86Base.m in Sources */,
 				D929488319B5850C009BC312 /* RKRecorder.m in Sources */,
 				D9EBB62919B47ECA00C833CA /* mem.m in Sources */,
@@ -784,6 +855,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D9D6904E2FC78E2000706872 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9D6905E2FC78E6500706872 /* i8080.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -791,6 +870,11 @@
 			isa = PBXTargetDependency;
 			target = D988F7B81A091D5A00079E0A /* QLRetro80 */;
 			targetProxy = D9D330BA1A10A71800CB2F8A /* PBXContainerItemProxy */;
+		};
+		D9D690632FC7902C00706872 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D9D690502FC78E2000706872 /* kr580 */;
+			targetProxy = D9D690622FC7902C00706872 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -828,7 +912,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -884,7 +968,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -931,11 +1015,14 @@
 		D974FCC519ADE9450041DF91 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				INFOPLIST_FILE = "Retro80/Retro80-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.retro80;
@@ -947,11 +1034,14 @@
 		D974FCC619ADE9450041DF91 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
+				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Retro80/Retro80-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				INFOPLIST_FILE = "Retro80/Retro80-Info.plist";
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.retro80;
@@ -967,10 +1057,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
 				INFOPLIST_FILE = QLRetro80/Info.plist;
 				INSTALL_PATH = /Library/QuickLook;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
@@ -988,6 +1075,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = NDEBUG;
 				INFOPLIST_FILE = QLRetro80/Info.plist;
 				INSTALL_PATH = /Library/QuickLook;
 				MACOSX_DEPLOYMENT_TARGET = "$(RECOMMENDED_MACOSX_DEPLOYMENT_TARGET)";
@@ -995,6 +1083,52 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ru.uart.QLRetro80;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = qlgenerator;
+			};
+			name = Release;
+		};
+		D9D690592FC78E2000706872 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		D9D6905A2FC78E2000706872 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_ENABLE_CPP_EXCEPTIONS = YES;
+				GCC_ENABLE_CPP_RTTI = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -1024,6 +1158,15 @@
 			buildConfigurations = (
 				D988F7C31A091D5A00079E0A /* Debug */,
 				D988F7C41A091D5A00079E0A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D9D6905B2FC78E2000706872 /* Build configuration list for PBXNativeTarget "kr580" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9D690592FC78E2000706872 /* Debug */,
+				D9D6905A2FC78E2000706872 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

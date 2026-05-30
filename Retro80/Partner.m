@@ -1,7 +1,7 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  ПЭВМ «Партнер 01.01»
 
@@ -231,7 +231,7 @@
 
 	// Контроллер прерывания
 
-	self.cpu.IRQ = self.crt;
+	self.crt.cpu = self.cpu;
 	self.cpu.RST = 0xF7;
 
 	// Контроллер НГМД
