@@ -100,13 +100,15 @@
 		D9D6905E2FC78E6500706872 /* i8080.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9D6905C2FC78E6500706872 /* i8080.cpp */; };
 		D9D6905F2FC78E6500706872 /* i8080.h in Headers */ = {isa = PBXBuildFile; fileRef = D9D6905D2FC78E6500706872 /* i8080.h */; };
 		D9D690652FC7909C00706872 /* libkr580.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D9D690512FC78E2000706872 /* libkr580.a */; };
-		D9D8CBB21CC2A8C600E2DD3A /* Dbg80.m in Sources */ = {isa = PBXBuildFile; fileRef = D9D8CBB11CC2A8C600E2DD3A /* Dbg80.m */; };
 		D9DE3A281B18E84C006B4104 /* UT88.m in Sources */ = {isa = PBXBuildFile; fileRef = D967B3E219B4584200C3ED9A /* UT88.m */; };
 		D9DE3A2B1B18EAA2006B4104 /* UT88-F.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9DE3A291B18EAA2006B4104 /* UT88-F.bin */; };
 		D9E7ED591BC42AEC00AA5F43 /* Orion128-3.2.bin in Resources */ = {isa = PBXBuildFile; fileRef = D9E7ED581BC42AEC00AA5F43 /* Orion128-3.2.bin */; };
 		D9EBB62519B47E8B00C833CA /* x8255.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62419B47E8B00C833CA /* x8255.m */; };
 		D9EBB62919B47ECA00C833CA /* mem.m in Sources */ = {isa = PBXBuildFile; fileRef = D9EBB62619B47ECA00C833CA /* mem.m */; };
 		D9F1C41A1AE189F900E927F7 /* Debug.m in Sources */ = {isa = PBXBuildFile; fileRef = D9F1C4191AE189F900E927F7 /* Debug.m */; };
+		D9F83D4B3004CE40007E693F /* Dbg80.mm in Sources */ = {isa = PBXBuildFile; fileRef = D9F83D4A3004CE40007E693F /* Dbg80.mm */; };
+		D9F83D4E3004CE86007E693F /* dasm.h in Headers */ = {isa = PBXBuildFile; fileRef = D9F83D4C3004CE86007E693F /* dasm.h */; };
+		D9F83D4F3004CE86007E693F /* dasm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9F83D4D3004CE86007E693F /* dasm.cpp */; };
 		D9FE179D19B9F874008EBD32 /* Retro80.m in Sources */ = {isa = PBXBuildFile; fileRef = D9FE179C19B9F874008EBD32 /* Retro80.m */; };
 /* End PBXBuildFile section */
 
@@ -287,7 +289,6 @@
 		D9D6905C2FC78E6500706872 /* i8080.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = i8080.cpp; path = libkr580/i8080.cpp; sourceTree = SOURCE_ROOT; };
 		D9D6905D2FC78E6500706872 /* i8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = i8080.h; path = libkr580/i8080.h; sourceTree = SOURCE_ROOT; };
 		D9D8CBB01CC2A8C600E2DD3A /* Dbg80.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Dbg80.h; sourceTree = "<group>"; };
-		D9D8CBB11CC2A8C600E2DD3A /* Dbg80.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Dbg80.m; sourceTree = "<group>"; };
 		D9DE3A291B18EAA2006B4104 /* UT88-F.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "UT88-F.bin"; path = "Retro80/ROM/UT88-F.bin"; sourceTree = "<group>"; };
 		D9E7ED581BC42AEC00AA5F43 /* Orion128-3.2.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = "Orion128-3.2.bin"; path = "Retro80/ROM/Orion128-3.2.bin"; sourceTree = "<group>"; };
 		D9EBB61E19B47E1300C833CA /* x8080.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = x8080.h; sourceTree = "<group>"; };
@@ -299,6 +300,9 @@
 		D9EC82C719BEBD5800384F94 /* ru */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = ru; path = ru.lproj/Document.xib; sourceTree = "<group>"; };
 		D9F1C4181AE189F900E927F7 /* Debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Debug.h; sourceTree = "<group>"; };
 		D9F1C4191AE189F900E927F7 /* Debug.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Debug.m; sourceTree = "<group>"; };
+		D9F83D4A3004CE40007E693F /* Dbg80.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = Dbg80.mm; sourceTree = "<group>"; };
+		D9F83D4C3004CE86007E693F /* dasm.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = dasm.h; path = libkr580/dasm.h; sourceTree = SOURCE_ROOT; };
+		D9F83D4D3004CE86007E693F /* dasm.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = dasm.cpp; path = libkr580/dasm.cpp; sourceTree = SOURCE_ROOT; };
 		D9FE179C19B9F874008EBD32 /* Retro80.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Retro80.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -569,6 +573,8 @@
 			children = (
 				D9D6905C2FC78E6500706872 /* i8080.cpp */,
 				D9D6905D2FC78E6500706872 /* i8080.h */,
+				D9F83D4C3004CE86007E693F /* dasm.h */,
+				D9F83D4D3004CE86007E693F /* dasm.cpp */,
 			);
 			path = kr580;
 			sourceTree = "<group>";
@@ -588,7 +594,7 @@
 				D9EBB61E19B47E1300C833CA /* x8080.h */,
 				D985A4222CEB73C200F4EBCC /* x8080.mm */,
 				D9D8CBB01CC2A8C600E2DD3A /* Dbg80.h */,
-				D9D8CBB11CC2A8C600E2DD3A /* Dbg80.m */,
+				D9F83D4A3004CE40007E693F /* Dbg80.mm */,
 				D9A4244D19B8310B00DAA3E0 /* x8253.h */,
 				D9A4244E19B8310B00DAA3E0 /* x8253.m */,
 				D9A4244F19B8310B00DAA3E0 /* x8257.h */,
@@ -620,6 +626,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				D9D6905F2FC78E6500706872 /* i8080.h in Headers */,
+				D9F83D4E3004CE86007E693F /* dasm.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -821,7 +828,6 @@
 				D929488319B5850C009BC312 /* RKRecorder.m in Sources */,
 				D9EBB62919B47ECA00C833CA /* mem.m in Sources */,
 				D974FCA019ADE9450041DF91 /* main.m in Sources */,
-				D9D8CBB21CC2A8C600E2DD3A /* Dbg80.m in Sources */,
 				D98E6C581E81008F0053FDF3 /* ComputerFactory.m in Sources */,
 				D9FE179D19B9F874008EBD32 /* Retro80.m in Sources */,
 				D92701851B073E1D00CC51BD /* Orion128.m in Sources */,
@@ -837,6 +843,7 @@
 				36A9CB081DCF3A64A8E2E2FE /* SpecialistScreen.m in Sources */,
 				36A9C519888D5E4FE31FF2FD /* SpecialistSP580.m in Sources */,
 				36A9C07354E31D0FF79869C3 /* SpecialistMX.m in Sources */,
+				D9F83D4B3004CE40007E693F /* Dbg80.mm in Sources */,
 				36A9C02B1250C90EF5C86C37 /* SpecialistMXKeyboard.m in Sources */,
 				36A9CF5B8E310101F21857C6 /* SpecialistMXSystem.m in Sources */,
 				D9D41F6D1E824800005C4AC5 /* Orion128Factory.m in Sources */,
@@ -859,6 +866,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D9F83D4F3004CE86007E693F /* dasm.cpp in Sources */,
 				D9D6905E2FC78E6500706872 /* i8080.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -959,7 +967,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
-				WARNING_CFLAGS = "-Wno-objc-property-synthesis";
+				WARNING_CFLAGS = "-Wno-objc-property-synthesis -Wno-deprecated-declarations";
 			};
 			name = Debug;
 		};
@@ -1008,7 +1016,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				SDKROOT = macosx;
-				WARNING_CFLAGS = "-Wno-objc-property-synthesis";
+				WARNING_CFLAGS = "-Wno-objc-property-synthesis -Wno-deprecated-declarations";
 			};
 			name = Release;
 		};

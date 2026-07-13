@@ -4,6 +4,7 @@ project(Retro80 VERSION 0.92 LANGUAGES OBJC)
 
 set(CMAKE_OBJC_STANDARD 99)
 add_compile_options(-Werror -fobjc-arc -fmodules)
+add_compile_options(-Wno-deprecated-declarations)
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
 
 set(CMAKE_OBJCXX_COMPILER clang++)
@@ -45,8 +46,10 @@ endif()
 ##
 
 set(KR580_SOURCES
+		libkr580/i8080.cpp
 		libkr580/i8080.h
-		libkr580/i8080.cpp)
+		libkr580/dasm.cpp
+		libkr580/dasm.h)
 
 add_library(kr580 STATIC ${KR580_SOURCES})
 target_include_directories(kr580 INTERFACE libkr580)
@@ -94,7 +97,7 @@ set(RETRO80_X8080_SOURCES
 		Retro80/x8080.h
 		Retro80/x8080.mm
 		Retro80/Dbg80.h
-		Retro80/Dbg80.m
+		Retro80/Dbg80.mm
 		Retro80/x8253.h
 		Retro80/x8253.m
 		Retro80/x8257.h

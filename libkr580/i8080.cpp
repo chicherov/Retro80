@@ -8,6 +8,7 @@
 *****/
 
 #include "i8080.h"
+#include <type_traits>
 #include <utility>
 
 namespace
