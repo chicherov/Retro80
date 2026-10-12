@@ -1,17 +1,24 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "" FORCE)
-project(Retro80 VERSION 0.92 LANGUAGES OBJC)
+
+if(NOT APPLE)
+	find_program(CLANG_C_COMPILER NAMES clang REQUIRED)
+	find_program(CLANG_CXX_COMPILER NAMES clang++ REQUIRED)
+
+	set(CMAKE_C_COMPILER ${CLANG_C_COMPILER} CACHE STRING "C compiler" FORCE)
+	set(CMAKE_CXX_COMPILER ${CLANG_CXX_COMPILER} CACHE STRING "C++ compiler" FORCE)
+	set(CMAKE_OBJC_COMPILER ${CLANG_C_COMPILER} CACHE STRING "Objective-C compiler" FORCE)
+	set(CMAKE_OBJCXX_COMPILER ${CLANG_CXX_COMPILER} CACHE STRING "Objective-C++ compiler" FORCE)
+endif()
+
+project(Retro80 VERSION 0.92 LANGUAGES OBJC CXX OBJCXX)
 
 set(CMAKE_OBJC_STANDARD 99)
+set(CMAKE_CXX_STANDARD 20)
+
 add_compile_options(-Werror -fobjc-arc -fmodules)
 add_compile_options(-Wno-deprecated-declarations)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
-
-set(CMAKE_OBJCXX_COMPILER clang++)
-set(CMAKE_CXX_COMPILER clang++)
-
-enable_language(CXX OBJCXX)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0)
 
 if(NOT APPLE)
 
@@ -37,6 +44,10 @@ if(NOT APPLE)
 
 	add_compile_options(-fobjc-runtime=gnustep-2.2 -fblocks)
 	add_compile_definitions(GNUSTEP)
+
+elseif(XCODE)
+
+	add_compile_options(-Wno-unused-command-line-argument)
 
 endif()
 
@@ -260,7 +271,6 @@ set_source_files_properties(
 add_executable(Retro80 MACOSX_BUNDLE
 		${RETRO80_SOURCES}
 		${RETRO80_RESOURCES})
-#		${KR580_SOURCES})
 
 target_link_libraries(Retro80 kr580)
 
@@ -268,6 +278,44 @@ if(APPLE)
 
 	set_target_properties(Retro80 PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Retro80/Retro80-Info.plist)
 	target_precompile_headers(Retro80 PRIVATE Retro80/Retro80-Prefix.pch)
+
+	##
+	## QLRetro80 (Quick Look app extension)
+	##
+
+	add_executable(QLRetro80 MACOSX_BUNDLE
+			QLRetro80/GeneratePreviewForURL.m)
+
+	target_compile_options(QLRetro80 PRIVATE "-fobjc-arc" "-fapplication-extension")
+	target_link_options(QLRetro80 PRIVATE "-Wl,-e,_NSExtensionMain")
+
+	set_target_properties(QLRetro80 PROPERTIES
+			BUNDLE TRUE
+			BUNDLE_EXTENSION "appex"
+			MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/QLRetro80/Info.plist
+			XCODE_ATTRIBUTE_MARKETING_VERSION "${PROJECT_VERSION}")
+
+	add_dependencies(Retro80 QLRetro80)
+
+	if(NOT XCODE)
+
+		find_program(PLUTIL plutil REQUIRED)
+
+		add_custom_command(TARGET Retro80 POST_BUILD
+				COMMAND ${PLUTIL} -replace CFBundleShortVersionString -string "${PROJECT_VERSION}" "$<TARGET_BUNDLE_DIR:Retro80>/Contents/Info.plist"
+				COMMAND ${PLUTIL} -replace LSMinimumSystemVersion -string "${CMAKE_OSX_DEPLOYMENT_TARGET}" "$<TARGET_BUNDLE_DIR:Retro80>/Contents/Info.plist"
+				COMMAND ${PLUTIL} -replace CFBundleShortVersionString -string "${PROJECT_VERSION}" "$<TARGET_BUNDLE_DIR:QLRetro80>/Contents/Info.plist"
+				COMMAND ${PLUTIL} -replace LSMinimumSystemVersion -string "${CMAKE_OSX_DEPLOYMENT_TARGET}" "$<TARGET_BUNDLE_DIR:QLRetro80>/Contents/Info.plist"
+				COMMENT "Replacing of Xcode variables in Info.plist files via plutil")
+	endif()
+
+	find_program(CODESIGN codesign REQUIRED)
+
+	add_custom_command(TARGET Retro80 POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_BUNDLE_DIR:Retro80>/Contents/PlugIns
+			COMMAND ${CMAKE_COMMAND} -E copy_directory $<TARGET_BUNDLE_DIR:QLRetro80> $<TARGET_BUNDLE_DIR:Retro80>/Contents/PlugIns/QLRetro80.appex
+			COMMAND ${CODESIGN} --force --sign - --entitlements ${CMAKE_CURRENT_SOURCE_DIR}/QLRetro80/Entitlements.plist $<TARGET_BUNDLE_DIR:Retro80>/Contents/PlugIns/QLRetro80.appex
+			COMMENT "Embedding Quick Look app extension")
 
 	if(NOT XCODE)
 
@@ -279,23 +327,28 @@ if(APPLE)
 
 		foreach(XIBFILE Document MainMenu)
 			add_custom_command(TARGET Retro80 POST_BUILD
-					COMMAND ${IBTOOL} --compile ${CMAKE_CURRENT_BINARY_DIR}/Retro80.app/Contents/Resources/ru.lproj/${XIBFILE}.nib ${CMAKE_CURRENT_SOURCE_DIR}/Retro80/ru.lproj/${XIBFILE}.xib
+					COMMAND ${IBTOOL} --compile "$<TARGET_BUNDLE_DIR:Retro80>/Contents/Resources/ru.lproj/${XIBFILE}.nib" ${CMAKE_CURRENT_SOURCE_DIR}/Retro80/ru.lproj/${XIBFILE}.xib
 					COMMENT "Compiling NIB file ${XIBFILE}.nib")
 		endforeach()
-
 	endif()
+
+	add_custom_command(TARGET Retro80 POST_BUILD
+			COMMAND ${CODESIGN} --force --sign - $<TARGET_BUNDLE_DIR:Retro80>
+			COMMENT "Resigning application bundle")
 
 else()
 
 	target_precompile_headers(Retro80 PRIVATE Retro80/GNUstep-Prefix.pch)
 	target_link_libraries(Retro80 objc dispatch gnustep-base gnustep-gui GL GLU m)
 
+	find_program(PLMERGE plmerge REQUIRED)
+
 	add_custom_command(
 			TARGET Retro80 POST_BUILD
 			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 			COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/Resources
-			COMMAND ${CMAKE_COMMAND} -E copy ${RETRO80_RESOURCES} ${CMAKE_CURRENT_BINARY_DIR}/Resources
-			COMMAND plmerge ${CMAKE_CURRENT_BINARY_DIR}/Resources/Info-gnustep.plist Retro80/Retro80-Info.plist
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RETRO80_RESOURCES} ${CMAKE_CURRENT_BINARY_DIR}/Resources
+			COMMAND ${PLMERGE} ${CMAKE_CURRENT_BINARY_DIR}/Resources/Info-gnustep.plist Retro80/Retro80-Info.plist
 	)
 
 endif()

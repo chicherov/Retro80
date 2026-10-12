@@ -4,7 +4,7 @@
 //  The contents of this file are implicitly included at the beginning of every source file.
 //
 
-#ifdef __OBJC__
+#if defined(__OBJC__) && __has_include(<objc/runtime.h>)
 	#import <objc/runtime.h>
 	#import <Cocoa/Cocoa.h>
 #endif

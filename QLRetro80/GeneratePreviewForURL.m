@@ -1,29 +1,34 @@
 /*****
 
  Проект «Ретро КР580» (https://github.com/chicherov/Retro80)
- Copyright © 2014-2018 Andrey Chicherov <chicherov@mac.com>
+ Copyright © 2014-2026 Andrey Chicherov <andrey@chicherov.ru>
 
  *****/
 
-#import <Cocoa/Cocoa.h>
-#import <QuickLook/QuickLook.h>
+#import <QuickLookUI/QuickLookUI.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
-OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview, CFURLRef url, CFStringRef contentTypeUTI, CFDictionaryRef options)
+@interface PreviewProvider : QLPreviewProvider <QLPreviewingController>
+@end
+
+@implementation PreviewProvider
+
+- (void)providePreviewForFileRequest:(QLFilePreviewRequest*)request completionHandler:(void (^)(QLPreviewReply* _Nullable reply, NSError* _Nullable error))completionHandler
 {
-	@autoreleasepool
+	QLPreviewReply* reply = [[QLPreviewReply alloc] initWithDataOfContentType:UTTypeRTF contentSize:NSZeroSize dataCreationBlock:^NSData* _Nullable(QLPreviewReply* _Nonnull reply, NSError* _Nullable __autoreleasing* _Nullable error)
 	{
-		NSString *ext = [[(__bridge NSURL *)url pathExtension] lowercaseString];
+		NSData* rtfData = nil;
 
-		NSData *data = [NSData dataWithContentsOfURL:(__bridge NSURL *)url];
+		@autoreleasepool
+		{
+		NSString *ext = [request.fileURL.pathExtension  lowercaseString];
+
+		NSData *data = [NSData dataWithContentsOfURL:request.fileURL];
 		const uint8_t *ptr = data.bytes;
 		NSUInteger length = data.length;
 
-		if (QLPreviewRequestIsCancelled(preview))
-			return noErr;
-		
 		NSString *unicode = @" ▘▝▀▗▚▐▜ ⌘ ⬆ \n➡⬇▖▌▞▛▄▙▟█   ┃━⬅☼  !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_ЮАБЦДЕФГХИЙКЛМНОПЯРСТУЖВЬЫЗШЭЩЧ▇";
 
-		NSMutableDictionary *properties = [NSMutableDictionary dictionary];
 		NSMutableString *name = [NSMutableString string];
 
 		NSMutableString *out = [NSMutableString string];
@@ -357,22 +362,17 @@ OSStatus GeneratePreviewForURL(void *thisInterface, QLPreviewRequestRef preview,
 				[out appendFormat:@"  %*c%@", (0x10 - (int)chr.length) * 3, ' ', chr];
 		}
 
-		if (name.length)
-			[properties setObject:name forKey:(__bridge NSString *)kQLPreviewPropertyDisplayNameKey];
+		NSAttributedString *output = [[NSAttributedString alloc] initWithString:out attributes:@{NSFontAttributeName: [NSFont userFixedPitchFontOfSize:18.0]}];
+		rtfData = [output RTFFromRange:NSMakeRange(0, output.length) documentAttributes:@{NSDocumentTypeDocumentAttribute: NSRTFTextDocumentType}];
 
-		NSAttributedString *output = [[NSAttributedString alloc] initWithString:out attributes:@{NSFontAttributeName : [NSFont userFixedPitchFontOfSize: 18.0]}];
+		if(name.length)
+			reply.title = name;
+		}
 
-		NSData *rtfData = [output RTFFromRange:NSMakeRange(0, output.length) documentAttributes:@{NSDocumentTypeDocumentAttribute: NSRTFTextDocumentType}];
+		return rtfData;
+	}];
 
-		QLPreviewRequestSetDataRepresentation(preview,
-											  (__bridge CFDataRef)rtfData,
-											  kUTTypeRTF,
-											  (__bridge CFMutableDictionaryRef)properties);
-
-		return noErr;
-	}
+	completionHandler(reply, nil);
 }
 
-void CancelPreviewGeneration(void *thisInterface, QLPreviewRequestRef preview)
-{
-}
+@end
